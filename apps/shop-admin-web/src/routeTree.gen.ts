@@ -11,7 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SigninRouteImport } from './routes/signin'
 import { Route as InventoryRouteImport } from './routes/inventory'
+import { Route as AppRouteRouteImport } from './routes/app/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppProductsIndexRouteImport } from './routes/app/products/index'
+import { Route as AppProductsCreateRouteImport } from './routes/app/products/create'
 
 const SigninRoute = SigninRouteImport.update({
   id: '/signin',
@@ -23,38 +26,82 @@ const InventoryRoute = InventoryRouteImport.update({
   path: '/inventory',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppRouteRoute = AppRouteRouteImport.update({
+  id: '/app',
+  path: '/app',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppProductsIndexRoute = AppProductsIndexRouteImport.update({
+  id: '/products/',
+  path: '/products/',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppProductsCreateRoute = AppProductsCreateRouteImport.update({
+  id: '/products/create',
+  path: '/products/create',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/app': typeof AppRouteRouteWithChildren
   '/inventory': typeof InventoryRoute
   '/signin': typeof SigninRoute
+  '/app/products/create': typeof AppProductsCreateRoute
+  '/app/products/': typeof AppProductsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/app': typeof AppRouteRouteWithChildren
   '/inventory': typeof InventoryRoute
   '/signin': typeof SigninRoute
+  '/app/products/create': typeof AppProductsCreateRoute
+  '/app/products': typeof AppProductsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/app': typeof AppRouteRouteWithChildren
   '/inventory': typeof InventoryRoute
   '/signin': typeof SigninRoute
+  '/app/products/create': typeof AppProductsCreateRoute
+  '/app/products/': typeof AppProductsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/inventory' | '/signin'
+  fullPaths:
+    | '/'
+    | '/app'
+    | '/inventory'
+    | '/signin'
+    | '/app/products/create'
+    | '/app/products/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/inventory' | '/signin'
-  id: '__root__' | '/' | '/inventory' | '/signin'
+  to:
+    | '/'
+    | '/app'
+    | '/inventory'
+    | '/signin'
+    | '/app/products/create'
+    | '/app/products'
+  id:
+    | '__root__'
+    | '/'
+    | '/app'
+    | '/inventory'
+    | '/signin'
+    | '/app/products/create'
+    | '/app/products/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRouteRoute: typeof AppRouteRouteWithChildren
   InventoryRoute: typeof InventoryRoute
   SigninRoute: typeof SigninRoute
 }
@@ -75,6 +122,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InventoryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app': {
+      id: '/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AppRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -82,11 +136,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/products/': {
+      id: '/app/products/'
+      path: '/products'
+      fullPath: '/app/products/'
+      preLoaderRoute: typeof AppProductsIndexRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/products/create': {
+      id: '/app/products/create'
+      path: '/products/create'
+      fullPath: '/app/products/create'
+      preLoaderRoute: typeof AppProductsCreateRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
   }
 }
 
+interface AppRouteRouteChildren {
+  AppProductsCreateRoute: typeof AppProductsCreateRoute
+  AppProductsIndexRoute: typeof AppProductsIndexRoute
+}
+
+const AppRouteRouteChildren: AppRouteRouteChildren = {
+  AppProductsCreateRoute: AppProductsCreateRoute,
+  AppProductsIndexRoute: AppProductsIndexRoute,
+}
+
+const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
+  AppRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRouteRoute: AppRouteRouteWithChildren,
   InventoryRoute: InventoryRoute,
   SigninRoute: SigninRoute,
 }

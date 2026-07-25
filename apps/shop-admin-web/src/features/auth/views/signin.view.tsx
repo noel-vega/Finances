@@ -1,53 +1,94 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
-import { signin, SignInRequestBodySchema, type SignInRequestBodyType } from "../auth.api";
+import {
+  SignInRequestBodySchema,
+  type SignInRequestBody,
+} from "../auth.api";
 import { Field, FieldLabel } from "ui/field";
 import { Input } from "ui/input";
+import { Alert, AlertDescription, AlertTitle } from "ui/alert";
 import { Button } from "ui/button";
+import { useSignInMutation } from "../auth.hooks";
+import { useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
+import { InfoIcon } from "lucide-react";
+import { AuthenticationError } from "../../../errors";
+import { appConfig } from "../../../config";
 
 export function SignInView() {
+  const signInMutation = useSignInMutation();
+  const navigate = useNavigate();
+  const [errorMessage, setErrorMessage] = useState("");
 
   const form = useForm({
     resolver: zodResolver(SignInRequestBodySchema),
     defaultValues: {
       email: "",
-      password:""
-    }
+      password: "",
+    },
   });
 
-  async function handleSubmit(data: SignInRequestBodyType) {
-    await signin(data)
-    console.log(data);
+  async function handleSubmit(formData: SignInRequestBody) {
+    console.log(formData)
+    try {
+      signInMutation.mutate(formData, {
+        onError: (err) => {
+          if (err instanceof AuthenticationError) {
+            setErrorMessage("Invalid email or password.");
+          }
+        },
+        onSuccess: (data) => {
+          navigate({ to: appConfig.homeRoute });
+        },
+      });
+    } catch (err) {}
+  }
 
+  function ErrorMessage() {
+    if(!errorMessage) return null
+    return (
+      <Alert variant="destructive">
+        <InfoIcon />
+        <AlertTitle>Authentication Failed</AlertTitle>
+        <AlertDescription>
+          Invalid email or password.
+        </AlertDescription>
+      </Alert>
+    );
   }
 
   return (
     <div className="h-full flex items-center">
-      <form  onSubmit={form.handleSubmit(handleSubmit)} className="max-w-sm space-y-4 mx-auto w-full">
-        <Controller
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <Field>
-              <FieldLabel>Email</FieldLabel>
-              <Input type="email" {...field} />
-            </Field>
-          )}
-        />
+      <div className="max-w-sm mx-auto w-full space-y-8">
+        <ErrorMessage />
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+          <Controller
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <Field>
+                <FieldLabel>Email</FieldLabel>
+                <Input type="email" placeholder="john.smith@example.com" {...field} />
+              </Field>
+            )}
+          />
 
-        <Controller
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <Field>
-              <FieldLabel>Password</FieldLabel>
-              <Input type="password" {...field} />
-            </Field>
-          )}
-        />
+          <Controller
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <Field>
+                <FieldLabel>Password</FieldLabel>
+                <Input type="password" placeholder="*********" {...field} />
+              </Field>
+            )}
+          />
 
-        <Button type="submit" className="w-full">Sign in</Button>
-      </form>
+          <Button type="submit" className="w-full">
+            Sign in
+          </Button>
+        </form>
+      </div>
     </div>
   );
 }

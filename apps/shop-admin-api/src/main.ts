@@ -1,10 +1,15 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { AuthGuard } from './modules/auth/auth.guard';
+import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
+import fastifyCookie from '@fastify/cookie';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  app.enableCors()
+  const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter);
+  app.enableCors({
+    origin: 'http://localhost:5000',
+    credentials: true,
+  })
+  await app.register(fastifyCookie)
   await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();

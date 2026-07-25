@@ -8,6 +8,10 @@
     ".": {
       "types": "./dist/src/index.d.ts",
       "default": "./dist/src/index.js"
+    },
+    "./schema": {
+      "types": "./dist/src/schema/index.d.ts",
+      "default": "./dist/src/schema/index.js"
     }
   },
   "scripts": {
@@ -36,6 +40,7 @@
   "dependencies": {
     "dotenv": "^17.4.2",
     "drizzle-orm": "^1.0.0-rc.4",
-    "pg": "^8.22.0"
+    "pg": "^8.22.0",
+    "zod": "^4.4.3"
   }
 }

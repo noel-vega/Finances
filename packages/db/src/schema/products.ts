@@ -7,6 +7,8 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { timestampAt } from "../utils.js";
+import { createInsertSchema, createSelectSchema } from "drizzle-orm/zod";
+import z from "zod";
 
 export const productStatusEnum = pgEnum("product_status", [
   "draft",
@@ -18,12 +20,15 @@ export const productStatusEnum = pgEnum("product_status", [
 export const productsTable = pgTable("products", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   name: varchar({ length: 255 }).notNull(),
-  slug: varchar({ length: 255 }).notNull().unique(),
+  // slug: varchar({ length: 255 }).notNull().unique(),
   description: varchar({ length: 2000 }),
   status: productStatusEnum().notNull().default("draft"),
   createdAt: timestampAt("created_at"),
   updatedAt: timestampAt("updated_at"),
 });
+
+export const InsertProductSchema = createInsertSchema(productsTable)
+export type InsertProduct = z.infer<typeof InsertProductSchema>
 
 // e.g. "Color", "Size" — scoped to one product
 export const productOptionsTable = pgTable(
