@@ -27,6 +27,8 @@ export const productsTable = pgTable("products", {
   updatedAt: timestampAt("updated_at"),
 });
 
+export const SelectProductSchema = createSelectSchema(productsTable)
+export type SelectProduct = z.infer<typeof SelectProductSchema>
 export const InsertProductSchema = createInsertSchema(productsTable)
 export type InsertProduct = z.infer<typeof InsertProductSchema>
 

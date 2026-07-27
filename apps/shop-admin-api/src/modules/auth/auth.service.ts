@@ -3,7 +3,6 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { SignInDto } from './dto/signin.dto';
-import { CreateUserDto } from './dto/create-auth.dto';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 
@@ -54,25 +53,8 @@ export class AuthService {
       const token = await this.createAccessToken(payload.sub, payload.email)
       return token
     } catch (error) {
-      console.log(error)
       // Throws error if token is expired, tampered, or invalid
       throw new UnauthorizedException('Invalid or expired token');
     }
-  }
-
-  createUser(createUserDto: CreateUserDto) {
-    return 'This action creates a new user';
-  }
-
-  findAll() {
-    return `This action returns all auth`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} auth`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} auth`;
   }
 }

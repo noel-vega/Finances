@@ -1,10 +1,10 @@
 import { queryOptions, useQuery } from "@tanstack/react-query"
-import { listProducts } from "./products.api"
+import { adminApi } from "../../lib/admin-api-client"
 
 export function getListProductsQueryOptions() {
     return queryOptions({
         queryKey: ['products'],
-        queryFn: listProducts
+        queryFn: adminApi.products.list
     })
 }
 

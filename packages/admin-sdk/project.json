@@ -1,0 +1,6 @@
+{
+  "name": "admin-sdk",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "packages/admin-sdk/src"
+}

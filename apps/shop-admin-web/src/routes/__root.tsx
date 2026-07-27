@@ -10,18 +10,20 @@ const RootLayout = () => (
 
 export const Route = createRootRoute({
   beforeLoad: async ({ location }) => {
-    const { success } = await adminApi.refreshAccessToken();
+    const accessToken = await adminApi.refreshAccessToken();
 
     switch (location.pathname) {
       case "/signin":
       case "/app":
       case "/":
-        if (success) {
+        if (accessToken) {
+          console.log("REDIRECT:", appConfig.homeRoute)
           throw redirect({ to: appConfig.homeRoute });
         }
         break;
       default:
-        if (!success) {
+        if (!accessToken) {
+          console.log("REDIRECT: /signin")
           throw redirect({ to: "/signin" });
         }
     }

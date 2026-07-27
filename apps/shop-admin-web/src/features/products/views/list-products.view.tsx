@@ -8,7 +8,6 @@ import { PlusIcon, SearchIcon } from "lucide-react";
 
 export function InventoryView() {
   const products = useQuery(getListProductsQueryOptions());
-  console.log(products.data);
 
   return (
     <div className="space-y-4">
