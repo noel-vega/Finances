@@ -127,9 +127,25 @@ export interface components {
             access_token: string;
         };
         UpdateUserDto: Record<string, never>;
-        CreateProductDto: Record<string, never>;
+        CreateProductDto: {
+            name: string;
+            description: string;
+            priceCents: number;
+            stock: number;
+            /** @enum {string} */
+            status: "draft" | "active" | "archived";
+            barcodes: string[];
+        };
         Product: {
             id: number;
+            name: string;
+            description: string | null;
+            /** @enum {string} */
+            status: "draft" | "active" | "archived";
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
         };
         UpdateProductDto: Record<string, never>;
     };

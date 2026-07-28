@@ -5,13 +5,18 @@ export class Product implements SelectProduct {
   @ApiProperty({ type: Number })
   id!: number;
 
+  @ApiProperty()
   name!: string;
 
+  @ApiProperty({type: "string", nullable: true})
   description!: string | null;
 
+  @ApiProperty({ enum: productStatusEnum.enumValues })
   status!: (typeof productStatusEnum.enumValues)[number];
 
+  @ApiProperty()
   createdAt!: Date;
 
+  @ApiProperty()
   updatedAt!: Date;
 }

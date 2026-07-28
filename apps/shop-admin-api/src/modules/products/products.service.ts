@@ -2,23 +2,44 @@ import { Inject, Injectable } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { DRIZZLE } from 'src/database/database.constants';
-import { productsTable, type db as Db } from 'db';
+import { eq, inventoryTable, productsTable, productVariantsTable, type db as Db } from 'db';
 
 @Injectable()
 export class ProductsService {
-
   constructor(@Inject(DRIZZLE) private readonly db: typeof Db) {}
-  create(createProductDto: CreateProductDto) {
-    this.db.insert(productsTable).values(createProductDto)
-    return 'This action adds a new product';
+  async create(createProductDto: CreateProductDto) {
+    const product = await this.db.transaction(async (tx) => {
+      const [product] = await tx
+        .insert(productsTable)
+        .values({
+          name: createProductDto.name,
+          description: createProductDto.description,
+          status: createProductDto.status,
+        })
+        .returning();
+
+      const [variant] = await tx.insert(productVariantsTable).values({
+        priceCents: createProductDto.priceCents,
+        productId: product.id,
+        sku: '',
+      }).returning();
+
+      await tx.insert(inventoryTable).values({
+        variantId: variant.id,
+        quantity: createProductDto.stock,
+      })
+      return product
+    });
+    return product;
   }
 
-  findAll() {
-    return []
+  async findAll() {
+    return await this.db.select().from(productsTable);
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} product`;
+  async findOne(id: number) {
+    const [product] =  await this.db.select().from(productsTable).where(eq(productsTable.id, id));
+    return product
   }
 
   update(id: number, updateProductDto: UpdateProductDto) {

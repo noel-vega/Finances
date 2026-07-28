@@ -34,7 +34,7 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton tooltip="Inventory">
                     <ShelvingUnitIcon />
-                    <span>Inventory</span>
+                    <span>Products</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </Link>

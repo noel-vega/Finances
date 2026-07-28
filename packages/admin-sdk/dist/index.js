@@ -36,7 +36,32 @@ export class AdminClient {
                 },
             }));
             return data;
-        }
+        },
+        create: async (params) => {
+            const { data } = await this.do(() => {
+                return this.client.POST("/products", {
+                    body: params,
+                    credentials: "include",
+                    headers: {
+                        Authorization: `Bearer ${this.accessToken}`,
+                    },
+                });
+            });
+            return data;
+        },
+        getById: async (id) => {
+            const path = {
+                id: String(id),
+            };
+            const { data } = await this.do(() => this.client.GET("/products/{id}", {
+                params: { path },
+                credentials: "include",
+                headers: {
+                    Authorization: `Bearer ${this.accessToken}`,
+                },
+            }));
+            return data;
+        },
     };
 }
 //# sourceMappingURL=index.js.map
