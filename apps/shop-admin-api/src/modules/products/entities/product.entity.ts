@@ -19,4 +19,7 @@ export class Product implements SelectProduct {
 
   @ApiProperty()
   updatedAt!: Date;
+
+  @ApiProperty({type: "number", nullable: true})
+  brandId!: number | null;
 }

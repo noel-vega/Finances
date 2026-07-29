@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,6 +17,8 @@ import { Button } from "ui/button";
 import { Barcode, X } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { useCreateProductMutation } from "../products.hooks";
+import { BrandCombobox } from "../../brands/components/brand-combobox";
+import { CategoryCombobox } from "../../categories/components/category-combobox";
 
 export const CreateProductFormSchema = z.object({
   name: z.string(),
@@ -31,6 +33,8 @@ export const CreateProductFormSchema = z.object({
   barcodes: z.object({ value: z.string() }).array(),
   priceCents: z.number(),
   stock: z.number(),
+  brandId: z.number().nullable(),
+  categoryIds: z.number().array(),
 });
 
 export type CreateProductForm = z.infer<typeof CreateProductFormSchema>;
@@ -47,6 +51,8 @@ export function CreateProductView() {
       priceCents: 0,
       stock: 0,
       barcodes: [],
+      brandId: null,
+      categoryIds: [],
     },
   });
 
@@ -69,8 +75,13 @@ export function CreateProductView() {
   };
 
   const handleSubmit = (data: CreateProductForm) => {
+    const { brandId, ...rest } = data;
+    if (!brandId) {
+      return;
+    }
+    const barcodes = data.barcodes.map((b) => b.value);
     createProduct.mutate(
-      { ...data, barcodes: data.barcodes.map((b) => b.value) },
+      { ...rest, brandId, barcodes },
       {
         onSuccess: () => {
           navigate({ to: "/app/products" });
@@ -96,16 +107,18 @@ export function CreateProductView() {
         })}
         className="max-w-lg space-y-4"
       >
-        <Controller
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <Field>
-              <FieldLabel>Name</FieldLabel>
-              <Input autoFocus {...field} />
-            </Field>
-          )}
-        />
+        <FieldGroup className="flex flex-row">
+          <Controller
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <Field>
+                <FieldLabel>Name</FieldLabel>
+                <Input autoFocus {...field} />
+              </Field>
+            )}
+          />
+        </FieldGroup>
 
         <Controller
           control={form.control}
@@ -149,6 +162,30 @@ export function CreateProductView() {
                     field.onChange(e.currentTarget.valueAsNumber)
                   }
                 />
+              </Field>
+            )}
+          />
+        </FieldGroup>
+
+        <FieldGroup className="flex flex-row">
+          <Controller
+            control={form.control}
+            name="brandId"
+            render={({ field }) => (
+              <Field>
+                <FieldLabel>Brand</FieldLabel>
+                <BrandCombobox value={field.value} onValueChange={field.onChange} />
+              </Field>
+            )}
+          />
+
+          <Controller
+            control={form.control}
+            name="categoryIds"
+            render={({ field }) => (
+              <Field>
+                <FieldLabel>Categories</FieldLabel>
+                <CategoryCombobox value={field.value} onValueChange={field.onChange} />
               </Field>
             )}
           />

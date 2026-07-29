@@ -28,7 +28,9 @@
     "./input-group": "./src/components/ui/input-group.tsx",
     "./textarea": "./src/components/ui/textarea.tsx",
     "./select": "./src/components/ui/select.tsx",
-    "./card": "./src/components/ui/card.tsx"
+    "./combobox": "./src/components/ui/combobox.tsx",
+    "./card": "./src/components/ui/card.tsx",
+    "./tabs": "./src/components/ui/tabs.tsx"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

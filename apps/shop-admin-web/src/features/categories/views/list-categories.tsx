@@ -1,16 +1,17 @@
+
 import { useQuery } from "@tanstack/react-query";
-import { getListProductsQueryOptions } from "../products.hooks";
+import { getListCategoriesQueryOptions } from "../categories.hooks";
 import { DataTable } from "../../../components/data-table";
 import { Button } from "ui/button";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "ui/input-group";
 import { PlusIcon, SearchIcon } from "lucide-react";
 import { type ColumnDef, type Row } from "@tanstack/react-table";
-import type { Product } from "admin-sdk";
+import type { Category } from "admin-sdk";
 import { Field, FieldLabel } from "ui/field";
 import { format } from "date-fns";
 
-const columns: ColumnDef<Product>[] = [
+const columns: ColumnDef<Category>[] = [
   {
     accessorKey: "id",
     header: "ID",
@@ -20,23 +21,17 @@ const columns: ColumnDef<Product>[] = [
     header: "Name",
   },
   {
-    accessorKey: "status",
-    header: "Status",
-  },
-  {
     accessorKey: "createdAt",
     header: "Created At",
     cell: ({row}) => format(new Date(row.original.createdAt), "MM/dd/yyyy hh:mm a")
   },
 ];
 
-export function InventoryView() {
-  const products = useQuery(getListProductsQueryOptions());
-  const navigate = useNavigate()
+export function ListCategoriesView() {
+  const categories = useQuery(getListCategoriesQueryOptions());
 
-  const handleRowClick = (row: Row<Product>) => {
-    const {id} = row.original
-    navigate({to: "/app/products/$id", params: {id}})
+  const handleRowClick = (row: Row<Category>) => {
+    console.log(row.original)
   }
 
   return (
@@ -45,19 +40,19 @@ export function InventoryView() {
         <Field className="max-w-xs">
           <FieldLabel>Search</FieldLabel>
           <InputGroup>
-            <InputGroupInput placeholder="Search products..." />
+            <InputGroupInput placeholder="Search categories..." />
             <InputGroupAddon>
               <SearchIcon />
             </InputGroupAddon>
           </InputGroup>
         </Field>
-        <Link to="/app/products/create">
+        <Link to="/app/products/categories/create">
           <Button>
-            <PlusIcon /> Product
+            <PlusIcon /> Category
           </Button>
         </Link>
       </div>
-      <DataTable onRowClick={handleRowClick} data={products.data ?? []} columns={columns} />
+      <DataTable onRowClick={handleRowClick} data={categories.data ?? []} columns={columns} />
     </div>
   );
 }

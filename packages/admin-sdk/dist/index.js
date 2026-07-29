@@ -63,5 +63,47 @@ export class AdminClient {
             return data;
         },
     };
+    brands = {
+        list: async () => {
+            const { data } = await this.do(() => this.client.GET("/brands", {
+                credentials: "include",
+                headers: {
+                    Authorization: `Bearer ${this.accessToken}`,
+                },
+            }));
+            return data;
+        },
+        create: async (params) => {
+            const { data } = await this.do(() => this.client.POST("/brands", {
+                body: params,
+                credentials: "include",
+                headers: {
+                    Authorization: `Bearer ${this.accessToken}`,
+                },
+            }));
+            return data;
+        },
+    };
+    categories = {
+        list: async () => {
+            const { data } = await this.do(() => this.client.GET("/categories", {
+                credentials: "include",
+                headers: {
+                    Authorization: `Bearer ${this.accessToken}`,
+                },
+            }));
+            return data;
+        },
+        create: async (params) => {
+            const { data } = await this.do(() => this.client.POST("/categories", {
+                body: params,
+                credentials: "include",
+                headers: {
+                    Authorization: `Bearer ${this.accessToken}`,
+                },
+            }));
+            return data;
+        },
+    };
 }
 //# sourceMappingURL=index.js.map

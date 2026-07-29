@@ -2,7 +2,14 @@ import { Inject, Injectable } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { DRIZZLE } from 'src/database/database.constants';
-import { eq, inventoryTable, productsTable, productVariantsTable, type db as Db } from 'db';
+import {
+  eq,
+  inventoryTable,
+  productCategoriesTable,
+  productsTable,
+  productVariantsTable,
+  type db as Db,
+} from 'db';
 
 @Injectable()
 export class ProductsService {
@@ -15,6 +22,7 @@ export class ProductsService {
           name: createProductDto.name,
           description: createProductDto.description,
           status: createProductDto.status,
+          brandId: createProductDto.brandId,
         })
         .returning();
 
@@ -28,6 +36,16 @@ export class ProductsService {
         variantId: variant.id,
         quantity: createProductDto.stock,
       })
+
+      if (createProductDto.categoryIds.length > 0) {
+        await tx.insert(productCategoriesTable).values(
+          createProductDto.categoryIds.map((categoryId) => ({
+            productId: product.id,
+            categoryId,
+          })),
+        );
+      }
+
       return product
     });
     return product;

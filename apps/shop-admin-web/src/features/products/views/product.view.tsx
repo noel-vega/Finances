@@ -2,6 +2,8 @@ import { Separator } from "ui/separator";
 import { useProductQuery } from "../products.hooks";
 import { Card, CardContent, CardHeader, CardTitle } from "ui/card";
 import { DataTable } from "../../../components/data-table";
+import { Button } from "ui/button";
+import {PlusIcon} from 'lucide-react'
 
 export function MetricCard({
   title,
@@ -41,7 +43,10 @@ export function ProductView({ id }: { id: number }) {
       <Separator className="my-8" />
 
       <section className="space-y-4">
-        <h2 className="font-semibold">Variants</h2>
+        <div className="flex justify-between">
+          <h2 className="font-semibold">Variants</h2>
+          <Button><PlusIcon /> Variant</Button>
+        </div>
         <DataTable columns={[]} data={[]} />
       </section>
     </div>
