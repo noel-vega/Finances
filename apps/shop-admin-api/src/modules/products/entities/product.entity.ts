@@ -22,4 +22,5 @@ export class Product implements SelectProduct {
 
   @ApiProperty({type: "number", nullable: true})
   brandId!: number | null;
+
 }

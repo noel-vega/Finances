@@ -12,8 +12,6 @@ export const inventoryTable = pgTable("inventory", {
     .notNull()
     .references(() => productVariantsTable.id, { onDelete: "cascade" })
     .unique(),
-  quantity: integer().notNull().default(0),
+  stock: integer().notNull().default(0),
   updatedAt: timestampAt("updated_at")
-
-
 });

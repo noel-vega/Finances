@@ -5,6 +5,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  Min,
   MinLength,
 } from 'class-validator';
 import { InsertProduct, productStatusEnum } from 'db/schema';
@@ -13,49 +14,38 @@ export class CreateProductDto {
   @ApiProperty()
   @IsString()
   @MinLength(1)
-  name: string;
+  name!: string;
 
   @ApiProperty()
   @IsString()
   @MinLength(8)
-  description: string;
+  description!: string;
 
   @ApiProperty()
   @IsNumber()
-  priceCents: number;
+  priceCents!: number;
 
-  @ApiProperty({type: "number"})
+  @ApiProperty({ type: 'number' })
   @IsNumber()
-  brandId: number;
+  brandId!: number;
 
-  @ApiProperty()
+  @ApiProperty({ type: String, nullable: true })
   @IsOptional()
-  stock?: number;
+  sku!: string;
+
+  @ApiProperty({ type: Number})
+  @Min(0)
+  stock!: number;
 
   @ApiProperty({ enum: productStatusEnum.enumValues })
-  @IsOptional()
   @IsIn(productStatusEnum.enumValues)
-  status?: (typeof productStatusEnum.enumValues)[number];
+  status!: (typeof productStatusEnum.enumValues)[number];
 
-  @ApiProperty({type: "array" })
+  @ApiProperty({ type: 'array' })
   @IsArray()
-  categoryIds: number[]
+  categoryIds!: number[];
 
   @ApiProperty()
-  @IsOptional()
-  barcodes?: string[];
-
-  constructor(
-    name: string,
-    description: string,
-    priceCents: number,
-    brandId: number,
-    categoryIds: number[]
-  ) {
-    this.name = name;
-    this.description = description;
-    this.priceCents = priceCents;
-    this.brandId = brandId;
-    this.categoryIds = categoryIds;
-  }
+  @IsArray()
+  barcodes!: string[];
 }

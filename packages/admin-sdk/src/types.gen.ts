@@ -116,6 +116,22 @@ export interface paths {
         patch: operations["ProductsController_update"];
         trace?: never;
     };
+    "/products/{id}/variants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ProductsController_findVariants"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/brands": {
         parameters: {
             query?: never;
@@ -165,6 +181,7 @@ export interface components {
             description: string;
             priceCents: number;
             brandId: number;
+            sku: string | null;
             stock: number;
             /** @enum {string} */
             status: "draft" | "active" | "archived";
@@ -182,6 +199,17 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
             brandId: number | null;
+        };
+        ProductVariant: {
+            id: number;
+            productId: number;
+            priceCents: number;
+            sku: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            stock: number;
         };
         UpdateProductDto: Record<string, never>;
         CreateBrandDto: {
@@ -442,7 +470,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Product"];
+                };
             };
         };
     };
@@ -466,6 +496,27 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    ProductsController_findVariants: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductVariant"][];
+                };
             };
         };
     };

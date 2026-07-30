@@ -76,7 +76,7 @@ export const productVariantsTable = pgTable("product_variants", {
   productId: integer()
     .notNull()
     .references(() => productsTable.id, { onDelete: "cascade" }),
-  sku: varchar({ length: 100 }).notNull().unique(),
+  sku: varchar({ length: 100 }).unique(),
   priceCents: integer().notNull(),
   createdAt: timestampAt("created_at"),
   updatedAt: timestampAt("updated_at"),

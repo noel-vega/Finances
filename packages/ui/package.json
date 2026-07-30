@@ -30,7 +30,10 @@
     "./select": "./src/components/ui/select.tsx",
     "./combobox": "./src/components/ui/combobox.tsx",
     "./card": "./src/components/ui/card.tsx",
-    "./tabs": "./src/components/ui/tabs.tsx"
+    "./tabs": "./src/components/ui/tabs.tsx",
+    "./alert-dialog": "./src/components/ui/alert-dialog.tsx",
+    "./dropdown-menu": "./src/components/ui/dropdown-menu.tsx",
+    "./collapsible": "./src/components/ui/collapsible.tsx"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Field, FieldGroup, FieldLabel } from "ui/field";
+import { Field, FieldDescription, FieldGroup, FieldLabel } from "ui/field";
 import { Input } from "ui/input";
 import { Textarea } from "ui/textarea";
 import {
@@ -30,6 +30,7 @@ export const CreateProductFormSchema = z.object({
   ]),
   // useFieldArray needs an object per row (RHF doesn't support arrays of
   // primitives); flattened back to string[] before hitting the API.
+  sku: z.string().nullable(),
   barcodes: z.object({ value: z.string() }).array(),
   priceCents: z.number(),
   stock: z.number(),
@@ -48,6 +49,7 @@ export function CreateProductView() {
       name: "",
       description: "",
       status: "active" as const,
+      sku: null,
       priceCents: 0,
       stock: 0,
       barcodes: [],
@@ -80,8 +82,9 @@ export function CreateProductView() {
       return;
     }
     const barcodes = data.barcodes.map((b) => b.value);
+    const sku = data.sku?.trim() || null;
     createProduct.mutate(
-      { ...rest, brandId, barcodes },
+      { ...rest, brandId, barcodes, sku },
       {
         onSuccess: () => {
           navigate({ to: "/app/products" });
@@ -127,6 +130,24 @@ export function CreateProductView() {
             <Field>
               <FieldLabel>Description</FieldLabel>
               <Textarea {...field} />
+            </Field>
+          )}
+        />
+
+        <Controller
+          control={form.control}
+          name="sku"
+          render={({ field }) => (
+            <Field>
+              <FieldLabel>SKU</FieldLabel>
+              <Input
+                placeholder="e.g. SHOE-BLK-42"
+                value={field.value ?? ""}
+                onChange={(e) => field.onChange(e.currentTarget.value)}
+              />
+              <FieldDescription>
+                Optional. Must be unique if provided.
+              </FieldDescription>
             </Field>
           )}
         />

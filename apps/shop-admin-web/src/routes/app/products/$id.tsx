@@ -1,6 +1,9 @@
 import z from 'zod'
 import { createFileRoute } from '@tanstack/react-router'
-import { getProductQueryOptions } from '../../../features/products/products.hooks'
+import {
+  getProductQueryOptions,
+  getProductVariantsQueryOptions,
+} from '../../../features/products/products.hooks'
 import { queryClient } from '../../../lib/react-query-client'
 import { ProductView } from '../../../features/products/views/product.view'
 
@@ -9,7 +12,10 @@ export const Route = createFileRoute('/app/products/$id')({
     parse: z.object({id: z.coerce.number()}).parse
   },
   beforeLoad: async ({params}) => {
-    await queryClient.invalidateQueries(getProductQueryOptions(params.id));
+    await Promise.all([
+      queryClient.invalidateQueries(getProductQueryOptions(params.id)),
+      queryClient.invalidateQueries(getProductVariantsQueryOptions(params.id)),
+    ]);
   },
   component: () => {
     const {id} = Route.useParams()

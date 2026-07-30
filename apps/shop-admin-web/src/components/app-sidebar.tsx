@@ -38,6 +38,7 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </Link>
+
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

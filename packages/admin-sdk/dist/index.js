@@ -37,6 +37,19 @@ export class AdminClient {
             }));
             return data;
         },
+        getVariants: async (productId) => {
+            const path = {
+                id: String(productId),
+            };
+            const { data } = await this.do(() => this.client.GET("/products/{id}/variants", {
+                params: { path },
+                credentials: "include",
+                headers: {
+                    Authorization: `Bearer ${this.accessToken}`,
+                },
+            }));
+            return data;
+        },
         create: async (params) => {
             const { data } = await this.do(() => {
                 return this.client.POST("/products", {
@@ -54,6 +67,19 @@ export class AdminClient {
                 id: String(id),
             };
             const { data } = await this.do(() => this.client.GET("/products/{id}", {
+                params: { path },
+                credentials: "include",
+                headers: {
+                    Authorization: `Bearer ${this.accessToken}`,
+                },
+            }));
+            return data;
+        },
+        remove: async (id) => {
+            const path = {
+                id: String(id),
+            };
+            const { data } = await this.do(() => this.client.DELETE("/products/{id}", {
                 params: { path },
                 credentials: "include",
                 headers: {

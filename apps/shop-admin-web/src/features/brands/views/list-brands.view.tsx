@@ -36,7 +36,7 @@ export function ListBrandsView() {
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-4 items-end">
+      <div className="flex gap-4 items-end justify-between">
         <Field className="max-w-xs">
           <FieldLabel>Search</FieldLabel>
           <InputGroup>

@@ -1,6 +1,7 @@
 import { type Client } from "openapi-fetch";
 import type { paths, components } from "./types.gen.js";
 export type Product = components["schemas"]["Product"];
+export type ProductVariant = components["schemas"]["ProductVariant"];
 export type Brand = components["schemas"]["Brand"];
 export type Category = components["schemas"]["Category"];
 export declare class AdminClient {
@@ -20,6 +21,15 @@ export declare class AdminClient {
             updatedAt: string;
             brandId: number | null;
         }[] | undefined>;
+        getVariants: (productId: number) => Promise<{
+            id: number;
+            productId: number;
+            priceCents: number;
+            sku: string | null;
+            createdAt: string;
+            updatedAt: string;
+            stock: number;
+        }[] | undefined>;
         create: (params: components["schemas"]["CreateProductDto"]) => Promise<{
             id: number;
             name: string;
@@ -30,6 +40,15 @@ export declare class AdminClient {
             brandId: number | null;
         } | undefined>;
         getById: (id: number) => Promise<{
+            id: number;
+            name: string;
+            description: string | null;
+            status: "draft" | "active" | "archived";
+            createdAt: string;
+            updatedAt: string;
+            brandId: number | null;
+        } | undefined>;
+        remove: (id: number) => Promise<{
             id: number;
             name: string;
             description: string | null;

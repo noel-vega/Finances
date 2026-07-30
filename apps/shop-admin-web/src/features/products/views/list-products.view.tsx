@@ -9,6 +9,7 @@ import { type ColumnDef, type Row } from "@tanstack/react-table";
 import type { Product } from "admin-sdk";
 import { Field, FieldLabel } from "ui/field";
 import { format } from "date-fns";
+import { Separator } from "ui/separator";
 
 const columns: ColumnDef<Product>[] = [
   {
@@ -30,7 +31,7 @@ const columns: ColumnDef<Product>[] = [
   },
 ];
 
-export function InventoryView() {
+export function ProductListView() {
   const products = useQuery(getListProductsQueryOptions());
   const navigate = useNavigate()
 
@@ -41,7 +42,7 @@ export function InventoryView() {
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-4 items-end">
+      <div className="flex gap-4 items-end justify-between">
         <Field className="max-w-xs">
           <FieldLabel>Search</FieldLabel>
           <InputGroup>

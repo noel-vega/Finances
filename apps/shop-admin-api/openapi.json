@@ -309,9 +309,59 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Product"
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "Products"
+        ]
+      }
+    },
+    "/products/{id}/variants": {
+      "get": {
+        "operationId": "ProductsController_findVariants",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProductVariant"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
         "tags": [
           "Products"
         ]
@@ -506,6 +556,10 @@
           "brandId": {
             "type": "number"
           },
+          "sku": {
+            "type": "string",
+            "nullable": true
+          },
           "stock": {
             "type": "number"
           },
@@ -532,6 +586,7 @@
           "description",
           "priceCents",
           "brandId",
+          "sku",
           "stock",
           "status",
           "categoryIds",
@@ -580,6 +635,44 @@
           "createdAt",
           "updatedAt",
           "brandId"
+        ]
+      },
+      "ProductVariant": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "productId": {
+            "type": "number"
+          },
+          "priceCents": {
+            "type": "number"
+          },
+          "sku": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "stock": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "productId",
+          "priceCents",
+          "sku",
+          "createdAt",
+          "updatedAt",
+          "stock"
         ]
       },
       "UpdateProductDto": {

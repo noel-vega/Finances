@@ -10,6 +10,7 @@ import {
   productVariantsTable,
   type db as Db,
 } from 'db';
+import { ProductVariant } from './entities/product-variant.entity';
 
 @Injectable()
 export class ProductsService {
@@ -29,12 +30,12 @@ export class ProductsService {
       const [variant] = await tx.insert(productVariantsTable).values({
         priceCents: createProductDto.priceCents,
         productId: product.id,
-        sku: '',
+        sku: createProductDto.sku,
       }).returning();
 
       await tx.insert(inventoryTable).values({
         variantId: variant.id,
-        quantity: createProductDto.stock,
+        stock: createProductDto.stock,
       })
 
       if (createProductDto.categoryIds.length > 0) {
@@ -60,11 +61,35 @@ export class ProductsService {
     return product
   }
 
+
+  async findVariants(productId: number): Promise<ProductVariant[]> {
+    return await this.db
+      .select({
+        id: productVariantsTable.id,
+        productId: productVariantsTable.productId,
+        priceCents: productVariantsTable.priceCents,
+        sku: productVariantsTable.sku,
+        createdAt: productVariantsTable.createdAt,
+        updatedAt: productVariantsTable.updatedAt,
+        stock: inventoryTable.stock,
+      })
+      .from(productVariantsTable)
+      .innerJoin(
+        inventoryTable,
+        eq(inventoryTable.variantId, productVariantsTable.id),
+      )
+      .where(eq(productVariantsTable.productId, productId));
+  }
+
   update(id: number, updateProductDto: UpdateProductDto) {
     return `This action updates a #${id} product`;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} product`;
+  async remove(id: number) {
+    const [product] = await this.db
+      .delete(productsTable)
+      .where(eq(productsTable.id, id))
+      .returning();
+    return product;
   }
 }

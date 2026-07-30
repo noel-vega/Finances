@@ -33,3 +33,23 @@ export function getProductQueryOptions(id: number) {
 export function useProductQuery(id: number) {
   return useQuery(getProductQueryOptions(id))
 }
+
+export function getProductVariantsQueryOptions(id: number) {
+  return queryOptions({
+    queryKey: ['products', id, 'variants'],
+    queryFn: () => adminApi.products.getVariants(id)
+  })
+}
+
+export function useProductVariantsQuery(id: number) {
+  return useQuery(getProductVariantsQueryOptions(id))
+}
+
+export function useDeleteProductMutation() {
+  return useMutation({
+    mutationFn: adminApi.products.remove,
+    onSuccess: () => {
+      queryClient.invalidateQueries(getListProductsQueryOptions());
+    },
+  });
+}
