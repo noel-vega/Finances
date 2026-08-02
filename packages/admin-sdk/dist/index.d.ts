@@ -2,6 +2,8 @@ import { type Client } from "openapi-fetch";
 import type { paths, components } from "./types.gen.js";
 export type Product = components["schemas"]["Product"];
 export type ProductVariant = components["schemas"]["ProductVariant"];
+export type ProductOption = components["schemas"]["ProductOption"];
+export type CreateVariantsDto = components["schemas"]["CreateVariantsDto"];
 export type Brand = components["schemas"]["Brand"];
 export type Category = components["schemas"]["Category"];
 export declare class AdminClient {
@@ -20,15 +22,6 @@ export declare class AdminClient {
             createdAt: string;
             updatedAt: string;
             brandId: number | null;
-        }[] | undefined>;
-        getVariants: (productId: number) => Promise<{
-            id: number;
-            productId: number;
-            priceCents: number;
-            sku: string | null;
-            createdAt: string;
-            updatedAt: string;
-            stock: number;
         }[] | undefined>;
         create: (params: components["schemas"]["CreateProductDto"]) => Promise<{
             id: number;
@@ -57,6 +50,66 @@ export declare class AdminClient {
             updatedAt: string;
             brandId: number | null;
         } | undefined>;
+        variants: {
+            list: (productId: number) => Promise<{
+                id: number;
+                productId: number;
+                priceCents: number;
+                sku: string | null;
+                createdAt: string;
+                updatedAt: string;
+                stock: number;
+            }[] | undefined>;
+            create: (productId: number, params: components["schemas"]["CreateVariantsDto"]) => Promise<{
+                id: number;
+                productId: number;
+                priceCents: number;
+                sku: string | null;
+                createdAt: string;
+                updatedAt: string;
+                stock: number;
+            }[] | undefined>;
+        };
+        options: {
+            list: (productId: number) => Promise<{
+                id: number;
+                productId: number;
+                name: string;
+                values: {
+                    id: number;
+                    value: string;
+                }[];
+            }[] | undefined>;
+            update: (productId: number, optionId: number, params: components["schemas"]["UpdateProductOptionDto"]) => Promise<{
+                id: number;
+                productId: number;
+                name: string;
+                values: {
+                    id: number;
+                    value: string;
+                }[];
+            } | undefined>;
+            remove: (productId: number, optionId: number) => Promise<{
+                id: number;
+                productId: number;
+                name: string;
+                values: {
+                    id: number;
+                    value: string;
+                }[];
+            } | undefined>;
+            values: {
+                remove: (productId: number, optionId: number, valueId: number) => Promise<{
+                    id: number;
+                    productId: number;
+                    name: string;
+                    values: {
+                        id: number;
+                        value: string;
+                    }[];
+                } | undefined>;
+            };
+        };
     };
     brands: {
         list: () => Promise<{

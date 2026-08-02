@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ShelvingUnitIcon } from "lucide-react";
+import { BookUserIcon, LibraryIcon, ShelvingUnitIcon, ShoppingCartIcon, UsersIcon } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -30,14 +30,53 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent className="flex flex-col gap-2">
             <SidebarMenu>
+              <Link to="/app/orders">
+                <SidebarMenuItem>
+                  <SidebarMenuButton tooltip="Roles">
+                    <ShoppingCartIcon />
+                    <span>Orders</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </Link>
+
               <Link to="/app/products">
                 <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Inventory">
-                    <ShelvingUnitIcon />
+                  <SidebarMenuButton tooltip="Products">
+                    <LibraryIcon />
                     <span>Products</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </Link>
+
+              <Link to="/app/customers">
+                <SidebarMenuItem>
+                  <SidebarMenuButton tooltip="Customers">
+                    <BookUserIcon />
+                    <span>Customers</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </Link>
+
+              <Link to="/app/inventory">
+                <SidebarMenuItem>
+                  <SidebarMenuButton tooltip="Users">
+                    <ShelvingUnitIcon />
+                    <span>Inventory</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </Link>
+
+
+
+              <Link to="/app/users">
+                <SidebarMenuItem>
+                  <SidebarMenuButton tooltip="Users">
+                    <UsersIcon />
+                    <span>Staff</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </Link>
+
 
             </SidebarMenu>
           </SidebarGroupContent>

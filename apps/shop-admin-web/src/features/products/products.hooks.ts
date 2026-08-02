@@ -37,12 +37,73 @@ export function useProductQuery(id: number) {
 export function getProductVariantsQueryOptions(id: number) {
   return queryOptions({
     queryKey: ['products', id, 'variants'],
-    queryFn: () => adminApi.products.getVariants(id)
+    queryFn: () => adminApi.products.variants.list(id)
   })
 }
 
 export function useProductVariantsQuery(id: number) {
   return useQuery(getProductVariantsQueryOptions(id))
+}
+
+export function useCreateVariantsMutation(productId: number) {
+  return useMutation({
+    mutationFn: (params: Parameters<typeof adminApi.products.variants.create>[1]) =>
+      adminApi.products.variants.create(productId, params),
+    onSuccess: () => {
+      queryClient.invalidateQueries(getProductQueryOptions(productId));
+      queryClient.invalidateQueries(getProductVariantsQueryOptions(productId));
+      queryClient.invalidateQueries(getProductOptionsQueryOptions(productId));
+    },
+  });
+}
+
+export function getProductOptionsQueryOptions(id: number) {
+  return queryOptions({
+    queryKey: ['products', id, 'options'],
+    queryFn: () => adminApi.products.options.list(id)
+  })
+}
+
+export function useProductOptionsQuery(id: number) {
+  return useQuery(getProductOptionsQueryOptions(id))
+}
+
+export function useDeleteProductOptionMutation(productId: number) {
+  return useMutation({
+    mutationFn: (optionId: number) =>
+      adminApi.products.options.remove(productId, optionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(getProductOptionsQueryOptions(productId));
+      queryClient.invalidateQueries(getProductVariantsQueryOptions(productId));
+      queryClient.invalidateQueries(getProductQueryOptions(productId));
+    },
+  });
+}
+
+export function useUpdateProductOptionMutation(productId: number) {
+  return useMutation({
+    mutationFn: ({ optionId, name }: { optionId: number; name: string }) =>
+      adminApi.products.options.update(productId, optionId, { name }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(getProductOptionsQueryOptions(productId));
+    },
+  });
+}
+
+export function useDeleteProductOptionValueMutation(productId: number) {
+  return useMutation({
+    mutationFn: ({
+      optionId,
+      valueId,
+    }: {
+      optionId: number;
+      valueId: number;
+    }) => adminApi.products.options.values.remove(productId, optionId, valueId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(getProductOptionsQueryOptions(productId));
+      queryClient.invalidateQueries(getProductVariantsQueryOptions(productId));
+    },
+  });
 }
 
 export function useDeleteProductMutation() {

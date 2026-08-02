@@ -56,6 +56,10 @@ export const productOptionsTable = pgTable(
   },
   (t) => [unique().on(t.productId, t.name)],
 );
+export const SelectProductOptionSchema = createSelectSchema(productOptionsTable)
+export type SelectProductOption = z.infer<typeof SelectProductOptionSchema>
+export const InsertProductOptionSchema = createInsertSchema(productOptionsTable)
+export type InsertProductOption = z.infer<typeof InsertProductOptionSchema>
 
 // e.g. "Red", "Large" — belongs to one option
 export const productOptionValuesTable = pgTable(
@@ -69,6 +73,10 @@ export const productOptionValuesTable = pgTable(
   },
   (t) => [unique().on(t.optionId, t.value)],
 );
+export const SelectProductOptionValueSchema = createSelectSchema(productOptionValuesTable)
+export type SelectProductOptionValue = z.infer<typeof SelectProductOptionValueSchema>
+export const InsertProductOptionValueSchema = createInsertSchema(productOptionsTable)
+export type InsertProductOptionValue = z.infer<typeof InsertProductOptionValueSchema>
 
 // a single sellable unit, e.g. "Blue / Large"
 export const productVariantsTable = pgTable("product_variants", {

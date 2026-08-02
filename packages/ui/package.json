@@ -33,7 +33,10 @@
     "./tabs": "./src/components/ui/tabs.tsx",
     "./alert-dialog": "./src/components/ui/alert-dialog.tsx",
     "./dropdown-menu": "./src/components/ui/dropdown-menu.tsx",
-    "./collapsible": "./src/components/ui/collapsible.tsx"
+    "./collapsible": "./src/components/ui/collapsible.tsx",
+    "./item": "./src/components/ui/item.tsx",
+    "./badge": "./src/components/ui/badge.tsx"
+
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

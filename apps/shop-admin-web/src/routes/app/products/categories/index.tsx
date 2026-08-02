@@ -5,7 +5,7 @@ import { queryClient } from '../../../../lib/react-query-client'
 
 export const Route = createFileRoute('/app/products/categories/')({
   beforeLoad: async () => {
-    await queryClient.invalidateQueries(getListCategoriesQueryOptions())
+    await queryClient.ensureQueryData(getListCategoriesQueryOptions())
   },
   component: ListCategoriesView,
 })

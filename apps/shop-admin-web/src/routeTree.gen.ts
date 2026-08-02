@@ -14,7 +14,12 @@ import { Route as InventoryRouteImport } from './routes/inventory'
 import { Route as AppRouteRouteImport } from './routes/app/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppProductsRouteRouteImport } from './routes/app/products/route'
+import { Route as AppUsersIndexRouteImport } from './routes/app/users/index'
+import { Route as AppRolesIndexRouteImport } from './routes/app/roles/index'
 import { Route as AppProductsIndexRouteImport } from './routes/app/products/index'
+import { Route as AppOrdersIndexRouteImport } from './routes/app/orders/index'
+import { Route as AppInventoryIndexRouteImport } from './routes/app/inventory/index'
+import { Route as AppCustomersIndexRouteImport } from './routes/app/customers/index'
 import { Route as AppProductsCreateRouteImport } from './routes/app/products/create'
 import { Route as AppProductsIdRouteImport } from './routes/app/products/$id'
 import { Route as AppProductsCategoriesIndexRouteImport } from './routes/app/products/categories/index'
@@ -47,10 +52,35 @@ const AppProductsRouteRoute = AppProductsRouteRouteImport.update({
   path: '/products',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppUsersIndexRoute = AppUsersIndexRouteImport.update({
+  id: '/users/',
+  path: '/users/',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppRolesIndexRoute = AppRolesIndexRouteImport.update({
+  id: '/roles/',
+  path: '/roles/',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppProductsIndexRoute = AppProductsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppProductsRouteRoute,
+} as any)
+const AppOrdersIndexRoute = AppOrdersIndexRouteImport.update({
+  id: '/orders/',
+  path: '/orders/',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppInventoryIndexRoute = AppInventoryIndexRouteImport.update({
+  id: '/inventory/',
+  path: '/inventory/',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppCustomersIndexRoute = AppCustomersIndexRouteImport.update({
+  id: '/customers/',
+  path: '/customers/',
+  getParentRoute: () => AppRouteRoute,
 } as any)
 const AppProductsCreateRoute = AppProductsCreateRouteImport.update({
   id: '/create',
@@ -93,7 +123,12 @@ export interface FileRoutesByFullPath {
   '/app/products': typeof AppProductsRouteRouteWithChildren
   '/app/products/$id': typeof AppProductsIdRoute
   '/app/products/create': typeof AppProductsCreateRoute
+  '/app/customers/': typeof AppCustomersIndexRoute
+  '/app/inventory/': typeof AppInventoryIndexRoute
+  '/app/orders/': typeof AppOrdersIndexRoute
   '/app/products/': typeof AppProductsIndexRoute
+  '/app/roles/': typeof AppRolesIndexRoute
+  '/app/users/': typeof AppUsersIndexRoute
   '/app/products/brands/create': typeof AppProductsBrandsCreateRoute
   '/app/products/categories/create': typeof AppProductsCategoriesCreateRoute
   '/app/products/brands/': typeof AppProductsBrandsIndexRoute
@@ -106,7 +141,12 @@ export interface FileRoutesByTo {
   '/signin': typeof SigninRoute
   '/app/products/$id': typeof AppProductsIdRoute
   '/app/products/create': typeof AppProductsCreateRoute
+  '/app/customers': typeof AppCustomersIndexRoute
+  '/app/inventory': typeof AppInventoryIndexRoute
+  '/app/orders': typeof AppOrdersIndexRoute
   '/app/products': typeof AppProductsIndexRoute
+  '/app/roles': typeof AppRolesIndexRoute
+  '/app/users': typeof AppUsersIndexRoute
   '/app/products/brands/create': typeof AppProductsBrandsCreateRoute
   '/app/products/categories/create': typeof AppProductsCategoriesCreateRoute
   '/app/products/brands': typeof AppProductsBrandsIndexRoute
@@ -121,7 +161,12 @@ export interface FileRoutesById {
   '/app/products': typeof AppProductsRouteRouteWithChildren
   '/app/products/$id': typeof AppProductsIdRoute
   '/app/products/create': typeof AppProductsCreateRoute
+  '/app/customers/': typeof AppCustomersIndexRoute
+  '/app/inventory/': typeof AppInventoryIndexRoute
+  '/app/orders/': typeof AppOrdersIndexRoute
   '/app/products/': typeof AppProductsIndexRoute
+  '/app/roles/': typeof AppRolesIndexRoute
+  '/app/users/': typeof AppUsersIndexRoute
   '/app/products/brands/create': typeof AppProductsBrandsCreateRoute
   '/app/products/categories/create': typeof AppProductsCategoriesCreateRoute
   '/app/products/brands/': typeof AppProductsBrandsIndexRoute
@@ -137,7 +182,12 @@ export interface FileRouteTypes {
     | '/app/products'
     | '/app/products/$id'
     | '/app/products/create'
+    | '/app/customers/'
+    | '/app/inventory/'
+    | '/app/orders/'
     | '/app/products/'
+    | '/app/roles/'
+    | '/app/users/'
     | '/app/products/brands/create'
     | '/app/products/categories/create'
     | '/app/products/brands/'
@@ -150,7 +200,12 @@ export interface FileRouteTypes {
     | '/signin'
     | '/app/products/$id'
     | '/app/products/create'
+    | '/app/customers'
+    | '/app/inventory'
+    | '/app/orders'
     | '/app/products'
+    | '/app/roles'
+    | '/app/users'
     | '/app/products/brands/create'
     | '/app/products/categories/create'
     | '/app/products/brands'
@@ -164,7 +219,12 @@ export interface FileRouteTypes {
     | '/app/products'
     | '/app/products/$id'
     | '/app/products/create'
+    | '/app/customers/'
+    | '/app/inventory/'
+    | '/app/orders/'
     | '/app/products/'
+    | '/app/roles/'
+    | '/app/users/'
     | '/app/products/brands/create'
     | '/app/products/categories/create'
     | '/app/products/brands/'
@@ -215,12 +275,47 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProductsRouteRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/users/': {
+      id: '/app/users/'
+      path: '/users'
+      fullPath: '/app/users/'
+      preLoaderRoute: typeof AppUsersIndexRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/roles/': {
+      id: '/app/roles/'
+      path: '/roles'
+      fullPath: '/app/roles/'
+      preLoaderRoute: typeof AppRolesIndexRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/app/products/': {
       id: '/app/products/'
       path: '/'
       fullPath: '/app/products/'
       preLoaderRoute: typeof AppProductsIndexRouteImport
       parentRoute: typeof AppProductsRouteRoute
+    }
+    '/app/orders/': {
+      id: '/app/orders/'
+      path: '/orders'
+      fullPath: '/app/orders/'
+      preLoaderRoute: typeof AppOrdersIndexRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/inventory/': {
+      id: '/app/inventory/'
+      path: '/inventory'
+      fullPath: '/app/inventory/'
+      preLoaderRoute: typeof AppInventoryIndexRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/customers/': {
+      id: '/app/customers/'
+      path: '/customers'
+      fullPath: '/app/customers/'
+      preLoaderRoute: typeof AppCustomersIndexRouteImport
+      parentRoute: typeof AppRouteRoute
     }
     '/app/products/create': {
       id: '/app/products/create'
@@ -292,10 +387,20 @@ const AppProductsRouteRouteWithChildren =
 
 interface AppRouteRouteChildren {
   AppProductsRouteRoute: typeof AppProductsRouteRouteWithChildren
+  AppCustomersIndexRoute: typeof AppCustomersIndexRoute
+  AppInventoryIndexRoute: typeof AppInventoryIndexRoute
+  AppOrdersIndexRoute: typeof AppOrdersIndexRoute
+  AppRolesIndexRoute: typeof AppRolesIndexRoute
+  AppUsersIndexRoute: typeof AppUsersIndexRoute
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppProductsRouteRoute: AppProductsRouteRouteWithChildren,
+  AppCustomersIndexRoute: AppCustomersIndexRoute,
+  AppInventoryIndexRoute: AppInventoryIndexRoute,
+  AppOrdersIndexRoute: AppOrdersIndexRoute,
+  AppRolesIndexRoute: AppRolesIndexRoute,
+  AppUsersIndexRoute: AppUsersIndexRoute,
 }
 
 const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(

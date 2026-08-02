@@ -102,7 +102,7 @@ export function CreateProductView() {
   console.log("FORM ERRORS:", form.formState.errors);
   return (
     <div className="space-y-4">
-      <h1 className="text-xl">Create Product</h1>
+      <h1 className="text-xl font-semibold">Create Product</h1>
       <form
         onKeyDown={handleKeyDown}
         onSubmit={form.handleSubmit((data) => {

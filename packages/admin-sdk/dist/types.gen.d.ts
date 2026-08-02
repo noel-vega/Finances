@@ -124,8 +124,56 @@ export interface paths {
         };
         get: operations["ProductsController_findVariants"];
         put?: never;
+        post: operations["ProductsController_createVariants"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/products/{id}/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ProductsController_findOptions"];
+        put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/products/{id}/options/{optionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["ProductsController_removeOption"];
+        options?: never;
+        head?: never;
+        patch: operations["ProductsController_updateOption"];
+        trace?: never;
+    };
+    "/products/{id}/options/{optionId}/values/{valueId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["ProductsController_removeOptionValue"];
         options?: never;
         head?: never;
         patch?: never;
@@ -208,6 +256,29 @@ export interface components {
             createdAt: string;
             /** Format: date-time */
             updatedAt: string;
+            stock: number;
+        };
+        ProductOptionValue: {
+            id: number;
+            value: string;
+        };
+        ProductOption: {
+            id: number;
+            productId: number;
+            name: string;
+            values: components["schemas"]["ProductOptionValue"][];
+        };
+        UpdateProductOptionDto: {
+            name: string;
+        };
+        VariantOptionInputDto: {
+            name: string;
+            values: string[];
+        };
+        CreateVariantsDto: {
+            options: components["schemas"]["VariantOptionInputDto"][];
+            priceCents: number;
+            /** @default 0 */
             stock: number;
         };
         UpdateProductDto: Record<string, never>;
@@ -515,6 +586,123 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProductVariant"][];
+                };
+            };
+        };
+    };
+    ProductsController_createVariants: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateVariantsDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductVariant"][];
+                };
+            };
+        };
+    };
+    ProductsController_findOptions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductOption"][];
+                };
+            };
+        };
+    };
+    ProductsController_removeOption: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                optionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductOption"];
+                };
+            };
+        };
+    };
+    ProductsController_updateOption: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                optionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProductOptionDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductOption"];
+                };
+            };
+        };
+    };
+    ProductsController_removeOptionValue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                optionId: string;
+                valueId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductOption"];
                 };
             };
         };

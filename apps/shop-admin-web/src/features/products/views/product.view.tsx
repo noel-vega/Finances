@@ -7,7 +7,6 @@ import {
   useProductVariantsQuery,
 } from "../products.hooks";
 import { Card, CardContent, CardHeader, CardTitle } from "ui/card";
-import { DataTable } from "../../../components/data-table";
 import { Button } from "ui/button";
 import {
   DropdownMenu,
@@ -25,46 +24,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "ui/alert-dialog";
-import { PlusIcon, SettingsIcon, TrashIcon } from "lucide-react";
-import type { ColumnDef } from "@tanstack/react-table";
-import type { ProductVariant } from "admin-sdk";
+import { SettingsIcon, Trash2Icon } from "lucide-react";
+import { formatPriceRange } from "../variant-section/shared";
+import { VariantSection } from "../variant-section";
 
 const LOW_STOCK_THRESHOLD = 0;
-
-const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-});
-
-function formatCents(cents: number) {
-  return currencyFormatter.format(cents / 100);
-}
-
-function formatPriceRange(variants: ProductVariant[]) {
-  if (variants.length === 0) return "—";
-  const prices = variants.map((variant) => variant.priceCents);
-  const min = Math.min(...prices);
-  const max = Math.max(...prices);
-  return min === max
-    ? formatCents(min)
-    : `${formatCents(min)} - ${formatCents(max)}`;
-}
-
-const variantColumns: ColumnDef<ProductVariant>[] = [
-  {
-    accessorKey: "sku",
-    header: "SKU",
-  },
-  {
-    accessorKey: "priceCents",
-    header: "Price",
-    cell: ({ row }) => formatCents(row.original.priceCents),
-  },
-  {
-    accessorKey: "stock",
-    header: "Stock",
-  },
-];
 
 export function MetricCard({
   title,
@@ -118,7 +82,12 @@ export function ProductView({ id }: { id: number }) {
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
-              <Button variant="ghost" size="icon-sm" aria-label="Product settings" />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Product settings"
+              />
             }
           >
             <SettingsIcon />
@@ -128,7 +97,7 @@ export function ProductView({ id }: { id: number }) {
               variant="destructive"
               onClick={() => setDeleteDialogOpen(true)}
             >
-              <TrashIcon /> Delete
+              <Trash2Icon /> Delete
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -139,8 +108,8 @@ export function ProductView({ id }: { id: number }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete "{data.name}"?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete this product and all of its
-              variants. This action cannot be undone.
+              This will permanently delete this product and all of its variants.
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -159,17 +128,17 @@ export function ProductView({ id }: { id: number }) {
       <section className="flex gap-4">
         <MetricCard title="Variants" value={variants?.length ?? 0} />
         <MetricCard title="Total Stock" value={totalStock} />
-        <MetricCard title="Price Range" value={formatPriceRange(variants ?? [])} />
+        <MetricCard
+          title="Price Range"
+          value={formatPriceRange(variants ?? [])}
+        />
         <MetricCard title="Needs Attention" value={needsAttentionCount} />
       </section>
       <Separator className="my-8" />
 
       <section className="space-y-4">
-        <div className="flex justify-between">
-          <h2 className="font-semibold">Variants</h2>
-          <Button><PlusIcon /> Variant</Button>
-        </div>
-        <DataTable columns={variantColumns} data={variants ?? []} />
+        <h2 className="font-semibold">Variants</h2>
+        <VariantSection productId={id} />
       </section>
     </div>
   );

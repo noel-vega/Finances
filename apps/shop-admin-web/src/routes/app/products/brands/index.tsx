@@ -5,7 +5,7 @@ import { getListBrandsQueryOptions } from '../../../../features/brands/brands.ho
 
 export const Route = createFileRoute('/app/products/brands/')({
   beforeLoad: async () => {
-      queryClient.invalidateQueries(getListBrandsQueryOptions())
+      await queryClient.ensureQueryData(getListBrandsQueryOptions())
   },
   component: ListBrandsView,
 })

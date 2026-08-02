@@ -22,7 +22,7 @@ async function bootstrap() {
   app.enableCors({
     origin: 'http://localhost:5000',
     credentials: true,
-    methods: ["GET", "POST", "DELETE"]
+    methods: ["GET", "POST", "PATCH", "DELETE"]
   });
   await app.register(fastifyCookie);
   await app.listen(process.env.PORT ?? 3000);
