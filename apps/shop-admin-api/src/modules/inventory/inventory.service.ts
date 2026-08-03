@@ -1,26 +1,41 @@
-import { Injectable } from '@nestjs/common';
-import { CreateInventoryDto } from './dto/create-inventory.dto';
-import { UpdateInventoryDto } from './dto/update-inventory.dto';
+import { Inject, Injectable } from '@nestjs/common';
+import { DRIZZLE } from 'src/database/database.constants';
+import {
+  eq,
+  inventoryTable,
+  locationsTable,
+  productsTable,
+  productVariantsTable,
+  type db as Db,
+} from 'db';
+import { InventoryRecord } from './entities/inventory.entity';
 
 @Injectable()
 export class InventoryService {
-  create(createInventoryDto: CreateInventoryDto) {
-    return 'This action adds a new inventory';
-  }
+  constructor(@Inject(DRIZZLE) private readonly db: typeof Db) {}
 
-  findAll() {
-    return `This action returns all inventory`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} inventory`;
-  }
-
-  update(id: number, updateInventoryDto: UpdateInventoryDto) {
-    return `This action updates a #${id} inventory`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} inventory`;
+  async findAll(): Promise<InventoryRecord[]> {
+    return await this.db
+      .select({
+        id: inventoryTable.id,
+        variantId: inventoryTable.variantId,
+        sku: productVariantsTable.sku,
+        productId: productsTable.id,
+        productName: productsTable.name,
+        locationId: locationsTable.id,
+        locationName: locationsTable.name,
+        stock: inventoryTable.stock,
+        updatedAt: inventoryTable.updatedAt,
+      })
+      .from(inventoryTable)
+      .innerJoin(
+        productVariantsTable,
+        eq(productVariantsTable.id, inventoryTable.variantId),
+      )
+      .innerJoin(
+        productsTable,
+        eq(productsTable.id, productVariantsTable.productId),
+      )
+      .innerJoin(locationsTable, eq(locationsTable.id, inventoryTable.locationId));
   }
 }

@@ -18,10 +18,12 @@ import { Route as AppUsersIndexRouteImport } from './routes/app/users/index'
 import { Route as AppRolesIndexRouteImport } from './routes/app/roles/index'
 import { Route as AppProductsIndexRouteImport } from './routes/app/products/index'
 import { Route as AppOrdersIndexRouteImport } from './routes/app/orders/index'
+import { Route as AppLocationsIndexRouteImport } from './routes/app/locations/index'
 import { Route as AppInventoryIndexRouteImport } from './routes/app/inventory/index'
 import { Route as AppCustomersIndexRouteImport } from './routes/app/customers/index'
 import { Route as AppProductsCreateRouteImport } from './routes/app/products/create'
 import { Route as AppProductsIdRouteImport } from './routes/app/products/$id'
+import { Route as AppLocationsCreateRouteImport } from './routes/app/locations/create'
 import { Route as AppProductsCategoriesIndexRouteImport } from './routes/app/products/categories/index'
 import { Route as AppProductsBrandsIndexRouteImport } from './routes/app/products/brands/index'
 import { Route as AppProductsCategoriesCreateRouteImport } from './routes/app/products/categories/create'
@@ -72,6 +74,11 @@ const AppOrdersIndexRoute = AppOrdersIndexRouteImport.update({
   path: '/orders/',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppLocationsIndexRoute = AppLocationsIndexRouteImport.update({
+  id: '/locations/',
+  path: '/locations/',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppInventoryIndexRoute = AppInventoryIndexRouteImport.update({
   id: '/inventory/',
   path: '/inventory/',
@@ -91,6 +98,11 @@ const AppProductsIdRoute = AppProductsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => AppProductsRouteRoute,
+} as any)
+const AppLocationsCreateRoute = AppLocationsCreateRouteImport.update({
+  id: '/locations/create',
+  path: '/locations/create',
+  getParentRoute: () => AppRouteRoute,
 } as any)
 const AppProductsCategoriesIndexRoute =
   AppProductsCategoriesIndexRouteImport.update({
@@ -121,10 +133,12 @@ export interface FileRoutesByFullPath {
   '/inventory': typeof InventoryRoute
   '/signin': typeof SigninRoute
   '/app/products': typeof AppProductsRouteRouteWithChildren
+  '/app/locations/create': typeof AppLocationsCreateRoute
   '/app/products/$id': typeof AppProductsIdRoute
   '/app/products/create': typeof AppProductsCreateRoute
   '/app/customers/': typeof AppCustomersIndexRoute
   '/app/inventory/': typeof AppInventoryIndexRoute
+  '/app/locations/': typeof AppLocationsIndexRoute
   '/app/orders/': typeof AppOrdersIndexRoute
   '/app/products/': typeof AppProductsIndexRoute
   '/app/roles/': typeof AppRolesIndexRoute
@@ -139,10 +153,12 @@ export interface FileRoutesByTo {
   '/app': typeof AppRouteRouteWithChildren
   '/inventory': typeof InventoryRoute
   '/signin': typeof SigninRoute
+  '/app/locations/create': typeof AppLocationsCreateRoute
   '/app/products/$id': typeof AppProductsIdRoute
   '/app/products/create': typeof AppProductsCreateRoute
   '/app/customers': typeof AppCustomersIndexRoute
   '/app/inventory': typeof AppInventoryIndexRoute
+  '/app/locations': typeof AppLocationsIndexRoute
   '/app/orders': typeof AppOrdersIndexRoute
   '/app/products': typeof AppProductsIndexRoute
   '/app/roles': typeof AppRolesIndexRoute
@@ -159,10 +175,12 @@ export interface FileRoutesById {
   '/inventory': typeof InventoryRoute
   '/signin': typeof SigninRoute
   '/app/products': typeof AppProductsRouteRouteWithChildren
+  '/app/locations/create': typeof AppLocationsCreateRoute
   '/app/products/$id': typeof AppProductsIdRoute
   '/app/products/create': typeof AppProductsCreateRoute
   '/app/customers/': typeof AppCustomersIndexRoute
   '/app/inventory/': typeof AppInventoryIndexRoute
+  '/app/locations/': typeof AppLocationsIndexRoute
   '/app/orders/': typeof AppOrdersIndexRoute
   '/app/products/': typeof AppProductsIndexRoute
   '/app/roles/': typeof AppRolesIndexRoute
@@ -180,10 +198,12 @@ export interface FileRouteTypes {
     | '/inventory'
     | '/signin'
     | '/app/products'
+    | '/app/locations/create'
     | '/app/products/$id'
     | '/app/products/create'
     | '/app/customers/'
     | '/app/inventory/'
+    | '/app/locations/'
     | '/app/orders/'
     | '/app/products/'
     | '/app/roles/'
@@ -198,10 +218,12 @@ export interface FileRouteTypes {
     | '/app'
     | '/inventory'
     | '/signin'
+    | '/app/locations/create'
     | '/app/products/$id'
     | '/app/products/create'
     | '/app/customers'
     | '/app/inventory'
+    | '/app/locations'
     | '/app/orders'
     | '/app/products'
     | '/app/roles'
@@ -217,10 +239,12 @@ export interface FileRouteTypes {
     | '/inventory'
     | '/signin'
     | '/app/products'
+    | '/app/locations/create'
     | '/app/products/$id'
     | '/app/products/create'
     | '/app/customers/'
     | '/app/inventory/'
+    | '/app/locations/'
     | '/app/orders/'
     | '/app/products/'
     | '/app/roles/'
@@ -303,6 +327,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOrdersIndexRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/locations/': {
+      id: '/app/locations/'
+      path: '/locations'
+      fullPath: '/app/locations/'
+      preLoaderRoute: typeof AppLocationsIndexRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/app/inventory/': {
       id: '/app/inventory/'
       path: '/inventory'
@@ -330,6 +361,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/products/$id'
       preLoaderRoute: typeof AppProductsIdRouteImport
       parentRoute: typeof AppProductsRouteRoute
+    }
+    '/app/locations/create': {
+      id: '/app/locations/create'
+      path: '/locations/create'
+      fullPath: '/app/locations/create'
+      preLoaderRoute: typeof AppLocationsCreateRouteImport
+      parentRoute: typeof AppRouteRoute
     }
     '/app/products/categories/': {
       id: '/app/products/categories/'
@@ -387,8 +425,10 @@ const AppProductsRouteRouteWithChildren =
 
 interface AppRouteRouteChildren {
   AppProductsRouteRoute: typeof AppProductsRouteRouteWithChildren
+  AppLocationsCreateRoute: typeof AppLocationsCreateRoute
   AppCustomersIndexRoute: typeof AppCustomersIndexRoute
   AppInventoryIndexRoute: typeof AppInventoryIndexRoute
+  AppLocationsIndexRoute: typeof AppLocationsIndexRoute
   AppOrdersIndexRoute: typeof AppOrdersIndexRoute
   AppRolesIndexRoute: typeof AppRolesIndexRoute
   AppUsersIndexRoute: typeof AppUsersIndexRoute
@@ -396,8 +436,10 @@ interface AppRouteRouteChildren {
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppProductsRouteRoute: AppProductsRouteRouteWithChildren,
+  AppLocationsCreateRoute: AppLocationsCreateRoute,
   AppCustomersIndexRoute: AppCustomersIndexRoute,
   AppInventoryIndexRoute: AppInventoryIndexRoute,
+  AppLocationsIndexRoute: AppLocationsIndexRoute,
   AppOrdersIndexRoute: AppOrdersIndexRoute,
   AppRolesIndexRoute: AppRolesIndexRoute,
   AppUsersIndexRoute: AppUsersIndexRoute,

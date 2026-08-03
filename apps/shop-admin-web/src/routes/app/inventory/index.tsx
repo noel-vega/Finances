@@ -1,9 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { ListInventoryView } from '../../../features/inventory/views/list-inventory.view'
+import { getListInventoryQueryOptions } from '../../../features/inventory/inventory.hooks'
+import { queryClient } from '../../../lib/react-query-client'
 
 export const Route = createFileRoute('/app/inventory/')({
-  component: RouteComponent,
+  beforeLoad: async () => {
+    await queryClient.ensureQueryData(getListInventoryQueryOptions())
+  },
+  component: ListInventoryView,
 })
-
-function RouteComponent() {
-  return <div>Hello "/app/inventory/"!</div>
-}

@@ -7,6 +7,8 @@ export type ProductOption = components["schemas"]["ProductOption"];
 export type CreateVariantsDto = components["schemas"]["CreateVariantsDto"];
 export type Brand = components["schemas"]["Brand"];
 export type Category = components["schemas"]["Category"];
+export type Location = components["schemas"]["Location"];
+export type InventoryRecord = components["schemas"]["InventoryRecord"];
 
 export class AdminClient {
   accessToken: string | undefined;
@@ -295,6 +297,47 @@ export class AdminClient {
       const { data } = await this.do(() =>
         this.client.POST("/categories", {
           body: params,
+          credentials: "include",
+          headers: {
+            Authorization: `Bearer ${this.accessToken}`,
+          },
+        }),
+      );
+      return data;
+    },
+  };
+
+  locations = {
+    list: async () => {
+      const { data } = await this.do(() =>
+        this.client.GET("/locations", {
+          credentials: "include",
+          headers: {
+            Authorization: `Bearer ${this.accessToken}`,
+          },
+        }),
+      );
+      return data;
+    },
+
+    create: async (params: components["schemas"]["CreateLocationDto"]) => {
+      const { data } = await this.do(() =>
+        this.client.POST("/locations", {
+          body: params,
+          credentials: "include",
+          headers: {
+            Authorization: `Bearer ${this.accessToken}`,
+          },
+        }),
+      );
+      return data;
+    },
+  };
+
+  inventory = {
+    list: async () => {
+      const { data } = await this.do(() =>
+        this.client.GET("/inventory", {
           credentials: "include",
           headers: {
             Authorization: `Bearer ${this.accessToken}`,

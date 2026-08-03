@@ -3,6 +3,7 @@ import { Link, useLocation } from "@tanstack/react-router";
 import {
   BookUserIcon,
   LibraryIcon,
+  MapPinIcon,
   ShelvingUnitIcon,
   ShoppingCartIcon,
   UsersIcon,
@@ -42,17 +43,24 @@ const NAV_ITEMS = [
     ],
   },
   {
-    key: "customers",
-    label: "Customers",
-    icon: BookUserIcon,
-    to: "/app/customers",
-    children: undefined,
-  },
-  {
     key: "inventory",
     label: "Inventory",
     icon: ShelvingUnitIcon,
     to: "/app/inventory",
+    children: undefined,
+  },
+  {
+    key: "locations",
+    label: "Locations",
+    icon: MapPinIcon,
+    to: "/app/locations",
+    children: undefined,
+  },
+  {
+    key: "customers",
+    label: "Customers",
+    icon: BookUserIcon,
+    to: "/app/customers",
     children: undefined,
   },
   {
@@ -99,7 +107,10 @@ export function AppSidebar() {
                     >
                       <SidebarMenuItem>
                         <Link to={item.to} onClick={() => setOpenKey(item.key)}>
-                          <SidebarMenuButton tooltip={item.label} isActive={isActive}>
+                          <SidebarMenuButton
+                            tooltip={item.label}
+                            isActive={isActive}
+                          >
                             <item.icon />
                             <span>{item.label}</span>
                           </SidebarMenuButton>
@@ -109,7 +120,9 @@ export function AppSidebar() {
                             {item.children.map((child) => (
                               <Link key={child.to} to={child.to}>
                                 <SidebarMenuSubItem>
-                                  <SidebarMenuSubButton isActive={pathname === child.to}>
+                                  <SidebarMenuSubButton
+                                    isActive={pathname === child.to}
+                                  >
                                     <span>{child.label}</span>
                                   </SidebarMenuSubButton>
                                 </SidebarMenuSubItem>
@@ -123,9 +136,16 @@ export function AppSidebar() {
                 }
 
                 return (
-                  <Link key={item.key} to={item.to} onClick={() => setOpenKey(null)}>
+                  <Link
+                    key={item.key}
+                    to={item.to}
+                    onClick={() => setOpenKey(null)}
+                  >
                     <SidebarMenuItem>
-                      <SidebarMenuButton tooltip={item.label} isActive={pathname === item.to}>
+                      <SidebarMenuButton
+                        tooltip={item.label}
+                        isActive={pathname === item.to}
+                      >
                         <item.icon />
                         <span>{item.label}</span>
                       </SidebarMenuButton>

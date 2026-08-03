@@ -9,7 +9,7 @@ export const Route = createFileRoute("/app/products")({
 
 function RouteComponent() {
   return (
-    <div className="p-6">
+    <div>
       <Outlet />
     </div>
   );

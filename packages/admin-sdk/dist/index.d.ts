@@ -6,6 +6,8 @@ export type ProductOption = components["schemas"]["ProductOption"];
 export type CreateVariantsDto = components["schemas"]["CreateVariantsDto"];
 export type Brand = components["schemas"]["Brand"];
 export type Category = components["schemas"]["Category"];
+export type Location = components["schemas"]["Location"];
+export type InventoryRecord = components["schemas"]["InventoryRecord"];
 export declare class AdminClient {
     accessToken: string | undefined;
     client: Client<paths>;
@@ -155,6 +157,33 @@ export declare class AdminClient {
             createdAt: string;
             updatedAt: string;
         } | undefined>;
+    };
+    locations: {
+        list: () => Promise<{
+            id: number;
+            name: string;
+            createdAt: string;
+            updatedAt: string;
+        }[] | undefined>;
+        create: (params: components["schemas"]["CreateLocationDto"]) => Promise<{
+            id: number;
+            name: string;
+            createdAt: string;
+            updatedAt: string;
+        } | undefined>;
+    };
+    inventory: {
+        list: () => Promise<{
+            id: number;
+            variantId: number;
+            sku: string | null;
+            productId: number;
+            productName: string;
+            locationId: number;
+            locationName: string;
+            stock: number;
+            updatedAt: string;
+        }[] | undefined>;
     };
 }
 //# sourceMappingURL=index.d.ts.map

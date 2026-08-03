@@ -226,5 +226,37 @@ export class AdminClient {
             return data;
         },
     };
+    locations = {
+        list: async () => {
+            const { data } = await this.do(() => this.client.GET("/locations", {
+                credentials: "include",
+                headers: {
+                    Authorization: `Bearer ${this.accessToken}`,
+                },
+            }));
+            return data;
+        },
+        create: async (params) => {
+            const { data } = await this.do(() => this.client.POST("/locations", {
+                body: params,
+                credentials: "include",
+                headers: {
+                    Authorization: `Bearer ${this.accessToken}`,
+                },
+            }));
+            return data;
+        },
+    };
+    inventory = {
+        list: async () => {
+            const { data } = await this.do(() => this.client.GET("/inventory", {
+                credentials: "include",
+                headers: {
+                    Authorization: `Bearer ${this.accessToken}`,
+                },
+            }));
+            return data;
+        },
+    };
 }
 //# sourceMappingURL=index.js.map

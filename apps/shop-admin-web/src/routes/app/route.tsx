@@ -21,7 +21,7 @@ function RouteComponent() {
         <AppSidebar />
         <SidebarInset>
           <AppHeader />
-          <main className="flex flex-1 flex-col">
+          <main className="flex flex-1 flex-col p-6">
             <Outlet />
           </main>
         </SidebarInset>

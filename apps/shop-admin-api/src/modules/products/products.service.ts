@@ -9,12 +9,14 @@ import {
   eq,
   inArray,
   inventoryTable,
+  locationsTable,
   notInArray,
   productCategoriesTable,
   productOptionsTable,
   productOptionValuesTable,
   productsTable,
   productVariantsTable,
+  sql,
   variantOptionValuesTable,
   type db as Db,
 } from 'db';
@@ -50,8 +52,10 @@ export class ProductsService {
         sku: createProductDto.sku,
       }).returning();
 
+      const [location] = await tx.select({ id: locationsTable.id }).from(locationsTable).limit(1);
       await tx.insert(inventoryTable).values({
         variantId: variant.id,
+        locationId: location.id,
         stock: createProductDto.stock,
       })
 
@@ -80,6 +84,8 @@ export class ProductsService {
 
 
   async findVariants(productId: number): Promise<ProductVariant[]> {
+    // stock is derived — summed across a variant's per-location inventory
+    // rows rather than read off a single stored field
     const variants = await this.db
       .select({
         id: productVariantsTable.id,
@@ -88,14 +94,15 @@ export class ProductsService {
         sku: productVariantsTable.sku,
         createdAt: productVariantsTable.createdAt,
         updatedAt: productVariantsTable.updatedAt,
-        stock: inventoryTable.stock,
+        stock: sql<number>`coalesce(sum(${inventoryTable.stock}), 0)::int`,
       })
       .from(productVariantsTable)
-      .innerJoin(
+      .leftJoin(
         inventoryTable,
         eq(inventoryTable.variantId, productVariantsTable.id),
       )
-      .where(eq(productVariantsTable.productId, productId));
+      .where(eq(productVariantsTable.productId, productId))
+      .groupBy(productVariantsTable.id);
 
     return await this.attachOptionValues(variants);
   }
@@ -340,6 +347,7 @@ export class ProductsService {
       }
 
       const variantIds: number[] = [];
+      let defaultLocationId: number | undefined;
 
       for (const combination of combinations) {
         const existingVariantId = existingVariantIdByCombo.get(
@@ -355,8 +363,17 @@ export class ProductsService {
           .values({ productId, priceCents: createVariantsDto.priceCents })
           .returning();
 
+        if (defaultLocationId === undefined) {
+          const [location] = await tx
+            .select({ id: locationsTable.id })
+            .from(locationsTable)
+            .limit(1);
+          defaultLocationId = location.id;
+        }
+
         await tx.insert(inventoryTable).values({
           variantId: variant.id,
+          locationId: defaultLocationId,
           stock: createVariantsDto.stock,
         });
 
@@ -395,14 +412,15 @@ export class ProductsService {
         sku: productVariantsTable.sku,
         createdAt: productVariantsTable.createdAt,
         updatedAt: productVariantsTable.updatedAt,
-        stock: inventoryTable.stock,
+        stock: sql<number>`coalesce(sum(${inventoryTable.stock}), 0)::int`,
       })
       .from(productVariantsTable)
-      .innerJoin(
+      .leftJoin(
         inventoryTable,
         eq(inventoryTable.variantId, productVariantsTable.id),
       )
-      .where(inArray(productVariantsTable.id, variantIds));
+      .where(inArray(productVariantsTable.id, variantIds))
+      .groupBy(productVariantsTable.id);
 
     return await this.attachOptionValues(variants);
   }
