@@ -59,6 +59,10 @@ export declare class AdminClient {
                 createdAt: string;
                 updatedAt: string;
                 stock: number;
+                optionValues: {
+                    optionName: string;
+                    value: string;
+                }[];
             }[] | undefined>;
             create: (productId: number, params: components["schemas"]["CreateVariantsDto"]) => Promise<{
                 id: number;
@@ -68,6 +72,10 @@ export declare class AdminClient {
                 createdAt: string;
                 updatedAt: string;
                 stock: number;
+                optionValues: {
+                    optionName: string;
+                    value: string;
+                }[];
             }[] | undefined>;
         };
         options: {

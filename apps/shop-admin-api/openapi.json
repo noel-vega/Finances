@@ -866,6 +866,21 @@
           "brandId"
         ]
       },
+      "VariantOptionValue": {
+        "type": "object",
+        "properties": {
+          "optionName": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "optionName",
+          "value"
+        ]
+      },
       "ProductVariant": {
         "type": "object",
         "properties": {
@@ -892,6 +907,12 @@
           },
           "stock": {
             "type": "number"
+          },
+          "optionValues": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VariantOptionValue"
+            }
           }
         },
         "required": [
@@ -901,7 +922,8 @@
           "sku",
           "createdAt",
           "updatedAt",
-          "stock"
+          "stock",
+          "optionValues"
         ]
       },
       "ProductOptionValue": {

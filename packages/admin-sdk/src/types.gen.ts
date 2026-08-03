@@ -248,6 +248,10 @@ export interface components {
             updatedAt: string;
             brandId: number | null;
         };
+        VariantOptionValue: {
+            optionName: string;
+            value: string;
+        };
         ProductVariant: {
             id: number;
             productId: number;
@@ -258,6 +262,7 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
             stock: number;
+            optionValues: components["schemas"]["VariantOptionValue"][];
         };
         ProductOptionValue: {
             id: number;

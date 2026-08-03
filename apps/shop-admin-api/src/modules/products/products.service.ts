@@ -9,6 +9,7 @@ import {
   eq,
   inArray,
   inventoryTable,
+  notInArray,
   productCategoriesTable,
   productOptionsTable,
   productOptionValuesTable,
@@ -79,7 +80,7 @@ export class ProductsService {
 
 
   async findVariants(productId: number): Promise<ProductVariant[]> {
-    return await this.db
+    const variants = await this.db
       .select({
         id: productVariantsTable.id,
         productId: productVariantsTable.productId,
@@ -95,6 +96,53 @@ export class ProductsService {
         eq(inventoryTable.variantId, productVariantsTable.id),
       )
       .where(eq(productVariantsTable.productId, productId));
+
+    return await this.attachOptionValues(variants);
+  }
+
+  // fills in each variant's option-value combination (e.g. "Size: 9"), which
+  // requires a separate query since it's a many-to-many join
+  private async attachOptionValues<
+    T extends { id: number },
+  >(variants: T[]): Promise<(T & { optionValues: { optionName: string; value: string }[] })[]> {
+    if (variants.length === 0) return [];
+
+    const rows = await this.db
+      .select({
+        variantId: variantOptionValuesTable.variantId,
+        optionName: productOptionsTable.name,
+        value: productOptionValuesTable.value,
+      })
+      .from(variantOptionValuesTable)
+      .innerJoin(
+        productOptionValuesTable,
+        eq(productOptionValuesTable.id, variantOptionValuesTable.optionValueId),
+      )
+      .innerJoin(
+        productOptionsTable,
+        eq(productOptionsTable.id, productOptionValuesTable.optionId),
+      )
+      .where(
+        inArray(
+          variantOptionValuesTable.variantId,
+          variants.map((v) => v.id),
+        ),
+      );
+
+    const optionValuesByVariant = new Map<
+      number,
+      { optionName: string; value: string }[]
+    >();
+    for (const row of rows) {
+      const values = optionValuesByVariant.get(row.variantId) ?? [];
+      values.push({ optionName: row.optionName, value: row.value });
+      optionValuesByVariant.set(row.variantId, values);
+    }
+
+    return variants.map((variant) => ({
+      ...variant,
+      optionValues: optionValuesByVariant.get(variant.id) ?? [],
+    }));
   }
 
   async findOptions(productId: number): Promise<ProductOption[]> {
@@ -317,10 +365,24 @@ export class ProductsService {
         variantIds.push(variant.id);
       }
 
+      // a variant only makes sense if it has a value for every current
+      // option — drop anything left over from before an option was added,
+      // or from a value that was since removed
+      if (variantIds.length > 0) {
+        await tx
+          .delete(productVariantsTable)
+          .where(
+            and(
+              eq(productVariantsTable.productId, productId),
+              notInArray(productVariantsTable.id, variantIds),
+            ),
+          );
+      }
+
       return variantIds;
     });
 
-    return await this.db
+    const variants = await this.db
       .select({
         id: productVariantsTable.id,
         productId: productVariantsTable.productId,
@@ -336,5 +398,7 @@ export class ProductsService {
         eq(inventoryTable.variantId, productVariantsTable.id),
       )
       .where(inArray(productVariantsTable.id, variantIds));
+
+    return await this.attachOptionValues(variants);
   }
 }
