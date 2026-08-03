@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useWatch, type Control } from "react-hook-form";
 import { Badge } from "ui/badge";
 import {
   Item,
@@ -16,134 +15,106 @@ import {
   SheetDescription,
 } from "ui/sheet";
 import { GripVerticalIcon, PlusCircleIcon } from "lucide-react";
+import type { ProductOption } from "admin-sdk";
 import { DataTable } from "../../../components/data-table";
-import {
-  useVariantOptionsManager,
-  parseValuesText,
-  type CreateVariantsForm,
-} from "./shared";
+import { useVariantOptions } from "./shared";
 import { VariantOptionForm } from "./variant-option-form";
-import { UnsavedChangesBar } from "./unsaved-changes-bar";
 import { variantColumns } from "./variant-columns";
 
 export function VariantSection({ productId }: { productId: number }) {
-  const m = useVariantOptionsManager(productId);
-  // 'new' opens the drawer in create mode, a number opens it on that option's index
-  const [openSheet, setOpenSheet] = useState<number | "new" | null>(null);
+  const { variants, productOptions, saveOption, removeOption, isSaving } =
+    useVariantOptions(productId);
+  // 'new' opens the drawer in create mode, an option id opens it for that option
+  const [openTarget, setOpenTarget] = useState<number | "new" | null>(null);
 
   return (
-    <form onSubmit={m.handleGenerateVariants}>
-      <section className="space-y-4">
-        <ul>
-          {m.optionFields.fields.map((field, index) => (
-            <VariantOptionItem
-              key={field.id}
-              control={m.form.control}
-              index={index}
-              onClick={() => setOpenSheet(index)}
-            />
-          ))}
-          <div
-            className="flex hover:bg-muted rounded-b-lg border border-t-none text-sm items-center gap-2 p-2 cursor-pointer"
-            onClick={() => setOpenSheet("new")}
-          >
-            <PlusCircleIcon size="14" />
-            Add option
-          </div>
-        </ul>
-        {m.errors.options?.message && (
-          <p className="text-sm text-destructive">{m.errors.options.message}</p>
-        )}
+    <section className="space-y-4">
+      <ul>
+        {productOptions.map((option) => (
+          <VariantOptionItem
+            key={option.id}
+            option={option}
+            onClick={() => setOpenTarget(option.id)}
+          />
+        ))}
+        <div
+          className="flex hover:bg-muted rounded-b-lg border border-t-none text-sm items-center gap-2 p-2 cursor-pointer"
+          onClick={() => setOpenTarget("new")}
+        >
+          <PlusCircleIcon size="14" />
+          Add option
+        </div>
+      </ul>
 
-        <DataTable columns={variantColumns} data={m.variants} />
-      </section>
+      <DataTable columns={variantColumns} data={variants} />
 
       <Sheet
-        open={openSheet !== null}
-        onOpenChange={(open) => !open && setOpenSheet(null)}
+        open={openTarget !== null}
+        onOpenChange={(open) => !open && setOpenTarget(null)}
       >
         <SheetContent>
           <SheetHeader>
             <SheetTitle>
-              {openSheet === "new" ? "Add option" : "Edit option"}
+              {openTarget === "new" ? "Add option" : "Edit option"}
             </SheetTitle>
             <SheetDescription>
               Define the option name and its possible values.
             </SheetDescription>
           </SheetHeader>
           <div className="px-4">
-            {openSheet !== null && (
+            {openTarget !== null && (
               <SheetOptionForm
-                m={m}
-                target={openSheet}
-                onDone={() => setOpenSheet(null)}
+                productOptions={productOptions}
+                target={openTarget}
+                isSaving={isSaving}
+                onSave={async (values) => {
+                  await saveOption(openTarget, values);
+                  setOpenTarget(null);
+                }}
+                onDelete={async () => {
+                  await removeOption(openTarget);
+                  setOpenTarget(null);
+                }}
               />
             )}
           </div>
         </SheetContent>
       </Sheet>
-
-      <UnsavedChangesBar
-        isDirty={m.isDirty}
-        isSaving={m.isSavingChanges}
-        onReset={m.handleResetChanges}
-      />
-    </form>
+    </section>
   );
 }
 
 function SheetOptionForm({
-  m,
+  productOptions,
   target,
-  onDone,
+  isSaving,
+  onSave,
+  onDelete,
 }: {
-  m: ReturnType<typeof useVariantOptionsManager>;
+  productOptions: ProductOption[];
   target: number | "new";
-  onDone: () => void;
+  isSaving: boolean;
+  onSave: (values: { name: string; valuesText: string }) => void;
+  onDelete: () => void;
 }) {
   const existing =
-    target !== "new" ? m.form.getValues(`options.${target}`) : undefined;
+    target !== "new"
+      ? productOptions.find((option) => option.id === target)
+      : undefined;
 
   return (
     <VariantOptionForm
       name={existing?.name ?? ""}
-      valuesText={existing?.valuesText ?? ""}
+      valuesText={existing?.values.map((v) => v.value).join(", ") ?? ""}
       deleteLabel={target === "new" ? "Cancel" : "Delete"}
-      onSave={(values) => {
-        if (target === "new") {
-          m.handleSaveNewOption(values);
-        } else {
-          m.handleSaveOption(target, values);
-        }
-        onDone();
-      }}
-      onDelete={() => {
-        if (target === "new") {
-          m.handleCancelNewOption();
-        } else {
-          m.handleDeleteOption(target);
-        }
-        onDone();
-      }}
+      isSaving={isSaving}
+      onSave={onSave}
+      onDelete={onDelete}
     />
   );
 }
 
-function VariantOptionItem(props: {
-  control: Control<CreateVariantsForm>;
-  index: number;
-  onClick: () => void;
-}) {
-  const name = useWatch({
-    control: props.control,
-    name: `options.${props.index}.name`,
-  });
-  const valuesText = useWatch({
-    control: props.control,
-    name: `options.${props.index}.valuesText`,
-  });
-  const values = valuesText ? parseValuesText(valuesText) : [];
-
+function VariantOptionItem(props: { option: ProductOption; onClick: () => void }) {
   return (
     <Item
       variant="outline"
@@ -154,12 +125,12 @@ function VariantOptionItem(props: {
         <GripVerticalIcon />
       </ItemMedia>
       <ItemContent className="gap-2">
-        <ItemTitle>{name || "Untitled option"}</ItemTitle>
+        <ItemTitle>{props.option.name || "Untitled option"}</ItemTitle>
         <ItemDescription>
           <ul className="flex gap-2">
-            {values.map((x) => (
-              <li key={x}>
-                <Badge variant="secondary">{x}</Badge>
+            {props.option.values.map((v) => (
+              <li key={v.id}>
+                <Badge variant="secondary">{v.value}</Badge>
               </li>
             ))}
           </ul>

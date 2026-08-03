@@ -21,13 +21,16 @@ export function VariantOptionForm(props: {
   onSave: (values: { name: string; valuesText: string }) => void;
   onDelete: () => void;
   deleteLabel?: string;
+  isSaving?: boolean;
 }) {
-  // local draft so the form only becomes dirty once "Done" commits it, not on every keystroke
+  // local draft, committed immediately when "Done"/"Delete" is pressed — no
+  // outer form or save step, this is the only place these edits live until sent
   const [name, setName] = useState(props.name);
   const [values, setValues] = useState<string[]>(() => {
     const parsed = parseValuesText(props.valuesText);
     return parsed.length > 0 ? [...parsed, ""] : [""];
   });
+  const [error, setError] = useState<string | null>(null);
 
   const valueRefs = useRef<(HTMLInputElement | null)[]>([]);
   const pendingFocusIndex = useRef<number | null>(null);
@@ -87,8 +90,18 @@ export function VariantOptionForm(props: {
 
   const handleClickDone = (e: React.MouseEvent) => {
     e.stopPropagation();
+    const trimmedName = name.trim();
     const savedValues = values.map((value) => value.trim()).filter(Boolean);
-    props.onSave({ name, valuesText: savedValues.join(", ") });
+    if (!trimmedName) {
+      setError("Name is required");
+      return;
+    }
+    if (savedValues.length === 0) {
+      setError("Add at least one value");
+      return;
+    }
+    setError(null);
+    props.onSave({ name: trimmedName, valuesText: savedValues.join(", ") });
   };
 
   const handleClickDelete = (e: React.MouseEvent) => {
@@ -144,14 +157,20 @@ export function VariantOptionForm(props: {
             </InputGroup>
           ))}
         </div>
+        {error && <p className="text-sm text-destructive">{error}</p>}
       </Field>
 
       <div className="flex justify-between">
-        <Button variant="destructive" type="button" onClick={handleClickDelete}>
+        <Button
+          variant="destructive"
+          type="button"
+          disabled={props.isSaving}
+          onClick={handleClickDelete}
+        >
           {props.deleteLabel ?? "Delete"}
         </Button>
-        <Button type="button" onClick={handleClickDone}>
-          Done
+        <Button type="button" disabled={props.isSaving} onClick={handleClickDone}>
+          {props.isSaving ? "Saving..." : "Done"}
         </Button>
       </div>
     </div>

@@ -24,9 +24,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "ui/alert-dialog";
-import { SettingsIcon, Trash2Icon } from "lucide-react";
+import { PencilIcon, SettingsIcon, Trash2Icon } from "lucide-react";
 import { formatPriceRange } from "../variant-section/shared";
 import { VariantSection } from "../variant-section";
+import { EditProductSheet } from "../components/edit-product-sheet";
 
 const LOW_STOCK_THRESHOLD = 0;
 
@@ -53,6 +54,7 @@ export function ProductView({ id }: { id: number }) {
   const { data: variants } = useProductVariantsQuery(id);
   const deleteProduct = useDeleteProductMutation();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editSheetOpen, setEditSheetOpen] = useState(false);
 
   if (!data) {
     return null;
@@ -93,6 +95,9 @@ export function ProductView({ id }: { id: number }) {
             <SettingsIcon />
           </DropdownMenuTrigger>
           <DropdownMenuContent>
+            <DropdownMenuItem onClick={() => setEditSheetOpen(true)}>
+              <PencilIcon /> Edit
+            </DropdownMenuItem>
             <DropdownMenuItem
               variant="destructive"
               onClick={() => setDeleteDialogOpen(true)}
@@ -102,6 +107,12 @@ export function ProductView({ id }: { id: number }) {
           </DropdownMenuContent>
         </DropdownMenu>
       </header>
+
+      <EditProductSheet
+        product={data}
+        open={editSheetOpen}
+        onOpenChange={setEditSheetOpen}
+      />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>

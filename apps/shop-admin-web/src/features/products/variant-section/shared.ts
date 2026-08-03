@@ -1,7 +1,3 @@
-import { useEffect, useState } from "react";
-import { useFieldArray, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import z from "zod";
 import {
   useCreateVariantsMutation,
   useDeleteProductOptionMutation,
@@ -10,7 +6,7 @@ import {
   useProductVariantsQuery,
   useUpdateProductOptionMutation,
 } from "../products.hooks";
-import type { ProductVariant } from "admin-sdk";
+import type { ProductOption, ProductVariant } from "admin-sdk";
 
 export const currencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -31,18 +27,6 @@ export function formatPriceRange(variants: ProductVariant[]) {
     : `${formatCents(min)} - ${formatCents(max)}`;
 }
 
-export const VariantOptionFormSchema = z.object({
-  id: z.number().optional(),
-  name: z.string().min(1, "Required"),
-  valuesText: z.string().min(1, "Add at least one value"),
-});
-
-export const CreateVariantsFormSchema = z.object({
-  options: VariantOptionFormSchema.array().min(1, "Add at least one option"),
-});
-
-export type CreateVariantsForm = z.infer<typeof CreateVariantsFormSchema>;
-
 export function parseValuesText(valuesText: string) {
   return valuesText
     .split(",")
@@ -50,12 +34,30 @@ export function parseValuesText(valuesText: string) {
     .filter(Boolean);
 }
 
+// createVariants only creates/updates the options it's given and treats that
+// set as the *complete* option list for the product (it deletes variants
+// that don't have a value for every option in the payload) — so any single
+// option edit has to be sent alongside the rest of the product's options,
+// unchanged, or it looks like they were removed
+function buildOptionsPayload(
+  productOptions: ProductOption[],
+  edited: { optionId?: number; name: string; values: string[] },
+) {
+  const others = productOptions
+    .filter((option) => option.id !== edited.optionId)
+    .map((option) => ({
+      name: option.name,
+      values: option.values.map((v) => v.value),
+    }));
+  return [...others, { name: edited.name, values: edited.values }];
+}
+
 /**
- * Shared business logic for the product options + variants section. All
- * design variants render this same state/handlers differently so the 5
- * tabs stay directly comparable (no logic drift between them).
+ * Options + variants data and mutations for the product variant section.
+ * Every option create/update/delete here is a discrete, immediately-applied
+ * action — there's no page-level draft/save step.
  */
-export function useVariantOptionsManager(productId: number) {
+export function useVariantOptions(productId: number) {
   const { data: variants } = useProductVariantsQuery(productId);
   const { data: productOptions } = useProductOptionsQuery(productId);
   const createVariants = useCreateVariantsMutation(productId);
@@ -63,139 +65,68 @@ export function useVariantOptionsManager(productId: number) {
   const updateOption = useUpdateProductOptionMutation(productId);
   const deleteOptionValue = useDeleteProductOptionValueMutation(productId);
 
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [isAddingOption, setIsAddingOption] = useState(false);
-  const [pendingDeletedOptionIds, setPendingDeletedOptionIds] = useState<
-    number[]
-  >([]);
+  const options = productOptions ?? [];
 
-  const form = useForm<CreateVariantsForm>({
-    resolver: zodResolver(CreateVariantsFormSchema),
-    defaultValues: { options: [] },
-  });
-  const optionFields = useFieldArray({
-    control: form.control,
-    name: "options",
-  });
-
-  useEffect(() => {
-    if (!productOptions) return;
-    // don't clobber in-progress local edits with a background refetch
-    if (form.formState.isDirty) return;
-    form.reset({
-      options: productOptions.map((option) => ({
-        id: option.id,
-        name: option.name,
-        valuesText: option.values.map((value) => value.value).join(", "),
-      })),
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [productOptions]);
-
-  const handleAddOption = () => {
-    setEditingIndex(null);
-    setIsAddingOption(true);
-  };
-
-  const handleSaveNewOption = (values: {
-    name: string;
-    valuesText: string;
-  }) => {
-    optionFields.append(values);
-    form.setValue("options", form.getValues("options"), {
-      shouldDirty: true,
-    });
-    setIsAddingOption(false);
-  };
-
-  const handleCancelNewOption = () => {
-    setIsAddingOption(false);
-  };
-
-  const handleSaveOption = (
-    index: number,
+  // target is the option's id, or "new" when creating one
+  const saveOption = async (
+    target: number | "new",
     values: { name: string; valuesText: string },
   ) => {
-    form.setValue(`options.${index}.name`, values.name, {
-      shouldDirty: true,
-    });
-    form.setValue(`options.${index}.valuesText`, values.valuesText, {
-      shouldDirty: true,
-    });
-    setEditingIndex(null);
-  };
+    const trimmedName = values.name.trim();
+    const newValues = parseValuesText(values.valuesText);
 
-  const handleDeleteOption = (index: number) => {
-    const optionId = form.getValues(`options.${index}.id`);
-    if (optionId !== undefined) {
-      setPendingDeletedOptionIds((prev) => [...prev, optionId]);
-    }
-    optionFields.remove(index);
-    form.setValue("options", form.getValues("options"), {
-      shouldDirty: true,
-    });
-    setEditingIndex(null);
-  };
-
-  const handleResetChanges = () => {
-    form.reset();
-    setPendingDeletedOptionIds([]);
-    setEditingIndex(null);
-  };
-
-  const handleGenerateVariants = form.handleSubmit(async (data) => {
-    // push renames and value removals for options that already exist on the
-    // backend before regenerating variants, so the additive create call below
-    // sees the up-to-date name/value set
-    const originalOptionsById = new Map(
-      (productOptions ?? []).map((option) => [option.id, option]),
-    );
-
-    for (const option of data.options) {
-      if (option.id === undefined) continue;
-      const original = originalOptionsById.get(option.id);
-      if (!original) continue;
-
-      const trimmedName = option.name.trim();
-      if (trimmedName !== original.name) {
-        await updateOption.mutateAsync({
-          optionId: option.id,
+    if (target === "new") {
+      await createVariants.mutateAsync({
+        options: buildOptionsPayload(options, {
           name: trimmedName,
-        });
-      }
-
-      const newValues = new Set(parseValuesText(option.valuesText));
-      for (const originalValue of original.values) {
-        if (!newValues.has(originalValue.value)) {
-          await deleteOptionValue.mutateAsync({
-            optionId: option.id,
-            valueId: originalValue.id,
-          });
-        }
-      }
+          values: newValues,
+        }),
+        // price/stock are set per-variant later; new variants start at 0
+        priceCents: 0,
+        stock: 0,
+      });
+      return;
     }
 
-    await Promise.all(
-      pendingDeletedOptionIds.map((optionId) =>
-        deleteOption.mutateAsync(optionId),
-      ),
-    );
-    await createVariants.mutateAsync({
-      options: data.options.map((option) => ({
-        name: option.name.trim(),
-        values: parseValuesText(option.valuesText),
-      })),
-      // price/stock are set per-variant later; new variants start at 0
-      priceCents: 0,
-      stock: 0,
-    });
-    // re-baseline on the just-submitted values so the form is clean (not empty) and the footer hides
-    form.reset(form.getValues());
-    setPendingDeletedOptionIds([]);
-    setEditingIndex(null);
-  });
+    const original = options.find((o) => o.id === target);
+    if (!original) return;
 
-  const isSavingChanges =
+    if (trimmedName !== original.name) {
+      await updateOption.mutateAsync({ optionId: target, name: trimmedName });
+    }
+
+    const newValueSet = new Set(newValues);
+    const removedValues = original.values.filter(
+      (v) => !newValueSet.has(v.value),
+    );
+    for (const removed of removedValues) {
+      await deleteOptionValue.mutateAsync({
+        optionId: target,
+        valueId: removed.id,
+      });
+    }
+
+    const existingValueSet = new Set(original.values.map((v) => v.value));
+    const hasNewValues = newValues.some((v) => !existingValueSet.has(v));
+    if (hasNewValues) {
+      await createVariants.mutateAsync({
+        options: buildOptionsPayload(options, {
+          optionId: target,
+          name: trimmedName,
+          values: newValues,
+        }),
+        priceCents: 0,
+        stock: 0,
+      });
+    }
+  };
+
+  const removeOption = async (target: number | "new") => {
+    if (target === "new") return;
+    await deleteOption.mutateAsync(target);
+  };
+
+  const isSaving =
     createVariants.isPending ||
     deleteOption.isPending ||
     updateOption.isPending ||
@@ -203,22 +134,9 @@ export function useVariantOptionsManager(productId: number) {
 
   return {
     variants: variants ?? [],
-    productOptions: productOptions ?? [],
-    form,
-    optionFields,
-    editingIndex,
-    setEditingIndex,
-    isAddingOption,
-    setIsAddingOption,
-    handleAddOption,
-    handleSaveNewOption,
-    handleCancelNewOption,
-    handleSaveOption,
-    handleDeleteOption,
-    handleResetChanges,
-    handleGenerateVariants,
-    isDirty: form.formState.isDirty,
-    isSavingChanges,
-    errors: form.formState.errors,
+    productOptions: options,
+    saveOption,
+    removeOption,
+    isSaving,
   };
 }

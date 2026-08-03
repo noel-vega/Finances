@@ -241,8 +241,13 @@ export class ProductsService {
     return option;
   }
 
-  update(id: number, updateProductDto: UpdateProductDto) {
-    return `This action updates a #${id} product`;
+  async update(id: number, updateProductDto: UpdateProductDto) {
+    const [product] = await this.db
+      .update(productsTable)
+      .set(updateProductDto)
+      .where(eq(productsTable.id, id))
+      .returning();
+    return product;
   }
 
   async remove(id: number) {

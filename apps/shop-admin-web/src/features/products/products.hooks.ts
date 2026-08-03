@@ -114,3 +114,14 @@ export function useDeleteProductMutation() {
     },
   });
 }
+
+export function useUpdateProductMutation(id: number) {
+  return useMutation({
+    mutationFn: (params: Parameters<typeof adminApi.products.update>[1]) =>
+      adminApi.products.update(id, params),
+    onSuccess: () => {
+      queryClient.invalidateQueries(getProductQueryOptions(id));
+      queryClient.invalidateQueries(getListProductsQueryOptions());
+    },
+  });
+}

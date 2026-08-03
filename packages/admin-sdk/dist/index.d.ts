@@ -41,6 +41,15 @@ export declare class AdminClient {
             updatedAt: string;
             brandId: number | null;
         } | undefined>;
+        update: (id: number, params: components["schemas"]["UpdateProductDto"]) => Promise<{
+            id: number;
+            name: string;
+            description: string | null;
+            status: "draft" | "active" | "archived";
+            createdAt: string;
+            updatedAt: string;
+            brandId: number | null;
+        } | undefined>;
         remove: (id: number) => Promise<{
             id: number;
             name: string;

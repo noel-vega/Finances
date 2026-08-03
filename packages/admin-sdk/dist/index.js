@@ -66,6 +66,20 @@ export class AdminClient {
             }));
             return data;
         },
+        update: async (id, params) => {
+            const path = {
+                id: String(id),
+            };
+            const { data } = await this.do(() => this.client.PATCH("/products/{id}", {
+                params: { path },
+                body: params,
+                credentials: "include",
+                headers: {
+                    Authorization: `Bearer ${this.accessToken}`,
+                },
+            }));
+            return data;
+        },
         remove: async (id) => {
             const path = {
                 id: String(id),

@@ -286,7 +286,13 @@ export interface components {
             /** @default 0 */
             stock: number;
         };
-        UpdateProductDto: Record<string, never>;
+        UpdateProductDto: {
+            name?: string;
+            description?: string;
+            /** @enum {string} */
+            status?: "draft" | "active" | "archived";
+            brandId?: number | null;
+        };
         CreateBrandDto: {
             name: string;
         };
@@ -570,7 +576,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Product"];
+                };
             };
         };
     };

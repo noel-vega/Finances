@@ -90,6 +90,26 @@ export class AdminClient {
       return data;
     },
 
+    update: async (
+      id: number,
+      params: components["schemas"]["UpdateProductDto"],
+    ) => {
+      const path: paths["/products/{id}"]["patch"]["parameters"]["path"] = {
+        id: String(id),
+      };
+      const { data } = await this.do(() =>
+        this.client.PATCH("/products/{id}", {
+          params: { path },
+          body: params,
+          credentials: "include",
+          headers: {
+            Authorization: `Bearer ${this.accessToken}`,
+          },
+        }),
+      );
+      return data;
+    },
+
     remove: async (id: number) => {
       const path: paths["/products/{id}"]["delete"]["parameters"]["path"] = {
         id: String(id),

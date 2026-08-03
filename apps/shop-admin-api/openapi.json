@@ -288,9 +288,21 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Product"
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
         "tags": [
           "Products"
         ]
@@ -1020,7 +1032,26 @@
       },
       "UpdateProductDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "active",
+              "archived"
+            ]
+          },
+          "brandId": {
+            "type": "number",
+            "nullable": true
+          }
+        }
       },
       "CreateBrandDto": {
         "type": "object",
