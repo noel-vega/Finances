@@ -608,6 +608,59 @@
         ]
       }
     },
+    "/products/{id}/variants/{variantId}": {
+      "patch": {
+        "operationId": "ProductsController_updateVariant",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "variantId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateVariantDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductVariant"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "Products"
+        ]
+      }
+    },
     "/brands": {
       "post": {
         "operationId": "BrandsController_create",
@@ -825,6 +878,69 @@
           "Inventory"
         ]
       }
+    },
+    "/inventory/movements": {
+      "post": {
+        "operationId": "InventoryController_createMovement",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateInventoryMovementDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryMovementRecord"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "Inventory"
+        ]
+      },
+      "get": {
+        "operationId": "InventoryController_findMovements",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InventoryMovementRecord"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "Inventory"
+        ]
+      }
     }
   },
   "info": {
@@ -958,6 +1074,12 @@
           "brandId": {
             "type": "number",
             "nullable": true
+          },
+          "categoryIds": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
           }
         },
         "required": [
@@ -1142,6 +1264,24 @@
           "brandId": {
             "type": "number",
             "nullable": true
+          },
+          "categoryIds": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        }
+      },
+      "UpdateVariantDto": {
+        "type": "object",
+        "properties": {
+          "priceCents": {
+            "type": "number"
+          },
+          "sku": {
+            "type": "string",
+            "nullable": true
           }
         }
       },
@@ -1296,6 +1436,106 @@
           "locationName",
           "stock",
           "updatedAt"
+        ]
+      },
+      "CreateInventoryMovementDto": {
+        "type": "object",
+        "properties": {
+          "variantId": {
+            "type": "number"
+          },
+          "locationId": {
+            "type": "number"
+          },
+          "delta": {
+            "type": "number"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "received",
+              "sold",
+              "return",
+              "damaged",
+              "adjustment"
+            ]
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "variantId",
+          "locationId",
+          "delta",
+          "reason"
+        ]
+      },
+      "InventoryMovementRecord": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "variantId": {
+            "type": "number"
+          },
+          "sku": {
+            "type": "string",
+            "nullable": true
+          },
+          "productId": {
+            "type": "number"
+          },
+          "productName": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "number"
+          },
+          "locationName": {
+            "type": "string"
+          },
+          "delta": {
+            "type": "number"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "received",
+              "sold",
+              "return",
+              "damaged",
+              "adjustment"
+            ]
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdByEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "variantId",
+          "sku",
+          "productId",
+          "productName",
+          "locationId",
+          "locationName",
+          "delta",
+          "reason",
+          "note",
+          "createdByEmail",
+          "createdAt"
         ]
       }
     }

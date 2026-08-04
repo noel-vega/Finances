@@ -23,4 +23,7 @@ export class Product implements SelectProduct {
   @ApiProperty({type: "number", nullable: true})
   brandId!: number | null;
 
+  // only populated by findOne — findAll skips the extra join for list views
+  @ApiProperty({ type: [Number], required: false })
+  categoryIds?: number[];
 }

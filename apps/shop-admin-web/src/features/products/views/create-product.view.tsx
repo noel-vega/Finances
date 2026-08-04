@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -99,7 +99,10 @@ export function CreateProductView() {
     }
   };
 
-  console.log("FORM ERRORS:", form.formState.errors);
+  useEffect(() => {
+    console.log("ERRORS", form.formState.errors)
+  }, [form.formState.errors])
+
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-semibold">Create Product</h1>

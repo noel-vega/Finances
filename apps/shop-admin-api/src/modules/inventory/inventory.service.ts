@@ -1,14 +1,19 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { DRIZZLE } from 'src/database/database.constants';
 import {
+  desc,
   eq,
+  inventoryMovementsTable,
   inventoryTable,
   locationsTable,
   productsTable,
   productVariantsTable,
+  sql,
+  usersTable,
   type db as Db,
 } from 'db';
-import { InventoryRecord } from './entities/inventory.entity';
+import { InventoryRecord, InventoryMovementRecord } from './entities/inventory.entity';
+import { CreateInventoryMovementDto } from './dto/create-inventory-movement.dto';
 
 @Injectable()
 export class InventoryService {
@@ -37,5 +42,86 @@ export class InventoryService {
         eq(productsTable.id, productVariantsTable.productId),
       )
       .innerJoin(locationsTable, eq(locationsTable.id, inventoryTable.locationId));
+  }
+
+  // insert a ledger entry and atomically fold its delta into the
+  // materialized balance — the two never happen independently
+  async createMovement(
+    dto: CreateInventoryMovementDto,
+    userId: number | undefined,
+  ): Promise<InventoryMovementRecord> {
+    const movementId = await this.db.transaction(async (tx) => {
+      const [movement] = await tx
+        .insert(inventoryMovementsTable)
+        .values({
+          variantId: dto.variantId,
+          locationId: dto.locationId,
+          delta: dto.delta,
+          reason: dto.reason,
+          note: dto.note ?? null,
+          createdByUserId: userId ?? null,
+        })
+        .returning();
+
+      await tx
+        .insert(inventoryTable)
+        .values({
+          variantId: dto.variantId,
+          locationId: dto.locationId,
+          stock: dto.delta,
+        })
+        .onConflictDoUpdate({
+          target: [inventoryTable.variantId, inventoryTable.locationId],
+          set: {
+            stock: sql`${inventoryTable.stock} + ${dto.delta}`,
+            updatedAt: new Date(),
+          },
+        });
+
+      return movement.id;
+    });
+
+    const [record] = await this.movementRecordsQuery().where(
+      eq(inventoryMovementsTable.id, movementId),
+    );
+    return record;
+  }
+
+  async findMovements(): Promise<InventoryMovementRecord[]> {
+    return await this.movementRecordsQuery().orderBy(
+      desc(inventoryMovementsTable.createdAt),
+    );
+  }
+
+  private movementRecordsQuery() {
+    return this.db
+      .select({
+        id: inventoryMovementsTable.id,
+        variantId: inventoryMovementsTable.variantId,
+        sku: productVariantsTable.sku,
+        productId: productsTable.id,
+        productName: productsTable.name,
+        locationId: locationsTable.id,
+        locationName: locationsTable.name,
+        delta: inventoryMovementsTable.delta,
+        reason: inventoryMovementsTable.reason,
+        note: inventoryMovementsTable.note,
+        createdByEmail: usersTable.email,
+        createdAt: inventoryMovementsTable.createdAt,
+      })
+      .from(inventoryMovementsTable)
+      .innerJoin(
+        productVariantsTable,
+        eq(productVariantsTable.id, inventoryMovementsTable.variantId),
+      )
+      .innerJoin(
+        productsTable,
+        eq(productsTable.id, productVariantsTable.productId),
+      )
+      .innerJoin(
+        locationsTable,
+        eq(locationsTable.id, inventoryMovementsTable.locationId),
+      )
+      .leftJoin(usersTable, eq(usersTable.id, inventoryMovementsTable.createdByUserId));
   }
 }

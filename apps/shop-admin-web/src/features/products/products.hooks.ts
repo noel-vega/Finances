@@ -125,3 +125,17 @@ export function useUpdateProductMutation(id: number) {
     },
   });
 }
+
+export function useUpdateVariantMutation(productId: number) {
+  return useMutation({
+    mutationFn: ({
+      variantId,
+      ...params
+    }: { variantId: number } & Parameters<
+      typeof adminApi.products.variants.update
+    >[2]) => adminApi.products.variants.update(productId, variantId, params),
+    onSuccess: () => {
+      queryClient.invalidateQueries(getProductVariantsQueryOptions(productId));
+    },
+  });
+}

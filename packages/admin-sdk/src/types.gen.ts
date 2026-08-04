@@ -180,6 +180,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/products/{id}/variants/{variantId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["ProductsController_updateVariant"];
+        trace?: never;
+    };
     "/brands": {
         parameters: {
             query?: never;
@@ -244,6 +260,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/inventory/movements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["InventoryController_findMovements"];
+        put?: never;
+        post: operations["InventoryController_createMovement"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -279,6 +311,7 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
             brandId: number | null;
+            categoryIds?: number[];
         };
         VariantOptionValue: {
             optionName: string;
@@ -325,6 +358,11 @@ export interface components {
             /** @enum {string} */
             status?: "draft" | "active" | "archived";
             brandId?: number | null;
+            categoryIds?: number[];
+        };
+        UpdateVariantDto: {
+            priceCents?: number;
+            sku?: string | null;
         };
         CreateBrandDto: {
             name: string;
@@ -370,6 +408,30 @@ export interface components {
             stock: number;
             /** Format: date-time */
             updatedAt: string;
+        };
+        CreateInventoryMovementDto: {
+            variantId: number;
+            locationId: number;
+            delta: number;
+            /** @enum {string} */
+            reason: "received" | "sold" | "return" | "damaged" | "adjustment";
+            note?: string | null;
+        };
+        InventoryMovementRecord: {
+            id: number;
+            variantId: number;
+            sku: string | null;
+            productId: number;
+            productName: string;
+            locationId: number;
+            locationName: string;
+            delta: number;
+            /** @enum {string} */
+            reason: "received" | "sold" | "return" | "damaged" | "adjustment";
+            note: string | null;
+            createdByEmail: string | null;
+            /** Format: date-time */
+            createdAt: string;
         };
     };
     responses: never;
@@ -776,6 +838,32 @@ export interface operations {
             };
         };
     };
+    ProductsController_updateVariant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                variantId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateVariantDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductVariant"];
+                };
+            };
+        };
+    };
     BrandsController_findAll: {
         parameters: {
             query?: never;
@@ -917,6 +1005,48 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["InventoryRecord"][];
+                };
+            };
+        };
+    };
+    InventoryController_findMovements: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryMovementRecord"][];
+                };
+            };
+        };
+    };
+    InventoryController_createMovement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateInventoryMovementDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryMovementRecord"];
                 };
             };
         };

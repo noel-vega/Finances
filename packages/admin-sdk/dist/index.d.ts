@@ -8,6 +8,7 @@ export type Brand = components["schemas"]["Brand"];
 export type Category = components["schemas"]["Category"];
 export type Location = components["schemas"]["Location"];
 export type InventoryRecord = components["schemas"]["InventoryRecord"];
+export type InventoryMovementRecord = components["schemas"]["InventoryMovementRecord"];
 export declare class AdminClient {
     accessToken: string | undefined;
     client: Client<paths>;
@@ -24,6 +25,7 @@ export declare class AdminClient {
             createdAt: string;
             updatedAt: string;
             brandId: number | null;
+            categoryIds?: number[];
         }[] | undefined>;
         create: (params: components["schemas"]["CreateProductDto"]) => Promise<{
             id: number;
@@ -33,6 +35,7 @@ export declare class AdminClient {
             createdAt: string;
             updatedAt: string;
             brandId: number | null;
+            categoryIds?: number[];
         } | undefined>;
         getById: (id: number) => Promise<{
             id: number;
@@ -42,6 +45,7 @@ export declare class AdminClient {
             createdAt: string;
             updatedAt: string;
             brandId: number | null;
+            categoryIds?: number[];
         } | undefined>;
         update: (id: number, params: components["schemas"]["UpdateProductDto"]) => Promise<{
             id: number;
@@ -51,6 +55,7 @@ export declare class AdminClient {
             createdAt: string;
             updatedAt: string;
             brandId: number | null;
+            categoryIds?: number[];
         } | undefined>;
         remove: (id: number) => Promise<{
             id: number;
@@ -60,6 +65,7 @@ export declare class AdminClient {
             createdAt: string;
             updatedAt: string;
             brandId: number | null;
+            categoryIds?: number[];
         } | undefined>;
         variants: {
             list: (productId: number) => Promise<{
@@ -88,6 +94,19 @@ export declare class AdminClient {
                     value: string;
                 }[];
             }[] | undefined>;
+            update: (productId: number, variantId: number, params: components["schemas"]["UpdateVariantDto"]) => Promise<{
+                id: number;
+                productId: number;
+                priceCents: number;
+                sku: string | null;
+                createdAt: string;
+                updatedAt: string;
+                stock: number;
+                optionValues: {
+                    optionName: string;
+                    value: string;
+                }[];
+            } | undefined>;
         };
         options: {
             list: (productId: number) => Promise<{
@@ -184,6 +203,36 @@ export declare class AdminClient {
             stock: number;
             updatedAt: string;
         }[] | undefined>;
+        movements: {
+            list: () => Promise<{
+                id: number;
+                variantId: number;
+                sku: string | null;
+                productId: number;
+                productName: string;
+                locationId: number;
+                locationName: string;
+                delta: number;
+                reason: "received" | "sold" | "return" | "damaged" | "adjustment";
+                note: string | null;
+                createdByEmail: string | null;
+                createdAt: string;
+            }[] | undefined>;
+            create: (params: components["schemas"]["CreateInventoryMovementDto"]) => Promise<{
+                id: number;
+                variantId: number;
+                sku: string | null;
+                productId: number;
+                productName: string;
+                locationId: number;
+                locationName: string;
+                delta: number;
+                reason: "received" | "sold" | "return" | "damaged" | "adjustment";
+                note: string | null;
+                createdByEmail: string | null;
+                createdAt: string;
+            } | undefined>;
+        };
     };
 }
 //# sourceMappingURL=index.d.ts.map

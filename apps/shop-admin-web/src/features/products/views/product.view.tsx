@@ -1,13 +1,23 @@
-import { useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
-import { Separator } from "ui/separator";
-import {
-  useDeleteProductMutation,
-  useProductQuery,
-  useProductVariantsQuery,
-} from "../products.hooks";
-import { Card, CardContent, CardHeader, CardTitle } from "ui/card";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import z from "zod";
+import { formatDistanceToNow } from "date-fns";
+import { Badge } from "ui/badge";
 import { Button } from "ui/button";
+import { Field, FieldLabel } from "ui/field";
+import { Input } from "ui/input";
+import { Textarea } from "ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "ui/tabs";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,45 +34,73 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "ui/alert-dialog";
-import { PencilIcon, SettingsIcon, Trash2Icon } from "lucide-react";
-import { formatPriceRange } from "../variant-section/shared";
+import { ArrowLeftIcon, LoaderCircleIcon, SettingsIcon, Trash2Icon } from "lucide-react";
+import {
+  useDeleteProductMutation,
+  useProductQuery,
+  useProductVariantsQuery,
+  useUpdateProductMutation,
+} from "../products.hooks";
+import { useListInventoryQuery } from "../../inventory/inventory.hooks";
+import { BrandCombobox } from "../../brands/components/brand-combobox";
+import { CategoryCombobox } from "../../categories/components/category-combobox";
 import { VariantSection } from "../variant-section";
-import { EditProductSheet } from "../components/edit-product-sheet";
+import { ProductInventoryTab } from "./product-inventory-tab";
+import { Separator } from "ui/separator";
 
 const LOW_STOCK_THRESHOLD = 0;
 
-export function MetricCard({
-  title,
-  value,
-}: {
-  title: string;
-  value: number | string;
-}) {
-  return (
-    <Card className="flex-1">
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-      </CardHeader>
-      <CardContent>{value}</CardContent>
-    </Card>
-  );
-}
+const DetailsFormSchema = z.object({
+  status: z.union([z.literal("draft"), z.literal("active"), z.literal("archived")]),
+  name: z.string().min(1, "Required"),
+  description: z.string(),
+  brandId: z.number().nullable(),
+  categoryIds: z.number().array(),
+});
+
+type DetailsForm = z.infer<typeof DetailsFormSchema>;
 
 export function ProductView({ id }: { id: number }) {
   const navigate = useNavigate();
   const { data } = useProductQuery(id);
   const { data: variants } = useProductVariantsQuery(id);
+  const { data: inventory } = useListInventoryQuery();
   const deleteProduct = useDeleteProductMutation();
+  const updateProduct = useUpdateProductMutation(id);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [editSheetOpen, setEditSheetOpen] = useState(false);
+
+  const detailsForm = useForm<DetailsForm>({
+    resolver: zodResolver(DetailsFormSchema),
+    mode: "onChange",
+    defaultValues: {
+      status: "draft",
+      name: "",
+      description: "",
+      brandId: null,
+      categoryIds: [],
+    },
+  });
+
+  useEffect(() => {
+    if (!data) return;
+    // don't clobber in-progress edits with a background refetch
+    if (detailsForm.formState.isDirty) return;
+    detailsForm.reset({
+      status: data.status,
+      name: data.name,
+      description: data.description ?? "",
+      brandId: data.brandId,
+      categoryIds: data.categoryIds ?? [],
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
 
   if (!data) {
     return null;
   }
 
-  const totalStock = (variants ?? []).reduce(
-    (sum, variant) => sum + variant.stock,
-    0,
+  const productInventory = (inventory ?? []).filter(
+    (record) => record.productId === id,
   );
   const needsAttentionCount = (variants ?? []).filter(
     (variant) => variant.stock <= LOW_STOCK_THRESHOLD,
@@ -76,43 +114,54 @@ export function ProductView({ id }: { id: number }) {
     });
   };
 
+  const handleDetailsSubmit = detailsForm.handleSubmit(async (values) => {
+    await updateProduct.mutateAsync(values);
+    // re-baseline on the just-saved values so the form goes clean again
+    detailsForm.reset(values);
+  });
+
+  const { isDirty, isValid } = detailsForm.formState;
+
   return (
     <div className="max-w-6xl mx-auto w-full">
-      <header className="flex gap-4 mb-4 items-start">
-        <div className="size-20 bg-secondary rounded-lg" />
-        <h1 className="text-lg font-semibold flex-1">{data.name}</h1>
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                aria-label="Product settings"
-              />
-            }
-          >
-            <SettingsIcon />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => setEditSheetOpen(true)}>
-              <PencilIcon /> Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              variant="destructive"
-              onClick={() => setDeleteDialogOpen(true)}
+      <header className="mb-8">
+        <div className="flex items-start gap-3">
+          <Link to="/app/products">
+            <Button type="button" variant="ghost" size="icon-sm" aria-label="Back to products">
+              <ArrowLeftIcon />
+            </Button>
+          </Link>
+          <div className="flex-1">
+            <h1 className="text-lg font-semibold">{data.name}</h1>
+            <p className="text-sm text-muted-foreground">
+              Last edited{" "}
+              {formatDistanceToNow(new Date(data.updatedAt), { addSuffix: true })}
+            </p>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="Product settings"
+                />
+              }
             >
-              <Trash2Icon /> Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              <SettingsIcon />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={() => setDeleteDialogOpen(true)}
+              >
+                <Trash2Icon /> Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </header>
-
-      <EditProductSheet
-        product={data}
-        open={editSheetOpen}
-        onOpenChange={setEditSheetOpen}
-      />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
@@ -136,21 +185,113 @@ export function ProductView({ id }: { id: number }) {
         </AlertDialogContent>
       </AlertDialog>
 
-      <section className="flex gap-4">
-        <MetricCard title="Variants" value={variants?.length ?? 0} />
-        <MetricCard title="Total Stock" value={totalStock} />
-        <MetricCard
-          title="Price Range"
-          value={formatPriceRange(variants ?? [])}
-        />
-        <MetricCard title="Needs Attention" value={needsAttentionCount} />
-      </section>
-      <Separator className="my-8" />
+      <Tabs defaultValue="details" className="gap-0">
+        <TabsList variant="line">
+          <TabsTrigger value="details" className="px-4">Details</TabsTrigger>
+          <TabsTrigger value="variants" className="px-4">
+            Variants & Pricing
+          </TabsTrigger>
+          <TabsTrigger value="inventory" className="px-4">Inventory</TabsTrigger>
+        </TabsList>
+        <Separator className="mt-0" />
 
-      <section className="space-y-4">
-        <h2 className="font-semibold">Variants</h2>
-        <VariantSection productId={id} />
-      </section>
+        <TabsContent value="details" className="pt-6">
+          <form onSubmit={handleDetailsSubmit} className="max-w-lg space-y-4">
+            <Controller
+              control={detailsForm.control}
+              name="status"
+              render={({ field }) => (
+                <Field>
+                  <FieldLabel>Status</FieldLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectItem value="draft">draft</SelectItem>
+                        <SelectItem value="active">active</SelectItem>
+                        <SelectItem value="archived">archived</SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </Field>
+              )}
+            />
+            <Controller
+              control={detailsForm.control}
+              name="name"
+              render={({ field, fieldState }) => (
+                <Field data-invalid={!!fieldState.error}>
+                  <FieldLabel>Product name</FieldLabel>
+                  <Input {...field} />
+                  {fieldState.error && (
+                    <p className="text-sm text-destructive">{fieldState.error.message}</p>
+                  )}
+                </Field>
+              )}
+            />
+            <Controller
+              control={detailsForm.control}
+              name="description"
+              render={({ field }) => (
+                <Field>
+                  <FieldLabel>Description</FieldLabel>
+                  <Textarea {...field} />
+                </Field>
+              )}
+            />
+            <Controller
+              control={detailsForm.control}
+              name="brandId"
+              render={({ field }) => (
+                <Field>
+                  <FieldLabel>Brand</FieldLabel>
+                  <BrandCombobox value={field.value} onValueChange={field.onChange} />
+                </Field>
+              )}
+            />
+            <Controller
+              control={detailsForm.control}
+              name="categoryIds"
+              render={({ field }) => (
+                <Field>
+                  <FieldLabel>Categories</FieldLabel>
+                  <CategoryCombobox value={field.value} onValueChange={field.onChange} />
+                </Field>
+              )}
+            />
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={!isDirty || updateProduct.isPending}
+                onClick={() => detailsForm.reset()}
+              >
+                Reset
+              </Button>
+              <Button type="submit" disabled={!isDirty || !isValid || updateProduct.isPending}>
+                {updateProduct.isPending ? (
+                  <>
+                    <LoaderCircleIcon className="animate-spin" /> Saving...
+                  </>
+                ) : (
+                  "Save"
+                )}
+              </Button>
+            </div>
+          </form>
+        </TabsContent>
+
+        <TabsContent value="variants" className="pt-6">
+          <VariantSection productId={id} productName={data.name} />
+        </TabsContent>
+
+        <TabsContent value="inventory" className="pt-6">
+          <ProductInventoryTab records={productInventory} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

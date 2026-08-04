@@ -9,6 +9,7 @@ export type Brand = components["schemas"]["Brand"];
 export type Category = components["schemas"]["Category"];
 export type Location = components["schemas"]["Location"];
 export type InventoryRecord = components["schemas"]["InventoryRecord"];
+export type InventoryMovementRecord = components["schemas"]["InventoryMovementRecord"];
 
 export class AdminClient {
   accessToken: string | undefined;
@@ -156,6 +157,29 @@ export class AdminClient {
           };
         const { data } = await this.do(() =>
           this.client.POST("/products/{id}/variants", {
+            params: { path },
+            body: params,
+            credentials: "include",
+            headers: {
+              Authorization: `Bearer ${this.accessToken}`,
+            },
+          }),
+        );
+        return data;
+      },
+
+      update: async (
+        productId: number,
+        variantId: number,
+        params: components["schemas"]["UpdateVariantDto"],
+      ) => {
+        const path: paths["/products/{id}/variants/{variantId}"]["patch"]["parameters"]["path"] =
+          {
+            id: String(productId),
+            variantId: String(variantId),
+          };
+        const { data } = await this.do(() =>
+          this.client.PATCH("/products/{id}/variants/{variantId}", {
             params: { path },
             body: params,
             credentials: "include",
@@ -345,6 +369,35 @@ export class AdminClient {
         }),
       );
       return data;
+    },
+
+    movements: {
+      list: async () => {
+        const { data } = await this.do(() =>
+          this.client.GET("/inventory/movements", {
+            credentials: "include",
+            headers: {
+              Authorization: `Bearer ${this.accessToken}`,
+            },
+          }),
+        );
+        return data;
+      },
+
+      create: async (
+        params: components["schemas"]["CreateInventoryMovementDto"],
+      ) => {
+        const { data } = await this.do(() =>
+          this.client.POST("/inventory/movements", {
+            body: params,
+            credentials: "include",
+            headers: {
+              Authorization: `Bearer ${this.accessToken}`,
+            },
+          }),
+        );
+        return data;
+      },
     },
   };
 }

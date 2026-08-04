@@ -1,7 +1,9 @@
-import { Controller, Get } from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import { InventoryService } from './inventory.service';
-import { ApiBearerAuth, ApiOkResponse } from '@nestjs/swagger';
-import { InventoryRecord } from './entities/inventory.entity';
+import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
+import { InventoryRecord, InventoryMovementRecord } from './entities/inventory.entity';
+import { CreateInventoryMovementDto } from './dto/create-inventory-movement.dto';
+import { CurrentUser, type AuthenticatedUser } from '../auth/auth.decorators';
 
 @Controller('inventory')
 export class InventoryController {
@@ -12,5 +14,22 @@ export class InventoryController {
   @ApiOkResponse({ type: [InventoryRecord] })
   findAll() {
     return this.inventoryService.findAll();
+  }
+
+  @Post('movements')
+  @ApiBearerAuth('JWT-auth')
+  @ApiCreatedResponse({ type: InventoryMovementRecord })
+  createMovement(
+    @Body() createInventoryMovementDto: CreateInventoryMovementDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.inventoryService.createMovement(createInventoryMovementDto, user.sub);
+  }
+
+  @Get('movements')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOkResponse({ type: [InventoryMovementRecord] })
+  findMovements() {
+    return this.inventoryService.findMovements();
   }
 }

@@ -12,6 +12,7 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { CreateVariantsDto } from './dto/create-variant.dto';
 import { UpdateProductOptionDto } from './dto/update-product-option.dto';
+import { UpdateVariantDto } from './dto/update-variant.dto';
 import {
   ApiBearerAuth,
   ApiCreatedResponse,
@@ -112,6 +113,17 @@ export class ProductsController {
   @ApiOkResponse({ type: Product })
   update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
     return this.productsService.update(+id, updateProductDto);
+  }
+
+  @Patch(':id/variants/:variantId')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOkResponse({ type: ProductVariant })
+  updateVariant(
+    @Param('id') id: string,
+    @Param('variantId') variantId: string,
+    @Body() updateVariantDto: UpdateVariantDto,
+  ) {
+    return this.productsService.updateVariant(+id, +variantId, updateVariantDto);
   }
 
   @Delete(':id')

@@ -1,12 +1,4 @@
 import { useState } from "react";
-import { Badge } from "ui/badge";
-import {
-  Item,
-  ItemContent,
-  ItemDescription,
-  ItemMedia,
-  ItemTitle,
-} from "ui/item";
 import {
   Sheet,
   SheetContent,
@@ -14,39 +6,91 @@ import {
   SheetTitle,
   SheetDescription,
 } from "ui/sheet";
-import { GripVerticalIcon, PlusCircleIcon } from "lucide-react";
-import type { ProductOption } from "admin-sdk";
+import { PlusCircleIcon } from "lucide-react";
+import type { InventoryRecord, ProductOption, ProductVariant } from "admin-sdk";
 import { DataTable } from "../../../components/data-table";
 import { useVariantOptions } from "./shared";
 import { VariantOptionForm } from "./variant-option-form";
-import { variantColumns } from "./variant-columns";
+import { getVariantColumns } from "./variant-columns";
+import { EditVariantSheet } from "./edit-variant-sheet";
+import { useListLocationsQuery } from "../../locations/locations.hooks";
+import { AdjustStockSheet } from "../../inventory/components/adjust-stock-sheet";
 
-export function VariantSection({ productId }: { productId: number }) {
+export function VariantSection({
+  productId,
+  productName,
+}: {
+  productId: number;
+  productName: string;
+}) {
   const { variants, productOptions, saveOption, removeOption, isSaving } =
     useVariantOptions(productId);
   // 'new' opens the drawer in create mode, an option id opens it for that option
   const [openTarget, setOpenTarget] = useState<number | "new" | null>(null);
+  const [adjustingVariant, setAdjustingVariant] = useState<ProductVariant | null>(
+    null,
+  );
+  const [editingVariant, setEditingVariant] = useState<ProductVariant | null>(null);
+
+  const { data: locations } = useListLocationsQuery();
+  // single-location for now — once there's more than one, adjusting stock
+  // from here will need a location picker instead of a silent default
+  const defaultLocation = locations?.[0];
+
+  const adjustingRecord: InventoryRecord | null =
+    adjustingVariant && defaultLocation
+      ? {
+          id: adjustingVariant.id,
+          variantId: adjustingVariant.id,
+          sku: adjustingVariant.sku,
+          productId,
+          productName,
+          locationId: defaultLocation.id,
+          locationName: defaultLocation.name,
+          stock: adjustingVariant.stock,
+          updatedAt: adjustingVariant.updatedAt,
+        }
+      : null;
+
+  const columns = getVariantColumns({
+    onAdjustStock: (variant) => setAdjustingVariant(variant),
+    onEdit: (variant) => setEditingVariant(variant),
+  });
 
   return (
     <section className="space-y-4">
-      <ul>
+      <div className="flex flex-wrap items-center gap-2">
         {productOptions.map((option) => (
-          <VariantOptionItem
+          <OptionChip
             key={option.id}
             option={option}
             onClick={() => setOpenTarget(option.id)}
           />
         ))}
-        <div
-          className="flex hover:bg-muted rounded-b-lg border border-t-none text-sm items-center gap-2 p-2 cursor-pointer"
+        <button
+          type="button"
+          className="inline-flex items-center gap-1.5 rounded-full border border-dashed px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted"
           onClick={() => setOpenTarget("new")}
         >
-          <PlusCircleIcon size="14" />
+          <PlusCircleIcon size={14} />
           Add option
-        </div>
-      </ul>
+        </button>
+      </div>
 
-      <DataTable columns={variantColumns} data={variants} />
+      <DataTable columns={columns} data={variants} />
+
+      <AdjustStockSheet
+        record={adjustingRecord}
+        open={adjustingVariant !== null}
+        onOpenChange={(open) => !open && setAdjustingVariant(null)}
+      />
+
+      <EditVariantSheet
+        productId={productId}
+        variant={editingVariant}
+        open={editingVariant !== null}
+        onOpenChange={(open) => !open && setEditingVariant(null)}
+      />
 
       <Sheet
         open={openTarget !== null}
@@ -114,28 +158,17 @@ function SheetOptionForm({
   );
 }
 
-function VariantOptionItem(props: { option: ProductOption; onClick: () => void }) {
+function OptionChip(props: { option: ProductOption; onClick: () => void }) {
   return (
-    <Item
-      variant="outline"
-      className="not-last:rounded-b-none not-first:rounded-t-none p-5 hover:bg-muted hover:cursor-pointer"
+    <button
+      type="button"
       onClick={props.onClick}
+      className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm hover:bg-muted"
     >
-      <ItemMedia variant="icon">
-        <GripVerticalIcon />
-      </ItemMedia>
-      <ItemContent className="gap-2">
-        <ItemTitle>{props.option.name || "Untitled option"}</ItemTitle>
-        <ItemDescription>
-          <ul className="flex gap-2">
-            {props.option.values.map((v) => (
-              <li key={v.id}>
-                <Badge variant="secondary">{v.value}</Badge>
-              </li>
-            ))}
-          </ul>
-        </ItemDescription>
-      </ItemContent>
-    </Item>
+      <span className="font-medium">{props.option.name || "Untitled option"}</span>
+      <span className="text-muted-foreground">
+        {props.option.values.map((v) => v.value).join(", ")}
+      </span>
+    </button>
   );
 }

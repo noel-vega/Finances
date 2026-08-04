@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsIn, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsArray, IsIn, IsInt, IsOptional, IsString, MinLength } from 'class-validator';
 import { productStatusEnum } from 'db/schema';
 
 export class UpdateProductDto {
@@ -22,4 +22,10 @@ export class UpdateProductDto {
   @ApiProperty({ type: 'number', nullable: true, required: false })
   @IsOptional()
   brandId?: number | null;
+
+  @ApiProperty({ type: [Number], required: false })
+  @IsOptional()
+  @IsArray()
+  @IsInt({ each: true })
+  categoryIds?: number[];
 }

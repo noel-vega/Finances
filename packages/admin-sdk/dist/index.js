@@ -121,6 +121,21 @@ export class AdminClient {
                 }));
                 return data;
             },
+            update: async (productId, variantId, params) => {
+                const path = {
+                    id: String(productId),
+                    variantId: String(variantId),
+                };
+                const { data } = await this.do(() => this.client.PATCH("/products/{id}/variants/{variantId}", {
+                    params: { path },
+                    body: params,
+                    credentials: "include",
+                    headers: {
+                        Authorization: `Bearer ${this.accessToken}`,
+                    },
+                }));
+                return data;
+            },
         },
         options: {
             list: async (productId) => {
@@ -256,6 +271,27 @@ export class AdminClient {
                 },
             }));
             return data;
+        },
+        movements: {
+            list: async () => {
+                const { data } = await this.do(() => this.client.GET("/inventory/movements", {
+                    credentials: "include",
+                    headers: {
+                        Authorization: `Bearer ${this.accessToken}`,
+                    },
+                }));
+                return data;
+            },
+            create: async (params) => {
+                const { data } = await this.do(() => this.client.POST("/inventory/movements", {
+                    body: params,
+                    credentials: "include",
+                    headers: {
+                        Authorization: `Bearer ${this.accessToken}`,
+                    },
+                }));
+                return data;
+            },
         },
     };
 }

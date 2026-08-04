@@ -24,6 +24,7 @@ import { Route as AppCustomersIndexRouteImport } from './routes/app/customers/in
 import { Route as AppProductsCreateRouteImport } from './routes/app/products/create'
 import { Route as AppProductsIdRouteImport } from './routes/app/products/$id'
 import { Route as AppLocationsCreateRouteImport } from './routes/app/locations/create'
+import { Route as AppInventoryMovementsRouteImport } from './routes/app/inventory/movements'
 import { Route as AppProductsCategoriesIndexRouteImport } from './routes/app/products/categories/index'
 import { Route as AppProductsBrandsIndexRouteImport } from './routes/app/products/brands/index'
 import { Route as AppProductsCategoriesCreateRouteImport } from './routes/app/products/categories/create'
@@ -104,6 +105,11 @@ const AppLocationsCreateRoute = AppLocationsCreateRouteImport.update({
   path: '/locations/create',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppInventoryMovementsRoute = AppInventoryMovementsRouteImport.update({
+  id: '/inventory/movements',
+  path: '/inventory/movements',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppProductsCategoriesIndexRoute =
   AppProductsCategoriesIndexRouteImport.update({
     id: '/categories/',
@@ -133,6 +139,7 @@ export interface FileRoutesByFullPath {
   '/inventory': typeof InventoryRoute
   '/signin': typeof SigninRoute
   '/app/products': typeof AppProductsRouteRouteWithChildren
+  '/app/inventory/movements': typeof AppInventoryMovementsRoute
   '/app/locations/create': typeof AppLocationsCreateRoute
   '/app/products/$id': typeof AppProductsIdRoute
   '/app/products/create': typeof AppProductsCreateRoute
@@ -153,6 +160,7 @@ export interface FileRoutesByTo {
   '/app': typeof AppRouteRouteWithChildren
   '/inventory': typeof InventoryRoute
   '/signin': typeof SigninRoute
+  '/app/inventory/movements': typeof AppInventoryMovementsRoute
   '/app/locations/create': typeof AppLocationsCreateRoute
   '/app/products/$id': typeof AppProductsIdRoute
   '/app/products/create': typeof AppProductsCreateRoute
@@ -175,6 +183,7 @@ export interface FileRoutesById {
   '/inventory': typeof InventoryRoute
   '/signin': typeof SigninRoute
   '/app/products': typeof AppProductsRouteRouteWithChildren
+  '/app/inventory/movements': typeof AppInventoryMovementsRoute
   '/app/locations/create': typeof AppLocationsCreateRoute
   '/app/products/$id': typeof AppProductsIdRoute
   '/app/products/create': typeof AppProductsCreateRoute
@@ -198,6 +207,7 @@ export interface FileRouteTypes {
     | '/inventory'
     | '/signin'
     | '/app/products'
+    | '/app/inventory/movements'
     | '/app/locations/create'
     | '/app/products/$id'
     | '/app/products/create'
@@ -218,6 +228,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/inventory'
     | '/signin'
+    | '/app/inventory/movements'
     | '/app/locations/create'
     | '/app/products/$id'
     | '/app/products/create'
@@ -239,6 +250,7 @@ export interface FileRouteTypes {
     | '/inventory'
     | '/signin'
     | '/app/products'
+    | '/app/inventory/movements'
     | '/app/locations/create'
     | '/app/products/$id'
     | '/app/products/create'
@@ -369,6 +381,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLocationsCreateRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/inventory/movements': {
+      id: '/app/inventory/movements'
+      path: '/inventory/movements'
+      fullPath: '/app/inventory/movements'
+      preLoaderRoute: typeof AppInventoryMovementsRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/app/products/categories/': {
       id: '/app/products/categories/'
       path: '/categories'
@@ -425,6 +444,7 @@ const AppProductsRouteRouteWithChildren =
 
 interface AppRouteRouteChildren {
   AppProductsRouteRoute: typeof AppProductsRouteRouteWithChildren
+  AppInventoryMovementsRoute: typeof AppInventoryMovementsRoute
   AppLocationsCreateRoute: typeof AppLocationsCreateRoute
   AppCustomersIndexRoute: typeof AppCustomersIndexRoute
   AppInventoryIndexRoute: typeof AppInventoryIndexRoute
@@ -436,6 +456,7 @@ interface AppRouteRouteChildren {
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppProductsRouteRoute: AppProductsRouteRouteWithChildren,
+  AppInventoryMovementsRoute: AppInventoryMovementsRoute,
   AppLocationsCreateRoute: AppLocationsCreateRoute,
   AppCustomersIndexRoute: AppCustomersIndexRoute,
   AppInventoryIndexRoute: AppInventoryIndexRoute,

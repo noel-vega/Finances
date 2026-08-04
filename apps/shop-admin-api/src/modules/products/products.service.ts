@@ -3,6 +3,7 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { CreateVariantsDto } from './dto/create-variant.dto';
 import { UpdateProductOptionDto } from './dto/update-product-option.dto';
+import { UpdateVariantDto } from './dto/update-variant.dto';
 import { DRIZZLE } from 'src/database/database.constants';
 import {
   and,
@@ -19,6 +20,7 @@ import {
   sql,
   variantOptionValuesTable,
   type db as Db,
+  type SQL,
 } from 'db';
 import { ProductVariant } from './entities/product-variant.entity';
 import { ProductOption } from './entities/product-option.entity';
@@ -79,14 +81,28 @@ export class ProductsService {
 
   async findOne(id: number) {
     const [product] =  await this.db.select().from(productsTable).where(eq(productsTable.id, id));
-    return product
+    if (!product) return product;
+
+    const categoryLinks = await this.db
+      .select({ categoryId: productCategoriesTable.categoryId })
+      .from(productCategoriesTable)
+      .where(eq(productCategoriesTable.productId, id));
+
+    return { ...product, categoryIds: categoryLinks.map((link) => link.categoryId) };
   }
 
 
   async findVariants(productId: number): Promise<ProductVariant[]> {
-    // stock is derived — summed across a variant's per-location inventory
-    // rows rather than read off a single stored field
-    const variants = await this.db
+    const variants = await this.selectVariants(
+      eq(productVariantsTable.productId, productId),
+    );
+    return await this.attachOptionValues(variants);
+  }
+
+  // stock is derived — summed across a variant's per-location inventory
+  // rows rather than read off a single stored field
+  private selectVariants(where: SQL) {
+    return this.db
       .select({
         id: productVariantsTable.id,
         productId: productVariantsTable.productId,
@@ -101,10 +117,30 @@ export class ProductsService {
         inventoryTable,
         eq(inventoryTable.variantId, productVariantsTable.id),
       )
-      .where(eq(productVariantsTable.productId, productId))
+      .where(where)
       .groupBy(productVariantsTable.id);
+  }
 
-    return await this.attachOptionValues(variants);
+  async updateVariant(
+    productId: number,
+    variantId: number,
+    updateVariantDto: UpdateVariantDto,
+  ): Promise<ProductVariant | undefined> {
+    await this.db
+      .update(productVariantsTable)
+      .set(updateVariantDto)
+      .where(
+        and(
+          eq(productVariantsTable.id, variantId),
+          eq(productVariantsTable.productId, productId),
+        ),
+      );
+
+    const variants = await this.selectVariants(eq(productVariantsTable.id, variantId));
+    if (variants.length === 0) return undefined;
+
+    const [record] = await this.attachOptionValues(variants);
+    return record;
   }
 
   // fills in each variant's option-value combination (e.g. "Size: 9"), which
@@ -249,12 +285,30 @@ export class ProductsService {
   }
 
   async update(id: number, updateProductDto: UpdateProductDto) {
-    const [product] = await this.db
-      .update(productsTable)
-      .set(updateProductDto)
-      .where(eq(productsTable.id, id))
-      .returning();
-    return product;
+    const { categoryIds, ...productFields } = updateProductDto;
+
+    return await this.db.transaction(async (tx) => {
+      const [product] = await tx
+        .update(productsTable)
+        .set(productFields)
+        .where(eq(productsTable.id, id))
+        .returning();
+
+      if (categoryIds !== undefined) {
+        // full replace — simpler than diffing, and category sets are small
+        await tx
+          .delete(productCategoriesTable)
+          .where(eq(productCategoriesTable.productId, id));
+
+        if (categoryIds.length > 0) {
+          await tx.insert(productCategoriesTable).values(
+            categoryIds.map((categoryId) => ({ productId: id, categoryId })),
+          );
+        }
+      }
+
+      return product;
+    });
   }
 
   async remove(id: number) {
@@ -404,24 +458,9 @@ export class ProductsService {
       return variantIds;
     });
 
-    const variants = await this.db
-      .select({
-        id: productVariantsTable.id,
-        productId: productVariantsTable.productId,
-        priceCents: productVariantsTable.priceCents,
-        sku: productVariantsTable.sku,
-        createdAt: productVariantsTable.createdAt,
-        updatedAt: productVariantsTable.updatedAt,
-        stock: sql<number>`coalesce(sum(${inventoryTable.stock}), 0)::int`,
-      })
-      .from(productVariantsTable)
-      .leftJoin(
-        inventoryTable,
-        eq(inventoryTable.variantId, productVariantsTable.id),
-      )
-      .where(inArray(productVariantsTable.id, variantIds))
-      .groupBy(productVariantsTable.id);
-
+    const variants = await this.selectVariants(
+      inArray(productVariantsTable.id, variantIds),
+    );
     return await this.attachOptionValues(variants);
   }
 }

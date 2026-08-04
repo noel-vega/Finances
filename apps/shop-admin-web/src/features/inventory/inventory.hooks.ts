@@ -1,5 +1,6 @@
-import { queryOptions, useQuery } from "@tanstack/react-query"
+import { queryOptions, useMutation, useQuery } from "@tanstack/react-query"
 import { adminApi } from "../../lib/admin-api-client"
+import { queryClient } from "../../lib/react-query-client"
 
 export function getListInventoryQueryOptions() {
   return queryOptions({
@@ -10,4 +11,28 @@ export function getListInventoryQueryOptions() {
 
 export function useListInventoryQuery() {
   return useQuery(getListInventoryQueryOptions())
+}
+
+export function getListInventoryMovementsQueryOptions() {
+  return queryOptions({
+    queryKey: ["inventory", "movements"],
+    queryFn: adminApi.inventory.movements.list,
+  })
+}
+
+export function useListInventoryMovementsQuery() {
+  return useQuery(getListInventoryMovementsQueryOptions())
+}
+
+export function useCreateInventoryMovementMutation() {
+  return useMutation({
+    mutationFn: adminApi.inventory.movements.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries(getListInventoryQueryOptions())
+      queryClient.invalidateQueries(getListInventoryMovementsQueryOptions())
+      // a variant's derived stock (shown on the product page) lives off the
+      // same inventory rows a movement just changed
+      queryClient.invalidateQueries({ queryKey: ["products"] })
+    },
+  })
 }
