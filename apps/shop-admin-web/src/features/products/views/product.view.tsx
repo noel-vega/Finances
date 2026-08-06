@@ -4,7 +4,6 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
 import { formatDistanceToNow } from "date-fns";
-import { Badge } from "ui/badge";
 import { Button } from "ui/button";
 import { Field, FieldLabel } from "ui/field";
 import { Input } from "ui/input";
@@ -38,7 +37,6 @@ import { ArrowLeftIcon, LoaderCircleIcon, SettingsIcon, Trash2Icon } from "lucid
 import {
   useDeleteProductMutation,
   useProductQuery,
-  useProductVariantsQuery,
   useUpdateProductMutation,
 } from "../products.hooks";
 import { useListInventoryQuery } from "../../inventory/inventory.hooks";
@@ -48,7 +46,6 @@ import { VariantSection } from "../variant-section";
 import { ProductInventoryTab } from "./product-inventory-tab";
 import { Separator } from "ui/separator";
 
-const LOW_STOCK_THRESHOLD = 0;
 
 const DetailsFormSchema = z.object({
   status: z.union([z.literal("draft"), z.literal("active"), z.literal("archived")]),
@@ -63,7 +60,6 @@ type DetailsForm = z.infer<typeof DetailsFormSchema>;
 export function ProductView({ id }: { id: number }) {
   const navigate = useNavigate();
   const { data } = useProductQuery(id);
-  const { data: variants } = useProductVariantsQuery(id);
   const { data: inventory } = useListInventoryQuery();
   const deleteProduct = useDeleteProductMutation();
   const updateProduct = useUpdateProductMutation(id);
@@ -89,7 +85,7 @@ export function ProductView({ id }: { id: number }) {
       status: data.status,
       name: data.name,
       description: data.description ?? "",
-      brandId: data.brandId,
+      brandId: data.brand?.id ?? null,
       categoryIds: data.categoryIds ?? [],
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -102,10 +98,6 @@ export function ProductView({ id }: { id: number }) {
   const productInventory = (inventory ?? []).filter(
     (record) => record.productId === id,
   );
-  const needsAttentionCount = (variants ?? []).filter(
-    (variant) => variant.stock <= LOW_STOCK_THRESHOLD,
-  ).length;
-
   const handleDelete = () => {
     deleteProduct.mutate(id, {
       onSuccess: () => {

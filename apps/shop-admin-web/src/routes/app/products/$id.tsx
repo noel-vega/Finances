@@ -12,10 +12,11 @@ export const Route = createFileRoute('/app/products/$id')({
     parse: z.object({id: z.coerce.number()}).parse
   },
   beforeLoad: async ({params}) => {
-    await Promise.all([
-      queryClient.invalidateQueries(getProductQueryOptions(params.id)),
-      queryClient.invalidateQueries(getProductVariantsQueryOptions(params.id)),
+    const data = await Promise.all([
+      queryClient.ensureQueryData(getProductQueryOptions(params.id)),
+      queryClient.ensureQueryData(getProductVariantsQueryOptions(params.id)),
     ]);
+    console.log(data)
   },
   component: () => {
     const {id} = Route.useParams()

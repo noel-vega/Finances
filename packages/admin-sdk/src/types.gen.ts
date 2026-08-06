@@ -313,6 +313,27 @@ export interface components {
             brandId: number | null;
             categoryIds?: number[];
         };
+        Brand: {
+            id: number;
+            name: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        ProductDetail: {
+            id: number;
+            name: string;
+            description: string | null;
+            /** @enum {string} */
+            status: "draft" | "active" | "archived";
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            brand: components["schemas"]["Brand"] | null;
+            categoryIds: number[];
+        };
         VariantOptionValue: {
             optionName: string;
             value: string;
@@ -366,14 +387,6 @@ export interface components {
         };
         CreateBrandDto: {
             name: string;
-        };
-        Brand: {
-            id: number;
-            name: string;
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            updatedAt: string;
         };
         CreateCategoryDto: {
             name: string;
@@ -649,7 +662,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Product"];
+                    "application/json": components["schemas"]["ProductDetail"];
                 };
             };
         };

@@ -7,6 +7,7 @@ import { UpdateVariantDto } from './dto/update-variant.dto';
 import { DRIZZLE } from 'src/database/database.constants';
 import {
   and,
+  brandsTable,
   eq,
   inArray,
   inventoryTable,
@@ -24,6 +25,7 @@ import {
 } from 'db';
 import { ProductVariant } from './entities/product-variant.entity';
 import { ProductOption } from './entities/product-option.entity';
+import { ProductDetail } from './entities/product-detail.entity';
 
 // every combination of one value per option, e.g. [[1,2],[3,4]] -> [[1,3],[1,4],[2,3],[2,4]]
 function cartesianProduct<T>(groups: T[][]): T[][] {
@@ -79,16 +81,25 @@ export class ProductsService {
     return await this.db.select().from(productsTable);
   }
 
-  async findOne(id: number) {
+  async findOne(id: number): Promise<ProductDetail | undefined> {
     const [product] =  await this.db.select().from(productsTable).where(eq(productsTable.id, id));
-    if (!product) return product;
+    if (!product) return undefined;
+
+    const [brand] = product.brandId
+      ? await this.db.select().from(brandsTable).where(eq(brandsTable.id, product.brandId))
+      : [];
 
     const categoryLinks = await this.db
       .select({ categoryId: productCategoriesTable.categoryId })
       .from(productCategoriesTable)
       .where(eq(productCategoriesTable.productId, id));
 
-    return { ...product, categoryIds: categoryLinks.map((link) => link.categoryId) };
+    const { brandId, ...rest } = product;
+    return {
+      ...rest,
+      brand: brand ?? null,
+      categoryIds: categoryLinks.map((link) => link.categoryId),
+    };
   }
 
 

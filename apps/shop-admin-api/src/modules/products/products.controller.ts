@@ -19,6 +19,7 @@ import {
   ApiOkResponse,
 } from '@nestjs/swagger';
 import { Product } from './entities/product.entity';
+import { ProductDetail } from './entities/product-detail.entity';
 import { ProductVariant } from './entities/product-variant.entity';
 import { ProductOption } from './entities/product-option.entity';
 
@@ -42,7 +43,7 @@ export class ProductsController {
 
   @Get(':id')
   @ApiBearerAuth('JWT-auth')
-  @ApiOkResponse({ type: Product })
+  @ApiOkResponse({ type: ProductDetail })
   findOne(@Param('id') id: string) {
     return this.productsService.findOne(+id);
   }

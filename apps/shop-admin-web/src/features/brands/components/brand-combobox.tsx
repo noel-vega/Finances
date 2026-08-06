@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   Combobox,
   ComboboxContent,
@@ -37,6 +37,14 @@ export function BrandCombobox({
       : options
 
   const selected = options.find((option) => option.value === value) ?? null
+
+  // this is a fully controlled input, so nothing else keeps it in sync with
+  // the selected item — without this, a value set from outside (e.g. a form
+  // reset with existing data) or a fresh pick both leave the input showing
+  // whatever text was last typed instead of the selected brand's name
+  useEffect(() => {
+    setInputValue(selected?.label ?? "")
+  }, [selected?.label])
 
   const handleValueChange = (option: BrandOption | null) => {
     if (!option) {
