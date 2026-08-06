@@ -36,6 +36,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/signup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AuthController_signup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/token/refresh": {
         parameters: {
             query?: never;
@@ -287,6 +303,13 @@ export interface components {
         AccessTokenDto: {
             access_token: string;
         };
+        SignUpDto: {
+            businessName: string;
+            firstName: string;
+            lastName: string;
+            email: string;
+            password: string;
+        };
         UpdateUserDto: Record<string, never>;
         CreateProductDto: {
             name: string;
@@ -494,6 +517,35 @@ export interface operations {
                 };
             };
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthController_signup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SignUpDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessTokenDto"];
+                };
+            };
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

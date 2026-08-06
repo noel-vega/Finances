@@ -9,10 +9,11 @@ import {
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignInDto } from './dto/signin.dto';
+import { SignUpDto } from './dto/signup.dto';
 import { AccessTokenDto } from './dto/access-token.dto';
 import { Public } from './auth.decorators';
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { ApiBearerAuth, ApiOkResponse, ApiResponse, ApiUnauthorizedResponse } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiConflictResponse, ApiOkResponse, ApiResponse, ApiUnauthorizedResponse } from '@nestjs/swagger';
 
 const REFRESH_TOKEN_COOKIE = 'refresh_token';
 
@@ -41,6 +42,31 @@ export class AuthController {
       sameSite: 'lax', // Helps protect against CSRF attacks
       path: '/', // Scopes the cookie to the entire domain
       maxAge: 60 * 60 * 24 * 7, // 7 days
+    });
+
+    return { access_token: result.access_token };
+  }
+
+  @Public()
+  @Post('signup')
+  @ApiOkResponse({ type: AccessTokenDto })
+  @ApiConflictResponse()
+  async signup(
+    @Body() signupDto: SignUpDto,
+    @Res({ passthrough: true }) res: FastifyReply,
+  ): Promise<AccessTokenDto> {
+    const result = await this.authService.signup(signupDto);
+
+    const refreshToken = await this.authService.createRefreshToken(
+      result.userId,
+      result.email,
+    );
+
+    res.setCookie(REFRESH_TOKEN_COOKIE, refreshToken, {
+      httpOnly: true,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7,
     });
 
     return { access_token: result.access_token };

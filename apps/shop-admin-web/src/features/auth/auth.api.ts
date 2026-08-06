@@ -10,3 +10,13 @@ export type SignInRequestBody = z.infer<typeof SignInRequestBodySchema>;
 export const SignInResponseSchema = z.object({access_token: z.string()})
 
 export type SignInResponse = z.infer<typeof SignInResponseSchema>
+
+export const SignUpRequestBodySchema = z.object({
+  businessName: z.string().min(1),
+  firstName: z.string().min(1),
+  lastName: z.string().min(1),
+  email: z.email(),
+  password: z.string().min(8),
+});
+
+export type SignUpRequestBody = z.infer<typeof SignUpRequestBodySchema>

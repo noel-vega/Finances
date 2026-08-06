@@ -1,14 +1,23 @@
 import {
+  ConflictException,
+  Inject,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 import { SignInDto } from './dto/signin.dto';
+import { SignUpDto } from './dto/signup.dto';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
+import { DRIZZLE } from 'src/database/database.constants';
+import { accountsTable, usersTable, type db as Db } from 'db';
+import * as bcrypt from 'bcryptjs';
+
+const POSTGRES_UNIQUE_VIOLATION = '23505';
 
 @Injectable()
 export class AuthService {
   constructor(
+    @Inject(DRIZZLE) private readonly db: typeof Db,
     private jwtService: JwtService,
     private usersService: UsersService,
   ) {}
@@ -20,7 +29,7 @@ export class AuthService {
       throw new UnauthorizedException();
     }
 
-    if (user.password !== signinDto.password) {
+    if (!(await bcrypt.compare(signinDto.password, user.password))) {
       throw new UnauthorizedException();
     }
 
@@ -29,10 +38,57 @@ export class AuthService {
     return {userId: user.id, email: user.email, access_token };
   }
 
+  async signup(signupDto: SignUpDto) {
+    try {
+      const user = await this.db.transaction(async (tx) => {
+        const [account] = await tx
+          .insert(accountsTable)
+          .values({ name: signupDto.businessName })
+          .returning();
+
+        const hashedPassword = await bcrypt.hash(signupDto.password, 10);
+
+        const [user] = await tx
+          .insert(usersTable)
+          .values({
+            firstname: signupDto.firstName,
+            lastname: signupDto.lastName,
+            email: signupDto.email,
+            password: hashedPassword,
+            accountId: account.id,
+          })
+          .returning();
+
+        return user;
+      });
+
+      const access_token = await this.createAccessToken(user.id, user.email);
+
+      return { userId: user.id, email: user.email, access_token };
+    } catch (err) {
+      // node-postgres errors carry `.code`, but drizzle-orm wraps them in a
+      // DrizzleQueryError, so the pg error ends up at `.cause` instead.
+      const pgError =
+        typeof err === 'object' && err !== null && 'cause' in err
+          ? err.cause
+          : err;
+
+      if (
+        typeof pgError === 'object' &&
+        pgError !== null &&
+        'code' in pgError &&
+        pgError.code === POSTGRES_UNIQUE_VIOLATION
+      ) {
+        throw new ConflictException('Email already in use');
+      }
+      throw err;
+    }
+  }
+
   private async createToken(sub: number, email: string, expiresIn: string) {
     const payload = { sub, email };
     const token =  await this.jwtService.signAsync(payload, {
-      expiresIn: '7Days' 
+      expiresIn: '7Days'
     });
     return token
   }

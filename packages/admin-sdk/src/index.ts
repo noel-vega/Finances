@@ -61,6 +61,15 @@ export class AdminClient {
     return this.accessToken;
   }
 
+  async signUp(signup: components["schemas"]["SignUpDto"]) {
+    const { data } = await this.client.POST("/auth/signup", {
+      body: signup,
+    });
+
+    this.accessToken = data?.access_token;
+    return this.accessToken;
+  }
+
   async refreshAccessToken() {
     const { data } = await this.client.GET("/auth/token/refresh");
     this.accessToken = data?.access_token;

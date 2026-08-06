@@ -7,3 +7,10 @@ export function useSignInMutation(){
             adminApi.signIn(credentials)
     })
 }
+
+export function useSignUpMutation(){
+    return useMutation({
+        mutationFn: (signup: Parameters<typeof adminApi.signUp>[0]) =>
+            adminApi.signUp(signup)
+    })
+}

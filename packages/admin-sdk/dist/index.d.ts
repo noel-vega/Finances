@@ -26,6 +26,7 @@ export declare class AdminClient {
     private authMiddleware;
     constructor(baseUrl: string);
     signIn(credentials: components["schemas"]["SignInDto"]): Promise<string | undefined>;
+    signUp(signup: components["schemas"]["SignUpDto"]): Promise<string | undefined>;
     refreshAccessToken(): Promise<string | undefined>;
     private do;
 }

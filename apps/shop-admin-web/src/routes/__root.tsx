@@ -14,6 +14,7 @@ export const Route = createRootRoute({
 
     switch (location.pathname) {
       case "/signin":
+      case "/signup":
       case "/app":
       case "/":
         if (accessToken) {

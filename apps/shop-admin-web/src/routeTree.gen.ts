@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SigninRouteImport } from './routes/signin'
 import { Route as InventoryRouteImport } from './routes/inventory'
 import { Route as AppRouteRouteImport } from './routes/app/route'
@@ -30,6 +31,11 @@ import { Route as AppProductsBrandsIndexRouteImport } from './routes/app/product
 import { Route as AppProductsCategoriesCreateRouteImport } from './routes/app/products/categories/create'
 import { Route as AppProductsBrandsCreateRouteImport } from './routes/app/products/brands/create'
 
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SigninRoute = SigninRouteImport.update({
   id: '/signin',
   path: '/signin',
@@ -138,6 +144,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteRouteWithChildren
   '/inventory': typeof InventoryRoute
   '/signin': typeof SigninRoute
+  '/signup': typeof SignupRoute
   '/app/products': typeof AppProductsRouteRouteWithChildren
   '/app/inventory/movements': typeof AppInventoryMovementsRoute
   '/app/locations/create': typeof AppLocationsCreateRoute
@@ -160,6 +167,7 @@ export interface FileRoutesByTo {
   '/app': typeof AppRouteRouteWithChildren
   '/inventory': typeof InventoryRoute
   '/signin': typeof SigninRoute
+  '/signup': typeof SignupRoute
   '/app/inventory/movements': typeof AppInventoryMovementsRoute
   '/app/locations/create': typeof AppLocationsCreateRoute
   '/app/products/$id': typeof AppProductsIdRoute
@@ -182,6 +190,7 @@ export interface FileRoutesById {
   '/app': typeof AppRouteRouteWithChildren
   '/inventory': typeof InventoryRoute
   '/signin': typeof SigninRoute
+  '/signup': typeof SignupRoute
   '/app/products': typeof AppProductsRouteRouteWithChildren
   '/app/inventory/movements': typeof AppInventoryMovementsRoute
   '/app/locations/create': typeof AppLocationsCreateRoute
@@ -206,6 +215,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/inventory'
     | '/signin'
+    | '/signup'
     | '/app/products'
     | '/app/inventory/movements'
     | '/app/locations/create'
@@ -228,6 +238,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/inventory'
     | '/signin'
+    | '/signup'
     | '/app/inventory/movements'
     | '/app/locations/create'
     | '/app/products/$id'
@@ -249,6 +260,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/inventory'
     | '/signin'
+    | '/signup'
     | '/app/products'
     | '/app/inventory/movements'
     | '/app/locations/create'
@@ -272,10 +284,18 @@ export interface RootRouteChildren {
   AppRouteRoute: typeof AppRouteRouteWithChildren
   InventoryRoute: typeof InventoryRoute
   SigninRoute: typeof SigninRoute
+  SignupRoute: typeof SignupRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signin': {
       id: '/signin'
       path: '/signin'
@@ -475,6 +495,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRouteRoute: AppRouteRouteWithChildren,
   InventoryRoute: InventoryRoute,
   SigninRoute: SigninRoute,
+  SignupRoute: SignupRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
