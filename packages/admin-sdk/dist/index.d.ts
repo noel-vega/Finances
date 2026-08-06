@@ -1,5 +1,10 @@
 import { type Client } from "openapi-fetch";
 import type { paths, components } from "./types.gen.js";
+import { createProductsResource } from "./resources/products.js";
+import { createBrandsResource } from "./resources/brands.js";
+import { createCategoriesResource } from "./resources/categories.js";
+import { createLocationsResource } from "./resources/locations.js";
+import { createInventoryResource } from "./resources/inventory.js";
 export type Product = components["schemas"]["Product"];
 export type ProductDetail = components["schemas"]["ProductDetail"];
 export type ProductVariant = components["schemas"]["ProductVariant"];
@@ -13,232 +18,15 @@ export type InventoryMovementRecord = components["schemas"]["InventoryMovementRe
 export declare class AdminClient {
     accessToken: string | undefined;
     client: Client<paths>;
+    products: ReturnType<typeof createProductsResource>;
+    brands: ReturnType<typeof createBrandsResource>;
+    categories: ReturnType<typeof createCategoriesResource>;
+    locations: ReturnType<typeof createLocationsResource>;
+    inventory: ReturnType<typeof createInventoryResource>;
+    private authMiddleware;
     constructor(baseUrl: string);
     signIn(credentials: components["schemas"]["SignInDto"]): Promise<string | undefined>;
     refreshAccessToken(): Promise<string | undefined>;
     private do;
-    products: {
-        list: () => Promise<{
-            id: number;
-            name: string;
-            description: string | null;
-            status: "draft" | "active" | "archived";
-            createdAt: string;
-            updatedAt: string;
-            brandId: number | null;
-            categoryIds?: number[];
-        }[] | undefined>;
-        create: (params: components["schemas"]["CreateProductDto"]) => Promise<{
-            id: number;
-            name: string;
-            description: string | null;
-            status: "draft" | "active" | "archived";
-            createdAt: string;
-            updatedAt: string;
-            brandId: number | null;
-            categoryIds?: number[];
-        } | undefined>;
-        getById: (id: number) => Promise<{
-            id: number;
-            name: string;
-            description: string | null;
-            status: "draft" | "active" | "archived";
-            createdAt: string;
-            updatedAt: string;
-            brand: {
-                id: number;
-                name: string;
-                createdAt: string;
-                updatedAt: string;
-            } | null;
-            categoryIds: number[];
-        } | undefined>;
-        update: (id: number, params: components["schemas"]["UpdateProductDto"]) => Promise<{
-            id: number;
-            name: string;
-            description: string | null;
-            status: "draft" | "active" | "archived";
-            createdAt: string;
-            updatedAt: string;
-            brandId: number | null;
-            categoryIds?: number[];
-        } | undefined>;
-        remove: (id: number) => Promise<{
-            id: number;
-            name: string;
-            description: string | null;
-            status: "draft" | "active" | "archived";
-            createdAt: string;
-            updatedAt: string;
-            brandId: number | null;
-            categoryIds?: number[];
-        } | undefined>;
-        variants: {
-            list: (productId: number) => Promise<{
-                id: number;
-                productId: number;
-                priceCents: number;
-                sku: string | null;
-                createdAt: string;
-                updatedAt: string;
-                stock: number;
-                optionValues: {
-                    optionName: string;
-                    value: string;
-                }[];
-            }[] | undefined>;
-            create: (productId: number, params: components["schemas"]["CreateVariantsDto"]) => Promise<{
-                id: number;
-                productId: number;
-                priceCents: number;
-                sku: string | null;
-                createdAt: string;
-                updatedAt: string;
-                stock: number;
-                optionValues: {
-                    optionName: string;
-                    value: string;
-                }[];
-            }[] | undefined>;
-            update: (productId: number, variantId: number, params: components["schemas"]["UpdateVariantDto"]) => Promise<{
-                id: number;
-                productId: number;
-                priceCents: number;
-                sku: string | null;
-                createdAt: string;
-                updatedAt: string;
-                stock: number;
-                optionValues: {
-                    optionName: string;
-                    value: string;
-                }[];
-            } | undefined>;
-        };
-        options: {
-            list: (productId: number) => Promise<{
-                id: number;
-                productId: number;
-                name: string;
-                values: {
-                    id: number;
-                    value: string;
-                }[];
-            }[] | undefined>;
-            update: (productId: number, optionId: number, params: components["schemas"]["UpdateProductOptionDto"]) => Promise<{
-                id: number;
-                productId: number;
-                name: string;
-                values: {
-                    id: number;
-                    value: string;
-                }[];
-            } | undefined>;
-            remove: (productId: number, optionId: number) => Promise<{
-                id: number;
-                productId: number;
-                name: string;
-                values: {
-                    id: number;
-                    value: string;
-                }[];
-            } | undefined>;
-            values: {
-                remove: (productId: number, optionId: number, valueId: number) => Promise<{
-                    id: number;
-                    productId: number;
-                    name: string;
-                    values: {
-                        id: number;
-                        value: string;
-                    }[];
-                } | undefined>;
-            };
-        };
-    };
-    brands: {
-        list: () => Promise<{
-            id: number;
-            name: string;
-            createdAt: string;
-            updatedAt: string;
-        }[] | undefined>;
-        create: (params: components["schemas"]["CreateBrandDto"]) => Promise<{
-            id: number;
-            name: string;
-            createdAt: string;
-            updatedAt: string;
-        } | undefined>;
-    };
-    categories: {
-        list: () => Promise<{
-            id: number;
-            name: string;
-            createdAt: string;
-            updatedAt: string;
-        }[] | undefined>;
-        create: (params: components["schemas"]["CreateCategoryDto"]) => Promise<{
-            id: number;
-            name: string;
-            createdAt: string;
-            updatedAt: string;
-        } | undefined>;
-    };
-    locations: {
-        list: () => Promise<{
-            id: number;
-            name: string;
-            createdAt: string;
-            updatedAt: string;
-        }[] | undefined>;
-        create: (params: components["schemas"]["CreateLocationDto"]) => Promise<{
-            id: number;
-            name: string;
-            createdAt: string;
-            updatedAt: string;
-        } | undefined>;
-    };
-    inventory: {
-        list: () => Promise<{
-            id: number;
-            variantId: number;
-            sku: string | null;
-            productId: number;
-            productName: string;
-            locationId: number;
-            locationName: string;
-            stock: number;
-            updatedAt: string;
-        }[] | undefined>;
-        movements: {
-            list: () => Promise<{
-                id: number;
-                variantId: number;
-                sku: string | null;
-                productId: number;
-                productName: string;
-                locationId: number;
-                locationName: string;
-                delta: number;
-                reason: "received" | "sold" | "return" | "damaged" | "adjustment";
-                note: string | null;
-                createdByEmail: string | null;
-                createdAt: string;
-            }[] | undefined>;
-            create: (params: components["schemas"]["CreateInventoryMovementDto"]) => Promise<{
-                id: number;
-                variantId: number;
-                sku: string | null;
-                productId: number;
-                productName: string;
-                locationId: number;
-                locationName: string;
-                delta: number;
-                reason: "received" | "sold" | "return" | "damaged" | "adjustment";
-                note: string | null;
-                createdByEmail: string | null;
-                createdAt: string;
-            } | undefined>;
-        };
-    };
 }
 //# sourceMappingURL=index.d.ts.map
