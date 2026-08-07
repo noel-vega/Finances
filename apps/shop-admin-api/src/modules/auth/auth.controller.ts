@@ -34,6 +34,7 @@ export class AuthController {
     const refreshToken = await this.authService.createRefreshToken(
       result.userId,
       result.email,
+      result.accountId,
     );
 
     res.setCookie(REFRESH_TOKEN_COOKIE, refreshToken, {
@@ -60,6 +61,7 @@ export class AuthController {
     const refreshToken = await this.authService.createRefreshToken(
       result.userId,
       result.email,
+      result.accountId,
     );
 
     res.setCookie(REFRESH_TOKEN_COOKIE, refreshToken, {

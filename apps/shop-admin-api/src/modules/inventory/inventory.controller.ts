@@ -12,8 +12,8 @@ export class InventoryController {
   @Get()
   @ApiBearerAuth('JWT-auth')
   @ApiOkResponse({ type: [InventoryRecord] })
-  findAll() {
-    return this.inventoryService.findAll();
+  findAll(@CurrentUser() user: AuthenticatedUser) {
+    return this.inventoryService.findAll(user.accountId);
   }
 
   @Post('movements')
@@ -23,13 +23,17 @@ export class InventoryController {
     @Body() createInventoryMovementDto: CreateInventoryMovementDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.inventoryService.createMovement(createInventoryMovementDto, user.sub);
+    return this.inventoryService.createMovement(
+      createInventoryMovementDto,
+      user.sub,
+      user.accountId,
+    );
   }
 
   @Get('movements')
   @ApiBearerAuth('JWT-auth')
   @ApiOkResponse({ type: [InventoryMovementRecord] })
-  findMovements() {
-    return this.inventoryService.findMovements();
+  findMovements(@CurrentUser() user: AuthenticatedUser) {
+    return this.inventoryService.findMovements(user.accountId);
   }
 }

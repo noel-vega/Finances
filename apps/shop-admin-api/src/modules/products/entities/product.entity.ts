@@ -5,6 +5,9 @@ export class Product implements SelectProduct {
   @ApiProperty({ type: Number })
   id!: number;
 
+  @ApiProperty({ type: Number })
+  accountId!: number;
+
   @ApiProperty()
   name!: string;
 

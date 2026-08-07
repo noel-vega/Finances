@@ -5,18 +5,26 @@
 import { integer, pgEnum, pgTable, unique, varchar } from "drizzle-orm/pg-core";
 import { productVariantsTable } from "./products.js";
 import { usersTable } from "./users.js";
+import { accountsTable } from "./accounts.js";
 import { timestampAt } from "../utils.js";
 import { createInsertSchema, createSelectSchema } from "drizzle-orm/zod";
 import z from "zod";
 
 // a place stock can physically live — starts with a single seeded "Default"
 // row, grows into real warehouses/stores without reshaping anything below it
-export const locationsTable = pgTable("locations", {
-  id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  name: varchar({ length: 255 }).notNull().unique(),
-  createdAt: timestampAt("created_at"),
-  updatedAt: timestampAt("updated_at"),
-});
+export const locationsTable = pgTable(
+  "locations",
+  {
+    id: integer().primaryKey().generatedAlwaysAsIdentity(),
+    accountId: integer()
+      .notNull()
+      .references(() => accountsTable.id, { onDelete: "cascade" }),
+    name: varchar({ length: 255 }).notNull(),
+    createdAt: timestampAt("created_at"),
+    updatedAt: timestampAt("updated_at"),
+  },
+  (t) => [unique().on(t.accountId, t.name)],
+);
 
 export const SelectLocationSchema = createSelectSchema(locationsTable)
 export type SelectLocation = z.infer<typeof SelectLocationSchema>

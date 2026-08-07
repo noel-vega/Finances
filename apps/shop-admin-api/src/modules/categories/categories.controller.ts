@@ -3,6 +3,7 @@ import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
 import { Category } from './entities/category.entity';
+import { CurrentUser, type AuthenticatedUser } from '../auth/auth.decorators';
 
 @Controller('categories')
 export class CategoriesController {
@@ -11,14 +12,17 @@ export class CategoriesController {
   @Post()
   @ApiBearerAuth('JWT-auth')
   @ApiCreatedResponse({ type: Category })
-  create(@Body() createCategoryDto: CreateCategoryDto) {
-    return this.categoriesService.create(createCategoryDto);
+  create(
+    @Body() createCategoryDto: CreateCategoryDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.categoriesService.create(createCategoryDto, user.accountId);
   }
 
   @Get()
   @ApiBearerAuth('JWT-auth')
   @ApiOkResponse({ type: [Category] })
-  findAll() {
-    return this.categoriesService.findAll();
+  findAll(@CurrentUser() user: AuthenticatedUser) {
+    return this.categoriesService.findAll(user.accountId);
   }
 }

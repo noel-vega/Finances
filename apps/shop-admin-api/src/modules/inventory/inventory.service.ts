@@ -1,6 +1,7 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { DRIZZLE } from 'src/database/database.constants';
 import {
+  and,
   desc,
   eq,
   inventoryMovementsTable,
@@ -11,6 +12,7 @@ import {
   sql,
   usersTable,
   type db as Db,
+  type SQL,
 } from 'db';
 import { InventoryRecord, InventoryMovementRecord } from './entities/inventory.entity';
 import { CreateInventoryMovementDto } from './dto/create-inventory-movement.dto';
@@ -19,7 +21,7 @@ import { CreateInventoryMovementDto } from './dto/create-inventory-movement.dto'
 export class InventoryService {
   constructor(@Inject(DRIZZLE) private readonly db: typeof Db) {}
 
-  async findAll(): Promise<InventoryRecord[]> {
+  async findAll(accountId: number): Promise<InventoryRecord[]> {
     return await this.db
       .select({
         id: inventoryTable.id,
@@ -41,7 +43,8 @@ export class InventoryService {
         productsTable,
         eq(productsTable.id, productVariantsTable.productId),
       )
-      .innerJoin(locationsTable, eq(locationsTable.id, inventoryTable.locationId));
+      .innerJoin(locationsTable, eq(locationsTable.id, inventoryTable.locationId))
+      .where(eq(productsTable.accountId, accountId));
   }
 
   // insert a ledger entry and atomically fold its delta into the
@@ -49,7 +52,32 @@ export class InventoryService {
   async createMovement(
     dto: CreateInventoryMovementDto,
     userId: number | undefined,
+    accountId: number,
   ): Promise<InventoryMovementRecord> {
+    const [variant] = await this.db
+      .select({ id: productVariantsTable.id })
+      .from(productVariantsTable)
+      .innerJoin(productsTable, eq(productsTable.id, productVariantsTable.productId))
+      .where(
+        and(
+          eq(productVariantsTable.id, dto.variantId),
+          eq(productsTable.accountId, accountId),
+        ),
+      );
+    if (!variant) {
+      throw new BadRequestException('Variant not found');
+    }
+
+    const [location] = await this.db
+      .select({ id: locationsTable.id })
+      .from(locationsTable)
+      .where(
+        and(eq(locationsTable.id, dto.locationId), eq(locationsTable.accountId, accountId)),
+      );
+    if (!location) {
+      throw new BadRequestException('Location not found');
+    }
+
     const movementId = await this.db.transaction(async (tx) => {
       const [movement] = await tx
         .insert(inventoryMovementsTable)
@@ -81,19 +109,20 @@ export class InventoryService {
       return movement.id;
     });
 
-    const [record] = await this.movementRecordsQuery().where(
+    const [record] = await this.movementRecordsQuery(
+      accountId,
       eq(inventoryMovementsTable.id, movementId),
     );
     return record;
   }
 
-  async findMovements(): Promise<InventoryMovementRecord[]> {
-    return await this.movementRecordsQuery().orderBy(
+  async findMovements(accountId: number): Promise<InventoryMovementRecord[]> {
+    return await this.movementRecordsQuery(accountId).orderBy(
       desc(inventoryMovementsTable.createdAt),
     );
   }
 
-  private movementRecordsQuery() {
+  private movementRecordsQuery(accountId: number, extraWhere?: SQL) {
     return this.db
       .select({
         id: inventoryMovementsTable.id,
@@ -122,6 +151,11 @@ export class InventoryService {
         locationsTable,
         eq(locationsTable.id, inventoryMovementsTable.locationId),
       )
-      .leftJoin(usersTable, eq(usersTable.id, inventoryMovementsTable.createdByUserId));
+      .leftJoin(usersTable, eq(usersTable.id, inventoryMovementsTable.createdByUserId))
+      .where(
+        extraWhere
+          ? and(eq(productsTable.accountId, accountId), extraWhere)
+          : eq(productsTable.accountId, accountId),
+      );
   }
 }

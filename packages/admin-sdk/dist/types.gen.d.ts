@@ -340,6 +340,7 @@ export interface components {
         };
         Product: {
             id: number;
+            accountId: number;
             name: string;
             description: string | null;
             /** @enum {string} */
@@ -353,6 +354,7 @@ export interface components {
         };
         Brand: {
             id: number;
+            accountId: number;
             name: string;
             /** Format: date-time */
             createdAt: string;
@@ -361,6 +363,7 @@ export interface components {
         };
         ProductDetail: {
             id: number;
+            accountId: number;
             name: string;
             description: string | null;
             /** @enum {string} */
@@ -431,6 +434,7 @@ export interface components {
         };
         Category: {
             id: number;
+            accountId: number;
             name: string;
             /** Format: date-time */
             createdAt: string;
@@ -442,6 +446,7 @@ export interface components {
         };
         Location: {
             id: number;
+            accountId: number;
             name: string;
             /** Format: date-time */
             createdAt: string;

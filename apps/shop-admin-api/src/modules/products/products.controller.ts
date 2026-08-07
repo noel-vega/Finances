@@ -22,6 +22,7 @@ import { Product } from './entities/product.entity';
 import { ProductDetail } from './entities/product-detail.entity';
 import { ProductVariant } from './entities/product-variant.entity';
 import { ProductOption } from './entities/product-option.entity';
+import { CurrentUser, type AuthenticatedUser } from '../auth/auth.decorators';
 
 @Controller('products')
 export class ProductsController {
@@ -30,36 +31,39 @@ export class ProductsController {
   @Post()
   @ApiBearerAuth('JWT-auth')
   @ApiCreatedResponse({ type: Product })
-  create(@Body() createProductDto: CreateProductDto) {
-    return this.productsService.create(createProductDto);
+  create(
+    @Body() createProductDto: CreateProductDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.productsService.create(createProductDto, user.accountId);
   }
 
   @Get()
   @ApiBearerAuth('JWT-auth')
   @ApiOkResponse({ type: [Product] })
-  findAll() {
-    return this.productsService.findAll();
+  findAll(@CurrentUser() user: AuthenticatedUser) {
+    return this.productsService.findAll(user.accountId);
   }
 
   @Get(':id')
   @ApiBearerAuth('JWT-auth')
   @ApiOkResponse({ type: ProductDetail })
-  findOne(@Param('id') id: string) {
-    return this.productsService.findOne(+id);
+  findOne(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.productsService.findOne(+id, user.accountId);
   }
 
   @Get(":id/variants")
   @ApiBearerAuth('JWT-auth')
   @ApiOkResponse({ type: [ProductVariant] })
-  findVariants(@Param('id') id: string) {
-    return this.productsService.findVariants(+id);
+  findVariants(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.productsService.findVariants(+id, user.accountId);
   }
 
   @Get(":id/options")
   @ApiBearerAuth('JWT-auth')
   @ApiOkResponse({ type: [ProductOption] })
-  findOptions(@Param('id') id: string) {
-    return this.productsService.findOptions(+id);
+  findOptions(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.productsService.findOptions(+id, user.accountId);
   }
 
   @Patch(':id/options/:optionId')
@@ -69,11 +73,13 @@ export class ProductsController {
     @Param('id') id: string,
     @Param('optionId') optionId: string,
     @Body() updateProductOptionDto: UpdateProductOptionDto,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.productsService.updateOption(
       +id,
       +optionId,
       updateProductOptionDto,
+      user.accountId,
     );
   }
 
@@ -83,8 +89,9 @@ export class ProductsController {
   removeOption(
     @Param('id') id: string,
     @Param('optionId') optionId: string,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.productsService.removeOption(+id, +optionId);
+    return this.productsService.removeOption(+id, +optionId, user.accountId);
   }
 
   @Delete(':id/options/:optionId/values/:valueId')
@@ -94,8 +101,14 @@ export class ProductsController {
     @Param('id') id: string,
     @Param('optionId') optionId: string,
     @Param('valueId') valueId: string,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.productsService.removeOptionValue(+id, +optionId, +valueId);
+    return this.productsService.removeOptionValue(
+      +id,
+      +optionId,
+      +valueId,
+      user.accountId,
+    );
   }
 
 
@@ -105,15 +118,24 @@ export class ProductsController {
   createVariants(
     @Param('id') id: string,
     @Body() createVariantsDto: CreateVariantsDto,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.productsService.createVariants(+id, createVariantsDto);
+    return this.productsService.createVariants(
+      +id,
+      createVariantsDto,
+      user.accountId,
+    );
   }
 
   @Patch(':id')
   @ApiBearerAuth('JWT-auth')
   @ApiOkResponse({ type: Product })
-  update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
-    return this.productsService.update(+id, updateProductDto);
+  update(
+    @Param('id') id: string,
+    @Body() updateProductDto: UpdateProductDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.productsService.update(+id, updateProductDto, user.accountId);
   }
 
   @Patch(':id/variants/:variantId')
@@ -123,14 +145,20 @@ export class ProductsController {
     @Param('id') id: string,
     @Param('variantId') variantId: string,
     @Body() updateVariantDto: UpdateVariantDto,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.productsService.updateVariant(+id, +variantId, updateVariantDto);
+    return this.productsService.updateVariant(
+      +id,
+      +variantId,
+      updateVariantDto,
+      user.accountId,
+    );
   }
 
   @Delete(':id')
   @ApiBearerAuth('JWT-auth')
   @ApiOkResponse({ type: Product })
-  remove(@Param('id') id: string) {
-    return this.productsService.remove(+id);
+  remove(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.productsService.remove(+id, user.accountId);
   }
 }

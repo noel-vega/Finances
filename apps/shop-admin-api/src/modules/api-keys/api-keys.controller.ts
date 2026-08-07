@@ -13,6 +13,6 @@ export class ApiKeysController {
   @Get()
   @ApiOkResponse({ type: ApiKeyDto, isArray: true })
   async list(@CurrentUser() user: AuthenticatedUser) {
-    return this.apiKeysService.listForUser(user.sub);
+    return this.apiKeysService.listForAccount(user.accountId);
   }
 }

@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { CreateVariantsDto } from './dto/create-variant.dto';
@@ -8,6 +8,7 @@ import { DRIZZLE } from 'src/database/database.constants';
 import {
   and,
   brandsTable,
+  categoriesTable,
   eq,
   inArray,
   inventoryTable,
@@ -38,11 +39,40 @@ function cartesianProduct<T>(groups: T[][]): T[][] {
 @Injectable()
 export class ProductsService {
   constructor(@Inject(DRIZZLE) private readonly db: typeof Db) {}
-  async create(createProductDto: CreateProductDto) {
+  async create(createProductDto: CreateProductDto, accountId: number) {
+    const [brand] = await this.db
+      .select({ id: brandsTable.id })
+      .from(brandsTable)
+      .where(
+        and(
+          eq(brandsTable.id, createProductDto.brandId),
+          eq(brandsTable.accountId, accountId),
+        ),
+      );
+    if (!brand) {
+      throw new BadRequestException('Brand not found');
+    }
+
+    if (createProductDto.categoryIds.length > 0) {
+      const ownedCategories = await this.db
+        .select({ id: categoriesTable.id })
+        .from(categoriesTable)
+        .where(
+          and(
+            eq(categoriesTable.accountId, accountId),
+            inArray(categoriesTable.id, createProductDto.categoryIds),
+          ),
+        );
+      if (ownedCategories.length !== createProductDto.categoryIds.length) {
+        throw new BadRequestException('One or more categories not found');
+      }
+    }
+
     const product = await this.db.transaction(async (tx) => {
       const [product] = await tx
         .insert(productsTable)
         .values({
+          accountId,
           name: createProductDto.name,
           description: createProductDto.description,
           status: createProductDto.status,
@@ -56,7 +86,11 @@ export class ProductsService {
         sku: createProductDto.sku,
       }).returning();
 
-      const [location] = await tx.select({ id: locationsTable.id }).from(locationsTable).limit(1);
+      const [location] = await tx
+        .select({ id: locationsTable.id })
+        .from(locationsTable)
+        .where(eq(locationsTable.accountId, accountId))
+        .limit(1);
       await tx.insert(inventoryTable).values({
         variantId: variant.id,
         locationId: location.id,
@@ -77,12 +111,18 @@ export class ProductsService {
     return product;
   }
 
-  async findAll() {
-    return await this.db.select().from(productsTable);
+  async findAll(accountId: number) {
+    return await this.db
+      .select()
+      .from(productsTable)
+      .where(eq(productsTable.accountId, accountId));
   }
 
-  async findOne(id: number): Promise<ProductDetail | undefined> {
-    const [product] =  await this.db.select().from(productsTable).where(eq(productsTable.id, id));
+  async findOne(id: number, accountId: number): Promise<ProductDetail | undefined> {
+    const [product] = await this.db
+      .select()
+      .from(productsTable)
+      .where(and(eq(productsTable.id, id), eq(productsTable.accountId, accountId)));
     if (!product) return undefined;
 
     const [brand] = product.brandId
@@ -102,8 +142,19 @@ export class ProductsService {
     };
   }
 
+  // every nested product resource (variants/options) is reached only via a
+  // productId, so ownership is checked here once rather than on every table
+  private async productExists(productId: number, accountId: number): Promise<boolean> {
+    const [row] = await this.db
+      .select({ id: productsTable.id })
+      .from(productsTable)
+      .where(and(eq(productsTable.id, productId), eq(productsTable.accountId, accountId)));
+    return !!row;
+  }
 
-  async findVariants(productId: number): Promise<ProductVariant[]> {
+  async findVariants(productId: number, accountId: number): Promise<ProductVariant[]> {
+    if (!(await this.productExists(productId, accountId))) return [];
+
     const variants = await this.selectVariants(
       eq(productVariantsTable.productId, productId),
     );
@@ -136,7 +187,10 @@ export class ProductsService {
     productId: number,
     variantId: number,
     updateVariantDto: UpdateVariantDto,
+    accountId: number,
   ): Promise<ProductVariant | undefined> {
+    if (!(await this.productExists(productId, accountId))) return undefined;
+
     await this.db
       .update(productVariantsTable)
       .set(updateVariantDto)
@@ -199,7 +253,9 @@ export class ProductsService {
     }));
   }
 
-  async findOptions(productId: number): Promise<ProductOption[]> {
+  async findOptions(productId: number, accountId: number): Promise<ProductOption[]> {
+    if (!(await this.productExists(productId, accountId))) return [];
+
     const rows = await this.db
       .select({
         optionId: productOptionsTable.id,
@@ -233,7 +289,10 @@ export class ProductsService {
     productId: number,
     optionId: number,
     updateProductOptionDto: UpdateProductOptionDto,
+    accountId: number,
   ): Promise<ProductOption | undefined> {
+    if (!(await this.productExists(productId, accountId))) return undefined;
+
     await this.db
       .update(productOptionsTable)
       .set({ name: updateProductOptionDto.name })
@@ -244,7 +303,7 @@ export class ProductsService {
         ),
       );
 
-    const options = await this.findOptions(productId);
+    const options = await this.findOptions(productId, accountId);
     return options.find((o) => o.id === optionId);
   }
 
@@ -252,7 +311,10 @@ export class ProductsService {
     productId: number,
     optionId: number,
     valueId: number,
+    accountId: number,
   ): Promise<ProductOption | undefined> {
+    if (!(await this.productExists(productId, accountId))) return undefined;
+
     const [option] = await this.db
       .select()
       .from(productOptionsTable)
@@ -275,12 +337,18 @@ export class ProductsService {
         ),
       );
 
-    const options = await this.findOptions(productId);
+    const options = await this.findOptions(productId, accountId);
     return options.find((o) => o.id === optionId);
   }
 
-  async removeOption(productId: number, optionId: number): Promise<ProductOption | undefined> {
-    const options = await this.findOptions(productId);
+  async removeOption(
+    productId: number,
+    optionId: number,
+    accountId: number,
+  ): Promise<ProductOption | undefined> {
+    if (!(await this.productExists(productId, accountId))) return undefined;
+
+    const options = await this.findOptions(productId, accountId);
     const option = options.find((o) => o.id === optionId);
 
     await this.db
@@ -295,15 +363,17 @@ export class ProductsService {
     return option;
   }
 
-  async update(id: number, updateProductDto: UpdateProductDto) {
+  async update(id: number, updateProductDto: UpdateProductDto, accountId: number) {
     const { categoryIds, ...productFields } = updateProductDto;
 
     return await this.db.transaction(async (tx) => {
       const [product] = await tx
         .update(productsTable)
         .set(productFields)
-        .where(eq(productsTable.id, id))
+        .where(and(eq(productsTable.id, id), eq(productsTable.accountId, accountId)))
         .returning();
+
+      if (!product) return undefined;
 
       if (categoryIds !== undefined) {
         // full replace — simpler than diffing, and category sets are small
@@ -322,10 +392,10 @@ export class ProductsService {
     });
   }
 
-  async remove(id: number) {
+  async remove(id: number, accountId: number) {
     const [product] = await this.db
       .delete(productsTable)
-      .where(eq(productsTable.id, id))
+      .where(and(eq(productsTable.id, id), eq(productsTable.accountId, accountId)))
       .returning();
     return product;
   }
@@ -334,7 +404,10 @@ export class ProductsService {
   async createVariants(
     productId: number,
     createVariantsDto: CreateVariantsDto,
+    accountId: number,
   ): Promise<ProductVariant[]> {
+    if (!(await this.productExists(productId, accountId))) return [];
+
     const variantIds = await this.db.transaction(async (tx) => {
       const optionValueGroups: number[][] = [];
 
@@ -432,6 +505,7 @@ export class ProductsService {
           const [location] = await tx
             .select({ id: locationsTable.id })
             .from(locationsTable)
+            .where(eq(locationsTable.accountId, accountId))
             .limit(1);
           defaultLocationId = location.id;
         }

@@ -6,6 +6,7 @@ export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
 export interface AuthenticatedUser {
   sub: number;
   email: string;
+  accountId: number;
 }
 
 // AuthGuard stashes the verified JWT payload on request.user — this just

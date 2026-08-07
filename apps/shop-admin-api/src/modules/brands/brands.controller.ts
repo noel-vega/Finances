@@ -3,6 +3,7 @@ import { BrandsService } from './brands.service';
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
 import { Brand } from './entities/brand.entity';
+import { CurrentUser, type AuthenticatedUser } from '../auth/auth.decorators';
 
 @Controller('brands')
 export class BrandsController {
@@ -11,14 +12,17 @@ export class BrandsController {
   @Post()
   @ApiBearerAuth('JWT-auth')
   @ApiCreatedResponse({ type: Brand })
-  create(@Body() createBrandDto: CreateBrandDto) {
-    return this.brandsService.create(createBrandDto);
+  create(
+    @Body() createBrandDto: CreateBrandDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.brandsService.create(createBrandDto, user.accountId);
   }
 
   @Get()
   @ApiBearerAuth('JWT-auth')
   @ApiOkResponse({ type: [Brand] })
-  findAll() {
-    return this.brandsService.findAll();
+  findAll(@CurrentUser() user: AuthenticatedUser) {
+    return this.brandsService.findAll(user.accountId);
   }
 }

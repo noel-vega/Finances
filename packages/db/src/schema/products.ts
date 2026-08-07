@@ -7,6 +7,7 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { timestampAt } from "../utils.js";
+import { accountsTable } from "./accounts.js";
 import { createInsertSchema, createSelectSchema } from "drizzle-orm/zod";
 import z from "zod";
 
@@ -16,12 +17,19 @@ export const productStatusEnum = pgEnum("product_status", [
   "archived",
 ]);
 
-export const brandsTable = pgTable("brands", {
-  id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  name: varchar({ length: 255 }).notNull().unique(),
-  createdAt: timestampAt("created_at"),
-  updatedAt: timestampAt("updated_at"),
-});
+export const brandsTable = pgTable(
+  "brands",
+  {
+    id: integer().primaryKey().generatedAlwaysAsIdentity(),
+    accountId: integer()
+      .notNull()
+      .references(() => accountsTable.id, { onDelete: "cascade" }),
+    name: varchar({ length: 255 }).notNull(),
+    createdAt: timestampAt("created_at"),
+    updatedAt: timestampAt("updated_at"),
+  },
+  (t) => [unique().on(t.accountId, t.name)],
+);
 
 export const SelectBrandSchema = createSelectSchema(brandsTable)
 export type SelectBrand = z.infer<typeof SelectBrandSchema>
@@ -30,6 +38,9 @@ export type InsertBrand = z.infer<typeof InsertBrandSchema>
 
 export const productsTable = pgTable("products", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  accountId: integer()
+    .notNull()
+    .references(() => accountsTable.id, { onDelete: "cascade" }),
   name: varchar({ length: 255 }).notNull(),
   // slug: varchar({ length: 255 }).notNull().unique(),
   description: varchar({ length: 2000 }),
@@ -110,12 +121,19 @@ export const variantOptionValuesTable = pgTable(
   (t) => [primaryKey({ columns: [t.variantId, t.optionValueId] })],
 );
 
-export const categoriesTable = pgTable("categories", {
-  id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  name: varchar({ length: 255 }).notNull().unique(),
-  createdAt: timestampAt("created_at"),
-  updatedAt: timestampAt("updated_at"),
-});
+export const categoriesTable = pgTable(
+  "categories",
+  {
+    id: integer().primaryKey().generatedAlwaysAsIdentity(),
+    accountId: integer()
+      .notNull()
+      .references(() => accountsTable.id, { onDelete: "cascade" }),
+    name: varchar({ length: 255 }).notNull(),
+    createdAt: timestampAt("created_at"),
+    updatedAt: timestampAt("updated_at"),
+  },
+  (t) => [unique().on(t.accountId, t.name)],
+);
 
 export const SelectCategorySchema = createSelectSchema(categoriesTable)
 export type SelectCategory = z.infer<typeof SelectCategorySchema>

@@ -5,6 +5,9 @@ export class Brand implements SelectBrand {
   @ApiProperty({ type: Number })
   id!: number;
 
+  @ApiProperty({ type: Number })
+  accountId!: number;
+
   @ApiProperty()
   name!: string;
 

@@ -34,9 +34,18 @@ export class AuthService {
       throw new UnauthorizedException();
     }
 
-    const access_token = await this.createAccessToken(user.id, user.email);
+    const access_token = await this.createAccessToken(
+      user.id,
+      user.email,
+      user.accountId,
+    );
 
-    return {userId: user.id, email: user.email, access_token };
+    return {
+      userId: user.id,
+      email: user.email,
+      accountId: user.accountId,
+      access_token,
+    };
   }
 
   async signup(signupDto: SignUpDto) {
@@ -68,9 +77,18 @@ export class AuthService {
         return user;
       });
 
-      const access_token = await this.createAccessToken(user.id, user.email);
+      const access_token = await this.createAccessToken(
+        user.id,
+        user.email,
+        user.accountId,
+      );
 
-      return { userId: user.id, email: user.email, access_token };
+      return {
+        userId: user.id,
+        email: user.email,
+        accountId: user.accountId,
+        access_token,
+      };
     } catch (err) {
       // node-postgres errors carry `.code`, but drizzle-orm wraps them in a
       // DrizzleQueryError, so the pg error ends up at `.cause` instead.
@@ -91,28 +109,37 @@ export class AuthService {
     }
   }
 
-  private async createToken(sub: number, email: string, expiresIn: string) {
-    const payload = { sub, email };
+  private async createToken(
+    sub: number,
+    email: string,
+    accountId: number,
+    expiresIn: string,
+  ) {
+    const payload = { sub, email, accountId };
     const token =  await this.jwtService.signAsync(payload, {
       expiresIn: '7Days'
     });
     return token
   }
 
-  async createAccessToken(sub: number, email: string) {
-    return await this.createToken(sub, email, '8h')
+  async createAccessToken(sub: number, email: string, accountId: number) {
+    return await this.createToken(sub, email, accountId, '8h')
   }
 
 
-  async createRefreshToken(sub: number, email: string) {
-    return await this.createToken(sub, email, '7d')
+  async createRefreshToken(sub: number, email: string, accountId: number) {
+    return await this.createToken(sub, email, accountId, '7d')
   }
 
   async refreshAccessToken(refreshToken: string) {
     try {
       // Returns the decoded payload if valid
       const payload = await this.jwtService.verifyAsync(refreshToken);
-      const token = await this.createAccessToken(payload.sub, payload.email)
+      const token = await this.createAccessToken(
+        payload.sub,
+        payload.email,
+        payload.accountId,
+      )
       return token
     } catch (error) {
       // Throws error if token is expired, tampered, or invalid

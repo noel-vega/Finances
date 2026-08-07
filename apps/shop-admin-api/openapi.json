@@ -1138,6 +1138,9 @@
           "id": {
             "type": "number"
           },
+          "accountId": {
+            "type": "number"
+          },
           "name": {
             "type": "string"
           },
@@ -1174,6 +1177,7 @@
         },
         "required": [
           "id",
+          "accountId",
           "name",
           "description",
           "status",
@@ -1186,6 +1190,9 @@
         "type": "object",
         "properties": {
           "id": {
+            "type": "number"
+          },
+          "accountId": {
             "type": "number"
           },
           "name": {
@@ -1202,6 +1209,7 @@
         },
         "required": [
           "id",
+          "accountId",
           "name",
           "createdAt",
           "updatedAt"
@@ -1211,6 +1219,9 @@
         "type": "object",
         "properties": {
           "id": {
+            "type": "number"
+          },
+          "accountId": {
             "type": "number"
           },
           "name": {
@@ -1254,6 +1265,7 @@
         },
         "required": [
           "id",
+          "accountId",
           "name",
           "description",
           "status",
@@ -1484,6 +1496,9 @@
           "id": {
             "type": "number"
           },
+          "accountId": {
+            "type": "number"
+          },
           "name": {
             "type": "string"
           },
@@ -1498,6 +1513,7 @@
         },
         "required": [
           "id",
+          "accountId",
           "name",
           "createdAt",
           "updatedAt"
@@ -1520,6 +1536,9 @@
           "id": {
             "type": "number"
           },
+          "accountId": {
+            "type": "number"
+          },
           "name": {
             "type": "string"
           },
@@ -1534,6 +1553,7 @@
         },
         "required": [
           "id",
+          "accountId",
           "name",
           "createdAt",
           "updatedAt"
