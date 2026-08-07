@@ -5,13 +5,18 @@ import {
   Param,
   Query,
 } from '@nestjs/common';
-import { ApiNotFoundResponse, ApiOkResponse } from '@nestjs/swagger';
+import {
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiSecurity,
+} from '@nestjs/swagger';
 import { ProductsService } from './products.service';
 import { ListProductsQueryDto } from './dto/list-products-query.dto';
 import { PaginatedProducts } from './entities/paginated-products.entity';
 import { ProductDetail } from './entities/product-detail.entity';
 import { CurrentAccountId } from '../app-key/app-key.decorators';
 
+@ApiSecurity('AppKey-auth')
 @Controller('products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
