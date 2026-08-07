@@ -9,8 +9,9 @@ import { SignUpDto } from './dto/signup.dto';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { DRIZZLE } from 'src/database/database.constants';
-import { accountsTable, usersTable, type db as Db } from 'db';
+import { accountApiKeysTable, accountsTable, usersTable, type db as Db } from 'db';
 import * as bcrypt from 'bcryptjs';
+import { generateApiKey } from '../api-keys/api-keys.util';
 
 const POSTGRES_UNIQUE_VIOLATION = '23505';
 
@@ -45,6 +46,11 @@ export class AuthService {
           .insert(accountsTable)
           .values({ name: signupDto.businessName })
           .returning();
+
+        await tx.insert(accountApiKeysTable).values({
+          accountId: account.id,
+          key: generateApiKey(),
+        });
 
         const hashedPassword = await bcrypt.hash(signupDto.password, 10);
 

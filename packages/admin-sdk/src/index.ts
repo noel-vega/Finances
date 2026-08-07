@@ -6,7 +6,9 @@ import { createBrandsResource } from "./resources/brands.js";
 import { createCategoriesResource } from "./resources/categories.js";
 import { createLocationsResource } from "./resources/locations.js";
 import { createInventoryResource } from "./resources/inventory.js";
+import { createApiKeysResource } from "./resources/api-keys.js";
 
+export type ApiKey = components["schemas"]["ApiKeyDto"];
 export type Product = components["schemas"]["Product"];
 export type ProductDetail = components["schemas"]["ProductDetail"];
 export type ProductVariant = components["schemas"]["ProductVariant"];
@@ -27,6 +29,7 @@ export class AdminClient {
   categories: ReturnType<typeof createCategoriesResource>;
   locations: ReturnType<typeof createLocationsResource>;
   inventory: ReturnType<typeof createInventoryResource>;
+  apiKeys: ReturnType<typeof createApiKeysResource>;
 
   // every request needs the bearer token and the cross-origin cookie
   // (for the refresh_token) — centralized here instead of at each call site.
@@ -50,6 +53,7 @@ export class AdminClient {
     this.categories = createCategoriesResource(this.client, doRequest);
     this.locations = createLocationsResource(this.client, doRequest);
     this.inventory = createInventoryResource(this.client, doRequest);
+    this.apiKeys = createApiKeysResource(this.client, doRequest);
   }
 
   async signIn(credentials: components["schemas"]["SignInDto"]) {

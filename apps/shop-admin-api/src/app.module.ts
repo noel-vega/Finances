@@ -9,6 +9,7 @@ import { BrandsModule } from './modules/brands/brands.module';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { LocationsModule } from './modules/locations/locations.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
+import { ApiKeysModule } from './modules/api-keys/api-keys.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { InventoryModule } from './modules/inventory/inventory.module';
     CategoriesModule,
     LocationsModule,
     InventoryModule,
+    ApiKeysModule,
   ],
   controllers: [AppController],
   providers: [AppService],

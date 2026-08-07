@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
 import {
   BookUserIcon,
+  KeyRoundIcon,
   LibraryIcon,
   MapPinIcon,
   ShelvingUnitIcon,
@@ -68,6 +69,13 @@ const NAV_ITEMS = [
     label: "Staff",
     icon: UsersIcon,
     to: "/app/users",
+    children: undefined,
+  },
+  {
+    key: "developers",
+    label: "Developers",
+    icon: KeyRoundIcon,
+    to: "/app/developers",
     children: undefined,
   },
 ] as const;

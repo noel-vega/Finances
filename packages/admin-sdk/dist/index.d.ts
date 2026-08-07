@@ -5,6 +5,8 @@ import { createBrandsResource } from "./resources/brands.js";
 import { createCategoriesResource } from "./resources/categories.js";
 import { createLocationsResource } from "./resources/locations.js";
 import { createInventoryResource } from "./resources/inventory.js";
+import { createApiKeysResource } from "./resources/api-keys.js";
+export type ApiKey = components["schemas"]["ApiKeyDto"];
 export type Product = components["schemas"]["Product"];
 export type ProductDetail = components["schemas"]["ProductDetail"];
 export type ProductVariant = components["schemas"]["ProductVariant"];
@@ -23,6 +25,7 @@ export declare class AdminClient {
     categories: ReturnType<typeof createCategoriesResource>;
     locations: ReturnType<typeof createLocationsResource>;
     inventory: ReturnType<typeof createInventoryResource>;
+    apiKeys: ReturnType<typeof createApiKeysResource>;
     private authMiddleware;
     constructor(baseUrl: string);
     signIn(credentials: components["schemas"]["SignInDto"]): Promise<string | undefined>;

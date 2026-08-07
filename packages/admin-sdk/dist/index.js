@@ -4,6 +4,7 @@ import { createBrandsResource } from "./resources/brands.js";
 import { createCategoriesResource } from "./resources/categories.js";
 import { createLocationsResource } from "./resources/locations.js";
 import { createInventoryResource } from "./resources/inventory.js";
+import { createApiKeysResource } from "./resources/api-keys.js";
 export class AdminClient {
     accessToken;
     client;
@@ -12,6 +13,7 @@ export class AdminClient {
     categories;
     locations;
     inventory;
+    apiKeys;
     // every request needs the bearer token and the cross-origin cookie
     // (for the refresh_token) — centralized here instead of at each call site.
     // Request.headers is mutable in place, but credentials isn't, so that part
@@ -31,6 +33,7 @@ export class AdminClient {
         this.categories = createCategoriesResource(this.client, doRequest);
         this.locations = createLocationsResource(this.client, doRequest);
         this.inventory = createInventoryResource(this.client, doRequest);
+        this.apiKeys = createApiKeysResource(this.client, doRequest);
     }
     async signIn(credentials) {
         const { data } = await this.client.POST("/auth/signin", {
