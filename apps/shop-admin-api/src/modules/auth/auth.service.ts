@@ -9,7 +9,13 @@ import { SignUpDto } from './dto/signup.dto';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { DRIZZLE } from 'src/database/database.constants';
-import { accountApiKeysTable, accountsTable, usersTable, type db as Db } from 'db';
+import {
+  accountApiKeysTable,
+  accountsTable,
+  locationsTable,
+  usersTable,
+  type db as Db,
+} from 'db';
 import * as bcrypt from 'bcryptjs';
 import { generateApiKey } from '../api-keys/api-keys.util';
 
@@ -59,6 +65,13 @@ export class AuthService {
         await tx.insert(accountApiKeysTable).values({
           accountId: account.id,
           key: generateApiKey(),
+        });
+
+        // products need somewhere to hold stock — every account starts
+        // with a single seeded location, see locationsTable
+        await tx.insert(locationsTable).values({
+          accountId: account.id,
+          name: 'Default',
         });
 
         const hashedPassword = await bcrypt.hash(signupDto.password, 10);
