@@ -4,6 +4,7 @@ import { getListCategoriesQueryOptions } from '../../../../features/categories/c
 import { queryClient } from '../../../../lib/react-query-client'
 
 export const Route = createFileRoute('/app/products/categories/')({
+  staticData: { breadcrumb: 'Categories' },
   beforeLoad: async () => {
     await queryClient.ensureQueryData(getListCategoriesQueryOptions())
   },

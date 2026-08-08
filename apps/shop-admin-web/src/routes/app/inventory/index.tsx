@@ -4,6 +4,7 @@ import { getListInventoryQueryOptions } from '../../../features/inventory/invent
 import { queryClient } from '../../../lib/react-query-client'
 
 export const Route = createFileRoute('/app/inventory/')({
+  staticData: { breadcrumb: 'Inventory' },
   beforeLoad: async () => {
     await queryClient.ensureQueryData(getListInventoryQueryOptions())
   },

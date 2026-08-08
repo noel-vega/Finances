@@ -8,6 +8,9 @@ export const Route = createFileRoute('/app/carts/$id')({
   params: {
     parse: z.object({ id: z.coerce.number() }).parse,
   },
+  staticData: {
+    breadcrumb: (params) => `Cart #${params.id}`,
+  },
   beforeLoad: async ({ params }) => {
     await queryClient.ensureQueryData(getCartQueryOptions(params.id))
   },

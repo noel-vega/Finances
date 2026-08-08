@@ -4,6 +4,7 @@ import { getListCartsQueryOptions } from '../../../features/carts/carts.hooks'
 import { queryClient } from '../../../lib/react-query-client'
 
 export const Route = createFileRoute('/app/carts/')({
+  staticData: { breadcrumb: 'Carts' },
   beforeLoad: async () => {
     await queryClient.ensureQueryData(getListCartsQueryOptions())
   },

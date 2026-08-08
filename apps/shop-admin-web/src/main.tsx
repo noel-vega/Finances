@@ -17,6 +17,10 @@ declare module "@tanstack/react-router" {
   interface Register {
     router: typeof router;
   }
+
+  interface StaticDataRouteOption {
+    breadcrumb?: string | ((params: Record<string, unknown>) => string);
+  }
 }
 
 // Render the app

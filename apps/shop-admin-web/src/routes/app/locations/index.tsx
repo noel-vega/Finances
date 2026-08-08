@@ -4,6 +4,7 @@ import { getListLocationsQueryOptions } from '../../../features/locations/locati
 import { queryClient } from '../../../lib/react-query-client'
 
 export const Route = createFileRoute('/app/locations/')({
+  staticData: { breadcrumb: 'Locations' },
   beforeLoad: async () => {
     await queryClient.ensureQueryData(getListLocationsQueryOptions())
   },

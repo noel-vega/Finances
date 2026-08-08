@@ -4,6 +4,7 @@ import {
 } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/app/products")({
+  staticData: { breadcrumb: "Products" },
   component: RouteComponent,
 });
 

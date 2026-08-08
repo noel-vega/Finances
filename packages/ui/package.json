@@ -35,8 +35,8 @@
     "./dropdown-menu": "./src/components/ui/dropdown-menu.tsx",
     "./collapsible": "./src/components/ui/collapsible.tsx",
     "./item": "./src/components/ui/item.tsx",
-    "./badge": "./src/components/ui/badge.tsx"
-
+    "./badge": "./src/components/ui/badge.tsx",
+    "./breadcrumb": "./src/components/ui/breadcrumb.tsx"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

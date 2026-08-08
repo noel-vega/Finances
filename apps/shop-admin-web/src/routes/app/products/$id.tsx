@@ -11,6 +11,14 @@ export const Route = createFileRoute('/app/products/$id')({
   params: {
     parse: z.object({id: z.coerce.number()}).parse
   },
+  staticData: {
+    breadcrumb: (params) => {
+      const product = queryClient.getQueryData(
+        getProductQueryOptions(params.id as number).queryKey,
+      )
+      return product?.name ?? `Product #${params.id}`
+    },
+  },
   beforeLoad: async ({params}) => {
     const data = await Promise.all([
       queryClient.ensureQueryData(getProductQueryOptions(params.id)),
