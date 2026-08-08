@@ -324,6 +324,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/carts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CartsController_findAll"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/carts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CartsController_findOne"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -512,6 +544,47 @@ export interface components {
             label: string | null;
             /** Format: date-time */
             createdAt: string;
+        };
+        CartListItem: {
+            id: number;
+            token: string;
+            itemCount: number;
+            subtotalCents: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        PaginatedCarts: {
+            items: components["schemas"]["CartListItem"][];
+            total: number;
+            limit: number;
+            offset: number;
+        };
+        CartDetailItemOptionValue: {
+            optionName: string;
+            value: string;
+        };
+        CartDetailItem: {
+            variantId: number;
+            productId: number;
+            productName: string;
+            sku: string | null;
+            priceCents: number;
+            quantity: number;
+            stock: number;
+            optionValues: components["schemas"]["CartDetailItemOptionValue"][];
+        };
+        CartDetail: {
+            id: number;
+            token: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            items: components["schemas"]["CartDetailItem"][];
+            subtotalCents: number;
+            itemCount: number;
         };
     };
     responses: never;
@@ -1192,6 +1265,49 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiKeyDto"][];
+                };
+            };
+        };
+    };
+    CartsController_findAll: {
+        parameters: {
+            query: {
+                limit: number;
+                offset: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedCarts"];
+                };
+            };
+        };
+    };
+    CartsController_findOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CartDetail"];
                 };
             };
         };

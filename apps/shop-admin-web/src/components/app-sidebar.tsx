@@ -6,6 +6,7 @@ import {
   LibraryIcon,
   MapPinIcon,
   ShelvingUnitIcon,
+  ShoppingBasketIcon,
   ShoppingCartIcon,
   UsersIcon,
 } from "lucide-react";
@@ -32,6 +33,13 @@ const NAV_ITEMS = [
     label: "Orders",
     icon: ShoppingCartIcon,
     to: "/app/orders",
+    children: undefined,
+  },
+  {
+    key: "carts",
+    label: "Carts",
+    icon: ShoppingBasketIcon,
+    to: "/app/carts",
     children: undefined,
   },
   {

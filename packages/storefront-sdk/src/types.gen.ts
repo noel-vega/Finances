@@ -52,6 +52,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/cart/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["CartController_addItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/cart": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CartController_getCart"];
+        put?: never;
+        post?: never;
+        delete: operations["CartController_clear"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/cart/items/{variantId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["CartController_removeItem"];
+        options?: never;
+        head?: never;
+        patch: operations["CartController_updateItem"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -115,6 +163,34 @@ export interface components {
             categories: components["schemas"]["ProductDetailCategory"][];
             options: components["schemas"]["ProductDetailOption"][];
             variants: components["schemas"]["ProductDetailVariant"][];
+        };
+        AddCartItemDto: {
+            variantId: number;
+            /** @default 1 */
+            quantity: number;
+        };
+        CartItemOptionValue: {
+            optionName: string;
+            value: string;
+        };
+        CartItem: {
+            variantId: number;
+            productId: number;
+            productName: string;
+            sku: string | null;
+            priceCents: number;
+            quantity: number;
+            stock: number;
+            optionValues: components["schemas"]["CartItemOptionValue"][];
+        };
+        Cart: {
+            token: string;
+            items: components["schemas"]["CartItem"][];
+            subtotalCents: number;
+            itemCount: number;
+        };
+        UpdateCartItemDto: {
+            quantity: number;
         };
     };
     responses: never;
@@ -181,6 +257,137 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProductDetail"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CartController_addItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddCartItemDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Cart"];
+                };
+            };
+        };
+    };
+    CartController_getCart: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Cart"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CartController_clear: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Cart"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CartController_removeItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                variantId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Cart"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CartController_updateItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                variantId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCartItemDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Cart"];
                 };
             };
             404: {

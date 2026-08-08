@@ -8,13 +8,13 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
 
-  // public, read-only, and authenticated by a static x-app-key header
+  // public and authenticated by static headers (x-app-key, x-cart-token)
   // rather than cookies — unlike shop-admin-api there's no session to leak,
   // so any storefront origin can call it
   app.enableCors({
     origin: true,
-    methods: ['GET'],
-    allowedHeaders: ['x-app-key'],
+    methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+    allowedHeaders: ['content-type', 'x-app-key', 'x-cart-token'],
   });
 
   const document = SwaggerModule.createDocument(app, createSwaggerConfig());

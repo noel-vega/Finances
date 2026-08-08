@@ -1,0 +1,69 @@
+import type { Client } from "openapi-fetch";
+import type { components, paths } from "../types.gen.js";
+
+const CART_TOKEN_HEADER = "x-cart-token";
+
+export function createCartResource(
+  client: Client<paths>,
+  getCartToken: () => string | undefined,
+  setCartToken: (token: string) => void,
+) {
+  // x-cart-token isn't a documented OpenAPI header parameter (it's read via
+  // a plain decorator server-side, not @ApiHeader), so it's sent as a raw
+  // fetch header rather than through the typed params.header slot
+  function cartHeaders(): Record<string, string> {
+    const token = getCartToken();
+    return token ? { [CART_TOKEN_HEADER]: token } : {};
+  }
+
+  // addItem may create a cart server-side and hand back a new token — this
+  // captures it so the caller doesn't have to wire that up by hand
+  function captureToken(cart: components["schemas"]["Cart"] | undefined) {
+    if (cart) setCartToken(cart.token);
+    return cart;
+  }
+
+  return {
+    addItem: async (body: components["schemas"]["AddCartItemDto"]) => {
+      const { data } = await client.POST("/cart/items", {
+        body,
+        headers: cartHeaders(),
+      });
+      return captureToken(data);
+    },
+
+    get: async () => {
+      const { data } = await client.GET("/cart", { headers: cartHeaders() });
+      return data;
+    },
+
+    updateItem: async (
+      variantId: number,
+      body: components["schemas"]["UpdateCartItemDto"],
+    ) => {
+      const path: paths["/cart/items/{variantId}"]["patch"]["parameters"]["path"] =
+        { variantId: String(variantId) };
+      const { data } = await client.PATCH("/cart/items/{variantId}", {
+        params: { path },
+        body,
+        headers: cartHeaders(),
+      });
+      return data;
+    },
+
+    removeItem: async (variantId: number) => {
+      const path: paths["/cart/items/{variantId}"]["delete"]["parameters"]["path"] =
+        { variantId: String(variantId) };
+      const { data } = await client.DELETE("/cart/items/{variantId}", {
+        params: { path },
+        headers: cartHeaders(),
+      });
+      return data;
+    },
+
+    clear: async () => {
+      const { data } = await client.DELETE("/cart", { headers: cartHeaders() });
+      return data;
+    },
+  };
+}

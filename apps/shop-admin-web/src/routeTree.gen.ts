@@ -23,10 +23,12 @@ import { Route as AppLocationsIndexRouteImport } from './routes/app/locations/in
 import { Route as AppInventoryIndexRouteImport } from './routes/app/inventory/index'
 import { Route as AppDevelopersIndexRouteImport } from './routes/app/developers/index'
 import { Route as AppCustomersIndexRouteImport } from './routes/app/customers/index'
+import { Route as AppCartsIndexRouteImport } from './routes/app/carts/index'
 import { Route as AppProductsCreateRouteImport } from './routes/app/products/create'
 import { Route as AppProductsIdRouteImport } from './routes/app/products/$id'
 import { Route as AppLocationsCreateRouteImport } from './routes/app/locations/create'
 import { Route as AppInventoryMovementsRouteImport } from './routes/app/inventory/movements'
+import { Route as AppCartsIdRouteImport } from './routes/app/carts/$id'
 import { Route as AppProductsCategoriesIndexRouteImport } from './routes/app/products/categories/index'
 import { Route as AppProductsBrandsIndexRouteImport } from './routes/app/products/brands/index'
 import { Route as AppProductsCategoriesCreateRouteImport } from './routes/app/products/categories/create'
@@ -102,6 +104,11 @@ const AppCustomersIndexRoute = AppCustomersIndexRouteImport.update({
   path: '/customers/',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppCartsIndexRoute = AppCartsIndexRouteImport.update({
+  id: '/carts/',
+  path: '/carts/',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppProductsCreateRoute = AppProductsCreateRouteImport.update({
   id: '/create',
   path: '/create',
@@ -120,6 +127,11 @@ const AppLocationsCreateRoute = AppLocationsCreateRouteImport.update({
 const AppInventoryMovementsRoute = AppInventoryMovementsRouteImport.update({
   id: '/inventory/movements',
   path: '/inventory/movements',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppCartsIdRoute = AppCartsIdRouteImport.update({
+  id: '/carts/$id',
+  path: '/carts/$id',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppProductsCategoriesIndexRoute =
@@ -152,10 +164,12 @@ export interface FileRoutesByFullPath {
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
   '/app/products': typeof AppProductsRouteRouteWithChildren
+  '/app/carts/$id': typeof AppCartsIdRoute
   '/app/inventory/movements': typeof AppInventoryMovementsRoute
   '/app/locations/create': typeof AppLocationsCreateRoute
   '/app/products/$id': typeof AppProductsIdRoute
   '/app/products/create': typeof AppProductsCreateRoute
+  '/app/carts/': typeof AppCartsIndexRoute
   '/app/customers/': typeof AppCustomersIndexRoute
   '/app/developers/': typeof AppDevelopersIndexRoute
   '/app/inventory/': typeof AppInventoryIndexRoute
@@ -175,10 +189,12 @@ export interface FileRoutesByTo {
   '/inventory': typeof InventoryRoute
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
+  '/app/carts/$id': typeof AppCartsIdRoute
   '/app/inventory/movements': typeof AppInventoryMovementsRoute
   '/app/locations/create': typeof AppLocationsCreateRoute
   '/app/products/$id': typeof AppProductsIdRoute
   '/app/products/create': typeof AppProductsCreateRoute
+  '/app/carts': typeof AppCartsIndexRoute
   '/app/customers': typeof AppCustomersIndexRoute
   '/app/developers': typeof AppDevelopersIndexRoute
   '/app/inventory': typeof AppInventoryIndexRoute
@@ -200,10 +216,12 @@ export interface FileRoutesById {
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
   '/app/products': typeof AppProductsRouteRouteWithChildren
+  '/app/carts/$id': typeof AppCartsIdRoute
   '/app/inventory/movements': typeof AppInventoryMovementsRoute
   '/app/locations/create': typeof AppLocationsCreateRoute
   '/app/products/$id': typeof AppProductsIdRoute
   '/app/products/create': typeof AppProductsCreateRoute
+  '/app/carts/': typeof AppCartsIndexRoute
   '/app/customers/': typeof AppCustomersIndexRoute
   '/app/developers/': typeof AppDevelopersIndexRoute
   '/app/inventory/': typeof AppInventoryIndexRoute
@@ -226,10 +244,12 @@ export interface FileRouteTypes {
     | '/signin'
     | '/signup'
     | '/app/products'
+    | '/app/carts/$id'
     | '/app/inventory/movements'
     | '/app/locations/create'
     | '/app/products/$id'
     | '/app/products/create'
+    | '/app/carts/'
     | '/app/customers/'
     | '/app/developers/'
     | '/app/inventory/'
@@ -249,10 +269,12 @@ export interface FileRouteTypes {
     | '/inventory'
     | '/signin'
     | '/signup'
+    | '/app/carts/$id'
     | '/app/inventory/movements'
     | '/app/locations/create'
     | '/app/products/$id'
     | '/app/products/create'
+    | '/app/carts'
     | '/app/customers'
     | '/app/developers'
     | '/app/inventory'
@@ -273,10 +295,12 @@ export interface FileRouteTypes {
     | '/signin'
     | '/signup'
     | '/app/products'
+    | '/app/carts/$id'
     | '/app/inventory/movements'
     | '/app/locations/create'
     | '/app/products/$id'
     | '/app/products/create'
+    | '/app/carts/'
     | '/app/customers/'
     | '/app/developers/'
     | '/app/inventory/'
@@ -399,6 +423,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCustomersIndexRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/carts/': {
+      id: '/app/carts/'
+      path: '/carts'
+      fullPath: '/app/carts/'
+      preLoaderRoute: typeof AppCartsIndexRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/app/products/create': {
       id: '/app/products/create'
       path: '/create'
@@ -425,6 +456,13 @@ declare module '@tanstack/react-router' {
       path: '/inventory/movements'
       fullPath: '/app/inventory/movements'
       preLoaderRoute: typeof AppInventoryMovementsRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/carts/$id': {
+      id: '/app/carts/$id'
+      path: '/carts/$id'
+      fullPath: '/app/carts/$id'
+      preLoaderRoute: typeof AppCartsIdRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/app/products/categories/': {
@@ -483,8 +521,10 @@ const AppProductsRouteRouteWithChildren =
 
 interface AppRouteRouteChildren {
   AppProductsRouteRoute: typeof AppProductsRouteRouteWithChildren
+  AppCartsIdRoute: typeof AppCartsIdRoute
   AppInventoryMovementsRoute: typeof AppInventoryMovementsRoute
   AppLocationsCreateRoute: typeof AppLocationsCreateRoute
+  AppCartsIndexRoute: typeof AppCartsIndexRoute
   AppCustomersIndexRoute: typeof AppCustomersIndexRoute
   AppDevelopersIndexRoute: typeof AppDevelopersIndexRoute
   AppInventoryIndexRoute: typeof AppInventoryIndexRoute
@@ -496,8 +536,10 @@ interface AppRouteRouteChildren {
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppProductsRouteRoute: AppProductsRouteRouteWithChildren,
+  AppCartsIdRoute: AppCartsIdRoute,
   AppInventoryMovementsRoute: AppInventoryMovementsRoute,
   AppLocationsCreateRoute: AppLocationsCreateRoute,
+  AppCartsIndexRoute: AppCartsIndexRoute,
   AppCustomersIndexRoute: AppCustomersIndexRoute,
   AppDevelopersIndexRoute: AppDevelopersIndexRoute,
   AppInventoryIndexRoute: AppInventoryIndexRoute,

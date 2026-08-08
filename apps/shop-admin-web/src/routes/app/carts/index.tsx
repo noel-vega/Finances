@@ -1,0 +1,11 @@
+import { createFileRoute } from '@tanstack/react-router'
+import { ListCartsView } from '../../../features/carts/views/list-carts.view'
+import { getListCartsQueryOptions } from '../../../features/carts/carts.hooks'
+import { queryClient } from '../../../lib/react-query-client'
+
+export const Route = createFileRoute('/app/carts/')({
+  beforeLoad: async () => {
+    await queryClient.ensureQueryData(getListCartsQueryOptions())
+  },
+  component: ListCartsView,
+})

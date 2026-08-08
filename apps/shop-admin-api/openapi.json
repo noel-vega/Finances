@@ -1018,6 +1018,84 @@
           "ApiKeys"
         ]
       }
+    },
+    "/carts": {
+      "get": {
+        "operationId": "CartsController_findAll",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "offset",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedCarts"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "Carts"
+        ]
+      }
+    },
+    "/carts/{id}": {
+      "get": {
+        "operationId": "CartsController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CartDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "Carts"
+        ]
+      }
     }
   },
   "info": {
@@ -1741,6 +1819,163 @@
           "key",
           "label",
           "createdAt"
+        ]
+      },
+      "CartListItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "token": {
+            "type": "string"
+          },
+          "itemCount": {
+            "type": "number"
+          },
+          "subtotalCents": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "token",
+          "itemCount",
+          "subtotalCents",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "PaginatedCarts": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CartListItem"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          },
+          "offset": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ]
+      },
+      "CartDetailItemOptionValue": {
+        "type": "object",
+        "properties": {
+          "optionName": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "optionName",
+          "value"
+        ]
+      },
+      "CartDetailItem": {
+        "type": "object",
+        "properties": {
+          "variantId": {
+            "type": "number"
+          },
+          "productId": {
+            "type": "number"
+          },
+          "productName": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string",
+            "nullable": true
+          },
+          "priceCents": {
+            "type": "number"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "stock": {
+            "type": "number"
+          },
+          "optionValues": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CartDetailItemOptionValue"
+            }
+          }
+        },
+        "required": [
+          "variantId",
+          "productId",
+          "productName",
+          "sku",
+          "priceCents",
+          "quantity",
+          "stock",
+          "optionValues"
+        ]
+      },
+      "CartDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "token": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CartDetailItem"
+            }
+          },
+          "subtotalCents": {
+            "type": "number"
+          },
+          "itemCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "token",
+          "createdAt",
+          "updatedAt",
+          "items",
+          "subtotalCents",
+          "itemCount"
         ]
       }
     }

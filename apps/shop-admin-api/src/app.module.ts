@@ -10,6 +10,7 @@ import { CategoriesModule } from './modules/categories/categories.module';
 import { LocationsModule } from './modules/locations/locations.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { ApiKeysModule } from './modules/api-keys/api-keys.module';
+import { CartsModule } from './modules/carts/carts.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { ApiKeysModule } from './modules/api-keys/api-keys.module';
     LocationsModule,
     InventoryModule,
     ApiKeysModule,
+    CartsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

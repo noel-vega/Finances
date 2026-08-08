@@ -1,6 +1,14 @@
-import { Link, useLoaderData, type LoaderFunctionArgs } from "react-router";
+import {
+  Link,
+  useFetcher,
+  useLoaderData,
+  type ActionFunctionArgs,
+  type LoaderFunctionArgs,
+} from "react-router";
 import { storefrontApi } from "../lib/storefront-api-client";
+import { setStoredCartToken } from "../lib/cart-token";
 import { Badge } from "ui/badge";
+import { Button } from "ui/button";
 import { Separator } from "ui/separator";
 import {
   Table,
@@ -17,6 +25,16 @@ export async function productLoader({ params }: LoaderFunctionArgs) {
     throw new Response("Not Found", { status: 404 });
   }
   return product;
+}
+
+export async function productAction({ request }: ActionFunctionArgs) {
+  const formData = await request.formData();
+  const variantId = Number(formData.get("variantId"));
+
+  await storefrontApi.cart.addItem({ variantId, quantity: 1 });
+  setStoredCartToken(storefrontApi.cartToken);
+
+  return null;
 }
 
 function formatPrice(cents: number) {
@@ -64,6 +82,7 @@ export function ProductPage() {
             <TableHead>SKU</TableHead>
             <TableHead>Price</TableHead>
             <TableHead>Stock</TableHead>
+            <TableHead></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -83,10 +102,36 @@ export function ProductPage() {
                   <span className="text-muted-foreground">Out of stock</span>
                 )}
               </TableCell>
+              <TableCell>
+                <AddToCartButton
+                  variantId={variant.id}
+                  disabled={variant.stock <= 0}
+                />
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
     </div>
+  );
+}
+
+function AddToCartButton({
+  variantId,
+  disabled,
+}: {
+  variantId: number;
+  disabled: boolean;
+}) {
+  const fetcher = useFetcher();
+  const isAdding = fetcher.state !== "idle";
+
+  return (
+    <fetcher.Form method="post">
+      <input type="hidden" name="variantId" value={variantId} />
+      <Button type="submit" size="sm" disabled={disabled || isAdding}>
+        {disabled ? "Out of stock" : isAdding ? "Adding…" : "Add to cart"}
+      </Button>
+    </fetcher.Form>
   );
 }
