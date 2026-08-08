@@ -90,6 +90,12 @@ function DropdownMenuSeparator({
   )
 }
 
+function DropdownMenuGroup({ ...props }: MenuPrimitive.Group.Props) {
+  return <MenuPrimitive.Group data-slot="dropdown-menu-group" {...props} />
+}
+
+// only valid inside a DropdownMenuGroup — base-ui's GroupLabel reads its
+// context from Menu.Group, it isn't a standalone label
 function DropdownMenuLabel({
   className,
   ...props
@@ -110,5 +116,6 @@ export {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuGroup,
   DropdownMenuLabel,
 }

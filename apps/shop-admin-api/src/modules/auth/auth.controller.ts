@@ -35,6 +35,8 @@ export class AuthController {
       result.userId,
       result.email,
       result.accountId,
+      result.firstName,
+      result.lastName,
     );
 
     res.setCookie(REFRESH_TOKEN_COOKIE, refreshToken, {
@@ -62,6 +64,8 @@ export class AuthController {
       result.userId,
       result.email,
       result.accountId,
+      result.firstName,
+      result.lastName,
     );
 
     res.setCookie(REFRESH_TOKEN_COOKIE, refreshToken, {
@@ -72,6 +76,15 @@ export class AuthController {
     });
 
     return { access_token: result.access_token };
+  }
+
+  @Public()
+  @Post('logout')
+  @ApiOkResponse()
+  async logout(@Res({ passthrough: true }) res: FastifyReply): Promise<void> {
+    // refresh_token is httpOnly, so it can only be cleared by the server —
+    // the client can't just delete it itself
+    res.clearCookie(REFRESH_TOKEN_COOKIE, { path: '/' });
   }
 
   @Public()

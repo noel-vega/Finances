@@ -14,3 +14,9 @@ export function useSignUpMutation(){
             adminApi.signUp(signup)
     })
 }
+
+export function useLogoutMutation(){
+    return useMutation({
+        mutationFn: () => adminApi.logout()
+    })
+}

@@ -31,6 +31,7 @@ export declare class AdminClient {
     signIn(credentials: components["schemas"]["SignInDto"]): Promise<string | undefined>;
     signUp(signup: components["schemas"]["SignUpDto"]): Promise<string | undefined>;
     refreshAccessToken(): Promise<string | undefined>;
+    logout(): Promise<void>;
     private do;
 }
 //# sourceMappingURL=index.d.ts.map

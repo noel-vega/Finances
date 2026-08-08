@@ -24,6 +24,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "ui/sidebar";
+import { NavUser } from "./nav-user";
 
 const NAV_ITEMS = [
   {
@@ -87,7 +88,7 @@ export function AppSidebar() {
   const pathname = useLocation({ select: (location) => location.pathname });
 
   return (
-    <Sidebar>
+    <Sidebar variant="inset">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -165,7 +166,9 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter></SidebarFooter>
+      <SidebarFooter>
+        <NavUser />
+      </SidebarFooter>
     </Sidebar>
   );
 }

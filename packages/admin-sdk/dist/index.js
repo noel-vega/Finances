@@ -54,6 +54,12 @@ export class AdminClient {
         this.accessToken = data?.access_token;
         return this.accessToken;
     }
+    // clears the httpOnly refresh_token cookie server-side — the client can't
+    // delete it itself — then drops the in-memory access token
+    async logout() {
+        await this.client.POST("/auth/logout");
+        this.accessToken = undefined;
+    }
     // request is a thunk so the retry rebuilds headers off the refreshed accessToken, not a stale one
     async do(request) {
         const result = await request();

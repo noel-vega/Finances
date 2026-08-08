@@ -44,12 +44,16 @@ export class AuthService {
       user.id,
       user.email,
       user.accountId,
+      user.firstname,
+      user.lastname,
     );
 
     return {
       userId: user.id,
       email: user.email,
       accountId: user.accountId,
+      firstName: user.firstname,
+      lastName: user.lastname,
       access_token,
     };
   }
@@ -94,12 +98,16 @@ export class AuthService {
         user.id,
         user.email,
         user.accountId,
+        user.firstname,
+        user.lastname,
       );
 
       return {
         userId: user.id,
         email: user.email,
         accountId: user.accountId,
+        firstName: user.firstname,
+        lastName: user.lastname,
         access_token,
       };
     } catch (err) {
@@ -126,22 +134,36 @@ export class AuthService {
     sub: number,
     email: string,
     accountId: number,
+    firstName: string,
+    lastName: string,
     expiresIn: string,
   ) {
-    const payload = { sub, email, accountId };
+    const payload = { sub, email, accountId, firstName, lastName };
     const token =  await this.jwtService.signAsync(payload, {
       expiresIn: '7Days'
     });
     return token
   }
 
-  async createAccessToken(sub: number, email: string, accountId: number) {
-    return await this.createToken(sub, email, accountId, '8h')
+  async createAccessToken(
+    sub: number,
+    email: string,
+    accountId: number,
+    firstName: string,
+    lastName: string,
+  ) {
+    return await this.createToken(sub, email, accountId, firstName, lastName, '8h')
   }
 
 
-  async createRefreshToken(sub: number, email: string, accountId: number) {
-    return await this.createToken(sub, email, accountId, '7d')
+  async createRefreshToken(
+    sub: number,
+    email: string,
+    accountId: number,
+    firstName: string,
+    lastName: string,
+  ) {
+    return await this.createToken(sub, email, accountId, firstName, lastName, '7d')
   }
 
   async refreshAccessToken(refreshToken: string) {
@@ -152,6 +174,8 @@ export class AuthService {
         payload.sub,
         payload.email,
         payload.accountId,
+        payload.firstName,
+        payload.lastName,
       )
       return token
     } catch (error) {
