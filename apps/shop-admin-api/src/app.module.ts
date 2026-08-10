@@ -11,6 +11,8 @@ import { LocationsModule } from './modules/locations/locations.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { ApiKeysModule } from './modules/api-keys/api-keys.module';
 import { CartsModule } from './modules/carts/carts.module';
+import { StripeConnectModule } from './modules/stripe-connect/stripe-connect.module';
+import { OrdersModule } from './modules/orders/orders.module';
 
 @Module({
   imports: [
@@ -24,6 +26,8 @@ import { CartsModule } from './modules/carts/carts.module';
     InventoryModule,
     ApiKeysModule,
     CartsModule,
+    StripeConnectModule,
+    OrdersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

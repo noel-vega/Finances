@@ -8,6 +8,8 @@ import { createLocationsResource } from "./resources/locations.js";
 import { createInventoryResource } from "./resources/inventory.js";
 import { createApiKeysResource } from "./resources/api-keys.js";
 import { createCartsResource } from "./resources/carts.js";
+import { createStripeConnectResource } from "./resources/stripe-connect.js";
+import { createOrdersResource } from "./resources/orders.js";
 
 export type ApiKey = components["schemas"]["ApiKeyDto"];
 export type CartListItem = components["schemas"]["CartListItem"];
@@ -23,6 +25,10 @@ export type Category = components["schemas"]["Category"];
 export type Location = components["schemas"]["Location"];
 export type InventoryRecord = components["schemas"]["InventoryRecord"];
 export type InventoryMovementRecord = components["schemas"]["InventoryMovementRecord"];
+export type StripeConnectStatus = components["schemas"]["StripeConnectStatus"];
+export type OrderListItem = components["schemas"]["OrderListItem"];
+export type OrderDetail = components["schemas"]["OrderDetail"];
+export type PaginatedOrders = components["schemas"]["PaginatedOrders"];
 
 export class AdminClient {
   accessToken: string | undefined;
@@ -35,6 +41,8 @@ export class AdminClient {
   inventory: ReturnType<typeof createInventoryResource>;
   apiKeys: ReturnType<typeof createApiKeysResource>;
   carts: ReturnType<typeof createCartsResource>;
+  stripeConnect: ReturnType<typeof createStripeConnectResource>;
+  orders: ReturnType<typeof createOrdersResource>;
 
   // every request needs the bearer token and the cross-origin cookie
   // (for the refresh_token) — centralized here instead of at each call site.
@@ -60,6 +68,8 @@ export class AdminClient {
     this.inventory = createInventoryResource(this.client, doRequest);
     this.apiKeys = createApiKeysResource(this.client, doRequest);
     this.carts = createCartsResource(this.client, doRequest);
+    this.stripeConnect = createStripeConnectResource(this.client, doRequest);
+    this.orders = createOrdersResource(this.client, doRequest);
   }
 
   async signIn(credentials: components["schemas"]["SignInDto"]) {

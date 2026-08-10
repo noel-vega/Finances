@@ -1,0 +1,60 @@
+import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
+import { type ColumnDef, type Row } from "@tanstack/react-table";
+import { format } from "date-fns";
+import type { OrderListItem } from "admin-sdk";
+import { getListOrdersQueryOptions } from "../orders.hooks";
+import { formatCents } from "../orders.utils";
+import { DataTable } from "../../../components/data-table";
+
+const columns: ColumnDef<OrderListItem>[] = [
+  {
+    accessorKey: "id",
+    header: "ID",
+  },
+  {
+    accessorKey: "customerName",
+    header: "Customer",
+    cell: ({ row }) => (
+      <div>
+        <div>{row.original.customerName}</div>
+        <div className="text-xs text-muted-foreground">
+          {row.original.customerEmail}
+        </div>
+      </div>
+    ),
+  },
+  {
+    accessorKey: "itemCount",
+    header: "Items",
+  },
+  {
+    accessorKey: "amountTotalCents",
+    header: "Total",
+    cell: ({ row }) => formatCents(row.original.amountTotalCents),
+  },
+  {
+    accessorKey: "createdAt",
+    header: "Placed At",
+    cell: ({ row }) => format(new Date(row.original.createdAt), "MM/dd/yyyy hh:mm a"),
+  },
+];
+
+export function ListOrdersView() {
+  const orders = useQuery(getListOrdersQueryOptions());
+  const navigate = useNavigate();
+
+  const handleRowClick = (row: Row<OrderListItem>) => {
+    navigate({ to: "/app/orders/$id", params: { id: row.original.id } });
+  };
+
+  return (
+    <div className="space-y-4">
+      <DataTable
+        onRowClick={handleRowClick}
+        data={orders.data?.items ?? []}
+        columns={columns}
+      />
+    </div>
+  );
+}

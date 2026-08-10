@@ -5,7 +5,7 @@ import { AppModule } from './app.module';
 import { createSwaggerConfig } from './swagger.config';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { rawBody: true });
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
 
   // public and authenticated by static headers (x-app-key, x-cart-token)

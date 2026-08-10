@@ -81,6 +81,9 @@ export function CartPage() {
           <p className="text-lg font-medium">
             Subtotal: {formatPrice(cart.subtotalCents)}
           </p>
+          <Link to="/checkout" className="mt-2 inline-block">
+            <Button>Checkout</Button>
+          </Link>
         </div>
       </div>
     </div>

@@ -9,6 +9,7 @@
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "generate:openapi": "ts-node scripts/generate-openapi.ts",
+    "stripe:listen": "stripe listen --events checkout.session.completed --forward-connect-to localhost:3001/checkout/webhook",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
@@ -29,7 +30,8 @@
     "class-validator": "^0.15.1",
     "db": "*",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "stripe": "^22.4.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",

@@ -356,6 +356,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/stripe-connect/account-session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["StripeConnectController_createAccountSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/stripe-connect/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["StripeConnectController_getStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["OrdersController_findAll"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orders/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["OrdersController_findOne"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -585,6 +649,54 @@ export interface components {
             items: components["schemas"]["CartDetailItem"][];
             subtotalCents: number;
             itemCount: number;
+        };
+        AccountSessionResponse: {
+            clientSecret: string;
+        };
+        StripeConnectStatus: {
+            connected: boolean;
+            chargesEnabled: boolean;
+            detailsSubmitted: boolean;
+        };
+        OrderListItem: {
+            id: number;
+            customerName: string;
+            customerEmail: string;
+            itemCount: number;
+            amountTotalCents: number;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        PaginatedOrders: {
+            items: components["schemas"]["OrderListItem"][];
+            total: number;
+            limit: number;
+            offset: number;
+        };
+        OrderDetailItem: {
+            id: number;
+            variantId: number | null;
+            productName: string;
+            sku: string | null;
+            optionsLabel: string | null;
+            priceCents: number;
+            quantity: number;
+        };
+        OrderDetail: {
+            id: number;
+            customerName: string;
+            customerEmail: string;
+            shippingLine1: string;
+            shippingLine2: string | null;
+            shippingCity: string;
+            shippingState: string | null;
+            shippingPostalCode: string;
+            shippingCountry: string;
+            subtotalCents: number;
+            amountTotalCents: number;
+            /** Format: date-time */
+            createdAt: string;
+            items: components["schemas"]["OrderDetailItem"][];
         };
     };
     responses: never;
@@ -1308,6 +1420,89 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CartDetail"];
+                };
+            };
+        };
+    };
+    StripeConnectController_createAccountSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountSessionResponse"];
+                };
+            };
+        };
+    };
+    StripeConnectController_getStatus: {
+        parameters: {
+            query?: {
+                refresh?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StripeConnectStatus"];
+                };
+            };
+        };
+    };
+    OrdersController_findAll: {
+        parameters: {
+            query: {
+                limit: number;
+                offset: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedOrders"];
+                };
+            };
+        };
+    };
+    OrdersController_findOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderDetail"];
                 };
             };
         };

@@ -273,6 +273,103 @@
           "Cart"
         ]
       }
+    },
+    "/checkout/config": {
+      "get": {
+        "operationId": "CheckoutController_getConfig",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckoutConfig"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AppKey-auth": []
+          }
+        ],
+        "tags": [
+          "Checkout"
+        ]
+      }
+    },
+    "/checkout/session": {
+      "post": {
+        "operationId": "CheckoutController_createSession",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCheckoutSessionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckoutSession"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AppKey-auth": []
+          }
+        ],
+        "tags": [
+          "Checkout"
+        ]
+      }
+    },
+    "/checkout/session/{sessionId}": {
+      "get": {
+        "operationId": "CheckoutController_getSessionStatus",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckoutSessionStatus"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AppKey-auth": []
+          }
+        ],
+        "tags": [
+          "Checkout"
+        ]
+      }
     }
   },
   "info": {
@@ -667,6 +764,60 @@
         },
         "required": [
           "quantity"
+        ]
+      },
+      "CheckoutConfig": {
+        "type": "object",
+        "properties": {
+          "ready": {
+            "type": "boolean"
+          },
+          "stripeAccountId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "ready",
+          "stripeAccountId"
+        ]
+      },
+      "CreateCheckoutSessionDto": {
+        "type": "object",
+        "properties": {
+          "returnUrl": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "returnUrl"
+        ]
+      },
+      "CheckoutSession": {
+        "type": "object",
+        "properties": {
+          "clientSecret": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "clientSecret"
+        ]
+      },
+      "CheckoutSessionStatus": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "customerEmail": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "status",
+          "customerEmail"
         ]
       }
     }
