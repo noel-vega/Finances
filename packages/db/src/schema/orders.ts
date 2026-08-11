@@ -2,6 +2,7 @@ import { integer, pgTable, text, varchar } from "drizzle-orm/pg-core";
 import { timestampAt } from "../utils.js";
 import { accountsTable } from "./accounts.js";
 import { productVariantsTable } from "./products.js";
+import { locationsTable } from "./inventory.js";
 import { createInsertSchema, createSelectSchema } from "drizzle-orm/zod";
 import z from "zod";
 
@@ -25,6 +26,21 @@ export const ordersTable = pgTable("orders", {
   // the actual amount charged by Stripe — kept separate from subtotalCents
   // in case shipping/tax collection is ever added on top of the line items
   amountTotalCents: integer().notNull(),
+  // from Stripe's shipping_cost.amount_total at checkout time
+  shippingCents: integer().notNull().default(0),
+  // which location's address was quoted as ship-from at checkout — carried
+  // through via the Checkout Session's metadata into the webhook
+  shippingLocationId: integer().references(() => locationsTable.id, {
+    onDelete: "set null",
+  }),
+  // all null until a label is actually purchased (a separate, manual,
+  // later step — see modules/orders shipping-label endpoint)
+  shippoTransactionId: text(),
+  trackingNumber: text(),
+  trackingUrl: text(),
+  labelUrl: text(),
+  shippingCarrier: text(),
+  shippingServiceLevel: text(),
   // doubles as the webhook's idempotency key
   stripeCheckoutSessionId: text().notNull().unique(),
   stripePaymentIntentId: text(),
@@ -53,6 +69,10 @@ export const orderItemsTable = pgTable("order_items", {
   optionsLabel: text(),
   priceCents: integer().notNull(),
   quantity: integer().notNull(),
+  // snapshotted from the variant at order time, same reasoning as
+  // productName/sku above — needed later to re-quote a shipping label
+  // without depending on the variant still existing
+  weightOz: integer(),
   createdAt: timestampAt("created_at"),
 });
 

@@ -6,6 +6,7 @@ import {
   KeyRoundIcon,
   LibraryIcon,
   MapPinIcon,
+  SettingsIcon,
   ShelvingUnitIcon,
   ShoppingBasketIcon,
   ShoppingCartIcon,
@@ -93,6 +94,13 @@ const NAV_ITEMS = [
     label: "Payments",
     icon: CreditCardIcon,
     to: "/app/payments",
+    children: undefined,
+  },
+  {
+    key: "settings",
+    label: "Settings",
+    icon: SettingsIcon,
+    to: "/app/settings",
     children: undefined,
   },
 ] as const;

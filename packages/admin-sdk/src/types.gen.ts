@@ -276,6 +276,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/locations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["LocationsController_update"];
+        trace?: never;
+    };
     "/inventory": {
         parameters: {
             query?: never;
@@ -420,6 +436,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/orders/{id}/shipping-rates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["OrdersController_getShippingRates"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orders/{id}/shipping-label": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["OrdersController_buyShippingLabel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/account": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AccountController_findOne"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["AccountController_update"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -436,6 +500,7 @@ export interface components {
             firstName: string;
             lastName: string;
             email: string;
+            phone: string;
             password: string;
         };
         UpdateUserDto: Record<string, never>;
@@ -497,6 +562,7 @@ export interface components {
             productId: number;
             priceCents: number;
             sku: string | null;
+            weightOz: number | null;
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
@@ -538,6 +604,7 @@ export interface components {
         UpdateVariantDto: {
             priceCents?: number;
             sku?: string | null;
+            weightOz?: number | null;
         };
         CreateBrandDto: {
             name: string;
@@ -561,10 +628,24 @@ export interface components {
             id: number;
             accountId: number;
             name: string;
+            addressLine1: string | null;
+            addressLine2: string | null;
+            addressCity: string | null;
+            addressState: string | null;
+            addressPostalCode: string | null;
+            addressCountry: string | null;
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
             updatedAt: string;
+        };
+        UpdateLocationDto: {
+            addressLine1?: string | null;
+            addressLine2?: string | null;
+            addressCity?: string | null;
+            addressState?: string | null;
+            addressPostalCode?: string | null;
+            addressCountry?: string | null;
         };
         InventoryRecord: {
             id: number;
@@ -694,9 +775,43 @@ export interface components {
             shippingCountry: string;
             subtotalCents: number;
             amountTotalCents: number;
+            shippingCents: number;
+            shippingLocationId: number | null;
+            shippingCarrier: string | null;
+            shippingServiceLevel: string | null;
+            trackingNumber: string | null;
+            trackingUrl: string | null;
+            labelUrl: string | null;
             /** Format: date-time */
             createdAt: string;
             items: components["schemas"]["OrderDetailItem"][];
+        };
+        ShippingRate: {
+            objectId: string;
+            provider: string;
+            servicelevel: string;
+            amountCents: number;
+            estimatedDays: number | null;
+        };
+        BuyShippingLabelDto: {
+            rateObjectId: string;
+            provider: string;
+            servicelevel: string;
+            amountCents: number;
+        };
+        Account: {
+            id: number;
+            name: string;
+            phone: string;
+            email: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        UpdateAccountDto: {
+            phone?: string;
+            email?: string;
         };
     };
     responses: never;
@@ -1301,6 +1416,31 @@ export interface operations {
             };
         };
     };
+    LocationsController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateLocationDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Location"];
+                };
+            };
+        };
+    };
     InventoryController_findAll: {
         parameters: {
             query?: never;
@@ -1503,6 +1643,94 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OrderDetail"];
+                };
+            };
+        };
+    };
+    OrdersController_getShippingRates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShippingRate"][];
+                };
+            };
+        };
+    };
+    OrdersController_buyShippingLabel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BuyShippingLabelDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderDetail"];
+                };
+            };
+        };
+    };
+    AccountController_findOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Account"];
+                };
+            };
+        };
+    };
+    AccountController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAccountDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Account"];
                 };
             };
         };

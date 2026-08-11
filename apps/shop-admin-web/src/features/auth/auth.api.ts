@@ -16,6 +16,7 @@ export const SignUpRequestBodySchema = z.object({
   firstName: z.string().min(1),
   lastName: z.string().min(1),
   email: z.email(),
+  phone: z.string().min(1),
   password: z.string().min(8),
 });
 

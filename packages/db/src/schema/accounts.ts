@@ -6,6 +6,11 @@ import z from "zod";
 export const accountsTable = pgTable("accounts", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   name: text("name").notNull(),
+  // the shipping contact carriers reach out to about a package — some
+  // carriers (e.g. USPS) reject label purchases without it, so required
+  // up front at signup rather than discovered missing at purchase time
+  phone: text("phone").notNull(),
+  email: text("email").notNull(),
   createdAt: timestampAt("created_at"),
   updatedAt: timestampAt("updated_at"),
 });

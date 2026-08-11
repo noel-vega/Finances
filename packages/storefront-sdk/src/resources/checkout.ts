@@ -34,5 +34,12 @@ export function createCheckoutResource(
       });
       return data;
     },
+
+    getShippingOptions: async (
+      body: components["schemas"]["GetShippingOptionsDto"],
+    ) => {
+      const { data } = await client.POST("/checkout/shipping-options", { body });
+      return data;
+    },
   };
 }

@@ -23,6 +23,9 @@ export class ProductVariant implements SelectProductVariant {
   @ApiProperty({type: "string", nullable: true})
   sku!: string | null;
 
+  @ApiProperty({ type: Number, nullable: true })
+  weightOz!: number | null;
+
   @ApiProperty({ type: Date })
   createdAt!: Date;
 

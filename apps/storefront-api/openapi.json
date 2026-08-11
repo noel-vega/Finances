@@ -336,6 +336,42 @@
         ]
       }
     },
+    "/checkout/shipping-options": {
+      "post": {
+        "operationId": "CheckoutController_getShippingOptions",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetShippingOptionsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShippingOptionsResult"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AppKey-auth": []
+          }
+        ],
+        "tags": [
+          "Checkout"
+        ]
+      }
+    },
     "/checkout/session/{sessionId}": {
       "get": {
         "operationId": "CheckoutController_getSessionStatus",
@@ -802,6 +838,76 @@
         },
         "required": [
           "clientSecret"
+        ]
+      },
+      "ShippingAddressDto": {
+        "type": "object",
+        "properties": {
+          "country": {
+            "type": "string"
+          },
+          "line1": {
+            "type": "string"
+          },
+          "line2": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "postal_code": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "country"
+        ]
+      },
+      "ShippingDetailsDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "address": {
+            "$ref": "#/components/schemas/ShippingAddressDto"
+          }
+        },
+        "required": [
+          "name",
+          "address"
+        ]
+      },
+      "GetShippingOptionsDto": {
+        "type": "object",
+        "properties": {
+          "checkoutSessionId": {
+            "type": "string"
+          },
+          "shippingDetails": {
+            "$ref": "#/components/schemas/ShippingDetailsDto"
+          }
+        },
+        "required": [
+          "checkoutSessionId",
+          "shippingDetails"
+        ]
+      },
+      "ShippingOptionsResult": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "errorMessage": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ok"
         ]
       },
       "CheckoutSessionStatus": {

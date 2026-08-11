@@ -4,7 +4,7 @@ import { type ColumnDef, type Row } from "@tanstack/react-table";
 import { format } from "date-fns";
 import type { OrderListItem } from "admin-sdk";
 import { getListOrdersQueryOptions } from "../orders.hooks";
-import { formatCents } from "../orders.utils";
+import { formatCents } from "../../../lib/currency";
 import { DataTable } from "../../../components/data-table";
 
 const columns: ColumnDef<OrderListItem>[] = [

@@ -15,5 +15,15 @@ export function createLocationsResource(client: Client<paths>, doRequest: DoFn) 
       );
       return data;
     },
+
+    update: async (id: number, params: components["schemas"]["UpdateLocationDto"]) => {
+      const path: paths["/locations/{id}"]["patch"]["parameters"]["path"] = {
+        id: String(id),
+      };
+      const { data } = await doRequest(() =>
+        client.PATCH("/locations/{id}", { params: { path }, body: params }),
+      );
+      return data;
+    },
   };
 }

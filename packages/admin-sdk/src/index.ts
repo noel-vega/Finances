@@ -10,6 +10,7 @@ import { createApiKeysResource } from "./resources/api-keys.js";
 import { createCartsResource } from "./resources/carts.js";
 import { createStripeConnectResource } from "./resources/stripe-connect.js";
 import { createOrdersResource } from "./resources/orders.js";
+import { createAccountResource } from "./resources/account.js";
 
 export type ApiKey = components["schemas"]["ApiKeyDto"];
 export type CartListItem = components["schemas"]["CartListItem"];
@@ -28,7 +29,9 @@ export type InventoryMovementRecord = components["schemas"]["InventoryMovementRe
 export type StripeConnectStatus = components["schemas"]["StripeConnectStatus"];
 export type OrderListItem = components["schemas"]["OrderListItem"];
 export type OrderDetail = components["schemas"]["OrderDetail"];
+export type ShippingRate = components["schemas"]["ShippingRate"];
 export type PaginatedOrders = components["schemas"]["PaginatedOrders"];
+export type Account = components["schemas"]["Account"];
 
 export class AdminClient {
   accessToken: string | undefined;
@@ -43,6 +46,7 @@ export class AdminClient {
   carts: ReturnType<typeof createCartsResource>;
   stripeConnect: ReturnType<typeof createStripeConnectResource>;
   orders: ReturnType<typeof createOrdersResource>;
+  account: ReturnType<typeof createAccountResource>;
 
   // every request needs the bearer token and the cross-origin cookie
   // (for the refresh_token) — centralized here instead of at each call site.
@@ -70,6 +74,7 @@ export class AdminClient {
     this.carts = createCartsResource(this.client, doRequest);
     this.stripeConnect = createStripeConnectResource(this.client, doRequest);
     this.orders = createOrdersResource(this.client, doRequest);
+    this.account = createAccountResource(this.client, doRequest);
   }
 
   async signIn(credentials: components["schemas"]["SignInDto"]) {

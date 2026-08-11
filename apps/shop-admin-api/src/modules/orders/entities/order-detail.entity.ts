@@ -57,6 +57,27 @@ export class OrderDetail {
   @ApiProperty({ type: Number })
   amountTotalCents!: number;
 
+  @ApiProperty({ type: Number })
+  shippingCents!: number;
+
+  @ApiProperty({ type: Number, nullable: true })
+  shippingLocationId!: number | null;
+
+  @ApiProperty({ type: 'string', nullable: true })
+  shippingCarrier!: string | null;
+
+  @ApiProperty({ type: 'string', nullable: true })
+  shippingServiceLevel!: string | null;
+
+  @ApiProperty({ type: 'string', nullable: true })
+  trackingNumber!: string | null;
+
+  @ApiProperty({ type: 'string', nullable: true })
+  trackingUrl!: string | null;
+
+  @ApiProperty({ type: 'string', nullable: true })
+  labelUrl!: string | null;
+
   @ApiProperty()
   createdAt!: Date;
 

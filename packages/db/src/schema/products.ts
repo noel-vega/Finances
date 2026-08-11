@@ -97,6 +97,9 @@ export const productVariantsTable = pgTable("product_variants", {
     .references(() => productsTable.id, { onDelete: "cascade" }),
   sku: varchar({ length: 100 }).unique(),
   priceCents: integer().notNull(),
+  // nullable — used for shipping rate quotes; falls back to a default
+  // weight when unset rather than blocking checkout
+  weightOz: integer("weight_oz"),
   createdAt: timestampAt("created_at"),
   updatedAt: timestampAt("updated_at"),
 });

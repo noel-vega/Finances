@@ -898,6 +898,51 @@
         ]
       }
     },
+    "/locations/{id}": {
+      "patch": {
+        "operationId": "LocationsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLocationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Location"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "Locations"
+        ]
+      }
+    },
     "/inventory": {
       "get": {
         "operationId": "InventoryController_findAll",
@@ -1235,6 +1280,149 @@
           "Orders"
         ]
       }
+    },
+    "/orders/{id}/shipping-rates": {
+      "post": {
+        "operationId": "OrdersController_getShippingRates",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ShippingRate"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "Orders"
+        ]
+      }
+    },
+    "/orders/{id}/shipping-label": {
+      "post": {
+        "operationId": "OrdersController_buyShippingLabel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BuyShippingLabelDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "Orders"
+        ]
+      }
+    },
+    "/account": {
+      "get": {
+        "operationId": "AccountController_findOne",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Account"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "Account"
+        ]
+      },
+      "patch": {
+        "operationId": "AccountController_update",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAccountDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Account"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "Account"
+        ]
+      }
     }
   },
   "info": {
@@ -1295,6 +1483,9 @@
           "email": {
             "type": "string"
           },
+          "phone": {
+            "type": "string"
+          },
           "password": {
             "type": "string"
           }
@@ -1304,6 +1495,7 @@
           "firstName",
           "lastName",
           "email",
+          "phone",
           "password"
         ]
       },
@@ -1537,6 +1729,10 @@
             "type": "string",
             "nullable": true
           },
+          "weightOz": {
+            "type": "number",
+            "nullable": true
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string"
@@ -1560,6 +1756,7 @@
           "productId",
           "priceCents",
           "sku",
+          "weightOz",
           "createdAt",
           "updatedAt",
           "stock",
@@ -1696,6 +1893,10 @@
           "sku": {
             "type": "string",
             "nullable": true
+          },
+          "weightOz": {
+            "type": "number",
+            "nullable": true
           }
         }
       },
@@ -1773,6 +1974,30 @@
           "name": {
             "type": "string"
           },
+          "addressLine1": {
+            "type": "string",
+            "nullable": true
+          },
+          "addressLine2": {
+            "type": "string",
+            "nullable": true
+          },
+          "addressCity": {
+            "type": "string",
+            "nullable": true
+          },
+          "addressState": {
+            "type": "string",
+            "nullable": true
+          },
+          "addressPostalCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "addressCountry": {
+            "type": "string",
+            "nullable": true
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string"
@@ -1786,9 +2011,44 @@
           "id",
           "accountId",
           "name",
+          "addressLine1",
+          "addressLine2",
+          "addressCity",
+          "addressState",
+          "addressPostalCode",
+          "addressCountry",
           "createdAt",
           "updatedAt"
         ]
+      },
+      "UpdateLocationDto": {
+        "type": "object",
+        "properties": {
+          "addressLine1": {
+            "type": "string",
+            "nullable": true
+          },
+          "addressLine2": {
+            "type": "string",
+            "nullable": true
+          },
+          "addressCity": {
+            "type": "string",
+            "nullable": true
+          },
+          "addressState": {
+            "type": "string",
+            "nullable": true
+          },
+          "addressPostalCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "addressCountry": {
+            "type": "string",
+            "nullable": true
+          }
+        }
       },
       "InventoryRecord": {
         "type": "object",
@@ -2281,6 +2541,33 @@
           "amountTotalCents": {
             "type": "number"
           },
+          "shippingCents": {
+            "type": "number"
+          },
+          "shippingLocationId": {
+            "type": "number",
+            "nullable": true
+          },
+          "shippingCarrier": {
+            "type": "string",
+            "nullable": true
+          },
+          "shippingServiceLevel": {
+            "type": "string",
+            "nullable": true
+          },
+          "trackingNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "trackingUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "labelUrl": {
+            "type": "string",
+            "nullable": true
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string"
@@ -2304,9 +2591,111 @@
           "shippingCountry",
           "subtotalCents",
           "amountTotalCents",
+          "shippingCents",
+          "shippingLocationId",
+          "shippingCarrier",
+          "shippingServiceLevel",
+          "trackingNumber",
+          "trackingUrl",
+          "labelUrl",
           "createdAt",
           "items"
         ]
+      },
+      "ShippingRate": {
+        "type": "object",
+        "properties": {
+          "objectId": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "servicelevel": {
+            "type": "string"
+          },
+          "amountCents": {
+            "type": "number"
+          },
+          "estimatedDays": {
+            "type": "number",
+            "nullable": true
+          }
+        },
+        "required": [
+          "objectId",
+          "provider",
+          "servicelevel",
+          "amountCents",
+          "estimatedDays"
+        ]
+      },
+      "BuyShippingLabelDto": {
+        "type": "object",
+        "properties": {
+          "rateObjectId": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "servicelevel": {
+            "type": "string"
+          },
+          "amountCents": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "rateObjectId",
+          "provider",
+          "servicelevel",
+          "amountCents"
+        ]
+      },
+      "Account": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "phone",
+          "email",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "UpdateAccountDto": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        }
       }
     }
   }

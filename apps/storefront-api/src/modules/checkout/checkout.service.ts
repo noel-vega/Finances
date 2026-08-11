@@ -2,13 +2,17 @@ import { BadRequestException, Inject, Injectable, NotFoundException } from '@nes
 import { DRIZZLE } from '../../database/database.constants';
 import {
   and,
+  cartItemsTable,
   cartsTable,
   desc,
   eq,
   inventoryMovementsTable,
   inventoryTable,
+  isNotNull,
+  locationsTable,
   orderItemsTable,
   ordersTable,
+  productVariantsTable,
   sql,
   stripeAccountsTable,
   type db as Db,
@@ -16,10 +20,19 @@ import {
 import { CartService } from '../cart/cart.service';
 import { Cart } from '../cart/entities/cart.entity';
 import { CreateCheckoutSessionDto } from './dto/create-checkout-session.dto';
+import { GetShippingOptionsDto } from './dto/shipping-options.dto';
 import { CheckoutSession } from './entities/checkout-session.entity';
 import { CheckoutConfig } from './entities/checkout-config.entity';
 import { CheckoutSessionStatus } from './entities/checkout-session-status.entity';
+import { ShippingOptionsResult } from './entities/shipping-options-result.entity';
 import { stripe } from './stripe.client';
+import { shippo } from './shippo.client';
+
+// used when a variant has no weight set — a real value, not a hard block
+const DEFAULT_ITEM_WEIGHT_OZ = 16;
+// box dimensions aren't modeled per-product (real bin-packing is out of
+// scope) — every quote uses this fixed default, only weight is real
+const DEFAULT_PARCEL_DIMENSIONS_IN = { length: '12', width: '9', height: '6' };
 
 @Injectable()
 export class CheckoutService {
@@ -79,6 +92,18 @@ export class CheckoutService {
           quantity: item.quantity,
         })),
         shipping_address_collection: { allowed_countries: ['US'] },
+        // required scaffolding for dynamically updating shipping_options
+        // later, from POST /checkout/shipping-options — see getShippingOptions
+        permissions: { update_shipping_details: 'server_only' },
+        shipping_options: [
+          {
+            shipping_rate_data: {
+              type: 'fixed_amount',
+              fixed_amount: { amount: 0, currency: 'usd' },
+              display_name: 'Calculating…',
+            },
+          },
+        ],
         return_url: `${dto.returnUrl}?session_id={CHECKOUT_SESSION_ID}`,
         metadata: { accountId: String(accountId), cartToken: cart.token },
       },
@@ -89,6 +114,143 @@ export class CheckoutService {
       throw new BadRequestException('Failed to create checkout session');
     }
     return { clientSecret: session.client_secret };
+  }
+
+  // called by the storefront's onShippingDetailsChange callback the moment
+  // the customer finishes entering their shipping address — before they
+  // can pay — so real carrier rates can be shown for the rest of checkout
+  async getShippingOptions(
+    accountId: number,
+    dto: GetShippingOptionsDto,
+  ): Promise<ShippingOptionsResult> {
+    const [stripeAccount] = await this.db
+      .select()
+      .from(stripeAccountsTable)
+      .where(eq(stripeAccountsTable.accountId, accountId));
+    if (!stripeAccount) {
+      return { ok: false, errorMessage: "This store isn't ready to accept payments yet" };
+    }
+
+    const session = await stripe.checkout.sessions
+      .retrieve(dto.checkoutSessionId, undefined, {
+        stripeAccount: stripeAccount.stripeAccountId,
+      })
+      .catch(() => null);
+    const cartToken = session?.metadata?.cartToken;
+    if (!session || !cartToken) {
+      return { ok: false, errorMessage: 'Unable to find your cart' };
+    }
+
+    // the account's first location with a complete address — checkout-time
+    // quoting always assumes a single ship-from origin, real multi-location
+    // splitting is handled later at fulfillment time, not here
+    const [location] = await this.db
+      .select()
+      .from(locationsTable)
+      .where(and(eq(locationsTable.accountId, accountId), isNotNull(locationsTable.addressLine1)))
+      .orderBy(locationsTable.id)
+      .limit(1);
+    if (!location) {
+      return { ok: false, errorMessage: "This store hasn't set up a shipping origin yet" };
+    }
+
+    const totalWeightOz = await this.totalCartWeightOz(cartToken, accountId);
+
+    const shipment = await shippo.shipments
+      .create({
+        addressFrom: {
+          name: location.name,
+          street1: location.addressLine1!,
+          street2: location.addressLine2 ?? undefined,
+          city: location.addressCity ?? undefined,
+          state: location.addressState ?? undefined,
+          zip: location.addressPostalCode ?? undefined,
+          country: location.addressCountry ?? 'US',
+        },
+        addressTo: {
+          name: dto.shippingDetails.name,
+          street1: dto.shippingDetails.address.line1,
+          street2: dto.shippingDetails.address.line2,
+          city: dto.shippingDetails.address.city,
+          state: dto.shippingDetails.address.state,
+          zip: dto.shippingDetails.address.postal_code,
+          country: dto.shippingDetails.address.country,
+        },
+        parcels: [
+          {
+            massUnit: 'oz',
+            weight: String(totalWeightOz),
+            distanceUnit: 'in',
+            ...DEFAULT_PARCEL_DIMENSIONS_IN,
+          },
+        ],
+        async: false,
+      })
+      .catch(() => null);
+
+    if (!shipment || shipment.rates.length === 0) {
+      return { ok: false, errorMessage: "We can't calculate shipping to that address" };
+    }
+
+    const cheapestRates = [...shipment.rates]
+      .sort((a, b) => parseFloat(a.amount) - parseFloat(b.amount))
+      .slice(0, 3);
+
+    await stripe.checkout.sessions.update(
+      dto.checkoutSessionId,
+      {
+        collected_information: {
+          shipping_details: {
+            name: dto.shippingDetails.name,
+            address: {
+              line1: dto.shippingDetails.address.line1 ?? '',
+              line2: dto.shippingDetails.address.line2,
+              city: dto.shippingDetails.address.city,
+              state: dto.shippingDetails.address.state,
+              postal_code: dto.shippingDetails.address.postal_code,
+              country: dto.shippingDetails.address.country,
+            },
+          },
+        },
+        shipping_options: cheapestRates.map((rate) => ({
+          shipping_rate_data: {
+            type: 'fixed_amount',
+            fixed_amount: {
+              amount: Math.round(parseFloat(rate.amount) * 100),
+              currency: 'usd',
+            },
+            display_name: `${rate.provider} ${rate.servicelevel.name ?? ''}`.trim(),
+          },
+        })),
+        metadata: { ...session.metadata, shippingLocationId: String(location.id) },
+      },
+      { stripeAccount: stripeAccount.stripeAccountId },
+    );
+
+    return { ok: true };
+  }
+
+  private async totalCartWeightOz(cartToken: string, accountId: number): Promise<number> {
+    // a separate query rather than extending CartService.getCart on purpose
+    // — weight is an internal shipping concern, not part of the public Cart
+    // API surface shown to the customer
+    const rows = await this.db
+      .select({
+        quantity: cartItemsTable.quantity,
+        weightOz: productVariantsTable.weightOz,
+      })
+      .from(cartItemsTable)
+      .innerJoin(cartsTable, eq(cartsTable.id, cartItemsTable.cartId))
+      .innerJoin(
+        productVariantsTable,
+        eq(productVariantsTable.id, cartItemsTable.variantId),
+      )
+      .where(and(eq(cartsTable.token, cartToken), eq(cartsTable.accountId, accountId)));
+
+    return rows.reduce(
+      (sum, row) => sum + (row.weightOz ?? DEFAULT_ITEM_WEIGHT_OZ) * row.quantity,
+      0,
+    );
   }
 
   async getSessionStatus(
@@ -183,6 +345,8 @@ export class CheckoutService {
           shippingCountry: shipping?.address.country ?? '',
           subtotalCents: cart.subtotalCents,
           amountTotalCents: session.amount_total ?? cart.subtotalCents,
+          shippingCents: session.shipping_cost?.amount_total ?? 0,
+          shippingLocationId: Number(session.metadata?.shippingLocationId) || null,
           stripeCheckoutSessionId: session.id,
           stripePaymentIntentId:
             typeof session.payment_intent === 'string' ? session.payment_intent : null,
@@ -190,6 +354,13 @@ export class CheckoutService {
         .returning();
 
       for (const item of cart.items) {
+        // snapshotted so a later label purchase doesn't depend on the
+        // variant still existing, same reasoning as productName/sku above
+        const [variant] = await tx
+          .select({ weightOz: productVariantsTable.weightOz })
+          .from(productVariantsTable)
+          .where(eq(productVariantsTable.id, item.variantId));
+
         await tx.insert(orderItemsTable).values({
           orderId: order.id,
           variantId: item.variantId,
@@ -198,6 +369,7 @@ export class CheckoutService {
           optionsLabel: optionsLabel(item) || null,
           priceCents: item.priceCents,
           quantity: item.quantity,
+          weightOz: variant?.weightOz ?? null,
         });
 
         // greedy across locations, highest stock first — if stock runs out

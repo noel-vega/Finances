@@ -1,5 +1,5 @@
 import type { Client } from "openapi-fetch";
-import type { paths } from "../types.gen.js";
+import type { components, paths } from "../types.gen.js";
 import type { DoFn } from "../http.js";
 
 export function createOrdersResource(client: Client<paths>, doRequest: DoFn) {
@@ -21,6 +21,27 @@ export function createOrdersResource(client: Client<paths>, doRequest: DoFn) {
       };
       const { data } = await doRequest(() =>
         client.GET("/orders/{id}", { params: { path } }),
+      );
+      return data;
+    },
+
+    getShippingRates: async (id: number) => {
+      const path: paths["/orders/{id}/shipping-rates"]["post"]["parameters"]["path"] =
+        { id: String(id) };
+      const { data } = await doRequest(() =>
+        client.POST("/orders/{id}/shipping-rates", { params: { path } }),
+      );
+      return data;
+    },
+
+    buyShippingLabel: async (
+      id: number,
+      params: components["schemas"]["BuyShippingLabelDto"],
+    ) => {
+      const path: paths["/orders/{id}/shipping-label"]["post"]["parameters"]["path"] =
+        { id: String(id) };
+      const { data } = await doRequest(() =>
+        client.POST("/orders/{id}/shipping-label", { params: { path }, body: params }),
       );
       return data;
     },

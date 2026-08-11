@@ -11,6 +11,24 @@ export class Location implements SelectLocation {
   @ApiProperty()
   name!: string;
 
+  @ApiProperty({ type: 'string', nullable: true })
+  addressLine1!: string | null;
+
+  @ApiProperty({ type: 'string', nullable: true })
+  addressLine2!: string | null;
+
+  @ApiProperty({ type: 'string', nullable: true })
+  addressCity!: string | null;
+
+  @ApiProperty({ type: 'string', nullable: true })
+  addressState!: string | null;
+
+  @ApiProperty({ type: 'string', nullable: true })
+  addressPostalCode!: string | null;
+
+  @ApiProperty({ type: 'string', nullable: true })
+  addressCountry!: string | null;
+
   @ApiProperty()
   createdAt!: Date;
 

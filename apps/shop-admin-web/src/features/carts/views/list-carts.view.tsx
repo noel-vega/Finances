@@ -4,7 +4,7 @@ import { type ColumnDef, type Row } from "@tanstack/react-table";
 import { format } from "date-fns";
 import type { CartListItem } from "admin-sdk";
 import { getListCartsQueryOptions } from "../carts.hooks";
-import { formatCents } from "../carts.utils";
+import { formatCents } from "../../../lib/currency";
 import { DataTable } from "../../../components/data-table";
 
 const columns: ColumnDef<CartListItem>[] = [

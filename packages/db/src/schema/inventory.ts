@@ -20,6 +20,14 @@ export const locationsTable = pgTable(
       .notNull()
       .references(() => accountsTable.id, { onDelete: "cascade" }),
     name: varchar({ length: 255 }).notNull(),
+    // nullable — a location can exist (e.g. the seeded "Default") without a
+    // shipping address; only needed once used as a ship-from origin
+    addressLine1: varchar("address_line1", { length: 255 }),
+    addressLine2: varchar("address_line2", { length: 255 }),
+    addressCity: varchar("address_city", { length: 255 }),
+    addressState: varchar("address_state", { length: 255 }),
+    addressPostalCode: varchar("address_postal_code", { length: 20 }),
+    addressCountry: varchar("address_country", { length: 2 }),
     createdAt: timestampAt("created_at"),
     updatedAt: timestampAt("updated_at"),
   },

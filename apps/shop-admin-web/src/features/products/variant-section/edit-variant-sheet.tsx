@@ -15,10 +15,12 @@ import { Input } from "ui/input";
 import { Button } from "ui/button";
 import { LoaderCircleIcon } from "lucide-react";
 import { useUpdateVariantMutation } from "../products.hooks";
+import { centsToDollars, dollarsToCents } from "../../../lib/currency";
 
 const EditVariantFormSchema = z.object({
   sku: z.string().nullable(),
   priceCents: z.number().int().min(0, "Must be at least 0"),
+  weightOz: z.number().int().min(0, "Must be at least 0").nullable(),
 });
 
 type EditVariantForm = z.infer<typeof EditVariantFormSchema>;
@@ -61,6 +63,7 @@ function EditVariantForm(props: {
     defaultValues: {
       sku: props.variant.sku,
       priceCents: props.variant.priceCents,
+      weightOz: props.variant.weightOz,
     },
   });
 
@@ -69,6 +72,7 @@ function EditVariantForm(props: {
       variantId: props.variant.id,
       sku: data.sku?.trim() || null,
       priceCents: data.priceCents,
+      weightOz: data.weightOz,
     });
     props.onDone();
   });
@@ -96,12 +100,43 @@ function EditVariantForm(props: {
           name="priceCents"
           render={({ field, fieldState }) => (
             <Field data-invalid={!!fieldState.error}>
-              <FieldLabel>Price (cents)</FieldLabel>
+              <FieldLabel>Price</FieldLabel>
+              <Input
+                type="number"
+                step="0.01"
+                min={0}
+                value={centsToDollars(field.value)}
+                onChange={(e) =>
+                  field.onChange(dollarsToCents(e.currentTarget.valueAsNumber || 0))
+                }
+              />
+              {fieldState.error && (
+                <p className="text-sm text-destructive">
+                  {fieldState.error.message}
+                </p>
+              )}
+            </Field>
+          )}
+        />
+
+        <Controller
+          control={form.control}
+          name="weightOz"
+          render={({ field, fieldState }) => (
+            <Field data-invalid={!!fieldState.error}>
+              <FieldLabel>Weight (oz)</FieldLabel>
               <Input
                 type="number"
                 min={0}
-                value={field.value}
-                onChange={(e) => field.onChange(e.currentTarget.valueAsNumber)}
+                placeholder="e.g. 16"
+                value={field.value ?? ""}
+                onChange={(e) =>
+                  field.onChange(
+                    e.currentTarget.value === ""
+                      ? null
+                      : e.currentTarget.valueAsNumber,
+                  )
+                }
               />
               {fieldState.error && (
                 <p className="text-sm text-destructive">

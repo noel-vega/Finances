@@ -63,7 +63,11 @@ export class AuthService {
       const user = await this.db.transaction(async (tx) => {
         const [account] = await tx
           .insert(accountsTable)
-          .values({ name: signupDto.businessName })
+          .values({
+            name: signupDto.businessName,
+            phone: signupDto.phone,
+            email: signupDto.email,
+          })
           .returning();
 
         await tx.insert(accountApiKeysTable).values({

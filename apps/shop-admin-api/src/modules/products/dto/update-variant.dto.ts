@@ -12,4 +12,12 @@ export class UpdateVariantDto {
   @IsOptional()
   @IsString()
   sku?: string | null;
+
+  // used for shipping rate quotes — nullable, falls back to a default
+  // weight elsewhere rather than requiring this up front
+  @ApiProperty({ type: Number, nullable: true, required: false })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  weightOz?: number | null;
 }

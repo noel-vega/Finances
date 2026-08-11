@@ -19,6 +19,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useCreateProductMutation } from "../products.hooks";
 import { BrandCombobox } from "../../brands/components/brand-combobox";
 import { CategoryCombobox } from "../../categories/components/category-combobox";
+import { centsToDollars, dollarsToCents } from "../../../lib/currency";
 
 export const CreateProductFormSchema = z.object({
   name: z.string(),
@@ -164,9 +165,11 @@ export function CreateProductView() {
                 <FieldLabel>Price</FieldLabel>
                 <Input
                   type="number"
-                  value={field.value}
+                  step="0.01"
+                  min={0}
+                  value={centsToDollars(field.value)}
                   onChange={(e) =>
-                    field.onChange(e.currentTarget.valueAsNumber)
+                    field.onChange(dollarsToCents(e.currentTarget.valueAsNumber || 0))
                   }
                 />
               </Field>

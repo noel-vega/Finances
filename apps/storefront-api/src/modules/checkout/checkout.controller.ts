@@ -17,9 +17,11 @@ import {
 } from '@nestjs/swagger';
 import { CheckoutService } from './checkout.service';
 import { CreateCheckoutSessionDto } from './dto/create-checkout-session.dto';
+import { GetShippingOptionsDto } from './dto/shipping-options.dto';
 import { CheckoutSession } from './entities/checkout-session.entity';
 import { CheckoutConfig } from './entities/checkout-config.entity';
 import { CheckoutSessionStatus } from './entities/checkout-session-status.entity';
+import { ShippingOptionsResult } from './entities/shipping-options-result.entity';
 import { CurrentAccountId, Public } from '../app-key/app-key.decorators';
 import { CurrentCartToken } from '../cart/cart.decorators';
 
@@ -44,6 +46,16 @@ export class CheckoutController {
     @CurrentAccountId() accountId: number,
   ) {
     return this.checkoutService.createSession(cartToken, accountId, dto);
+  }
+
+  // called by the storefront's onShippingDetailsChange callback
+  @Post('shipping-options')
+  @ApiOkResponse({ type: ShippingOptionsResult })
+  getShippingOptions(
+    @Body() dto: GetShippingOptionsDto,
+    @CurrentAccountId() accountId: number,
+  ) {
+    return this.checkoutService.getShippingOptions(accountId, dto);
   }
 
   // polled by the return page — embedded checkout has no server-confirmed

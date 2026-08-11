@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { loadStripe } from "@stripe/stripe-js";
+import type { StripeEmbeddedCheckoutShippingDetailsChangeEvent } from "@stripe/stripe-js";
 import { EmbeddedCheckout, EmbeddedCheckoutProvider } from "@stripe/react-stripe-js";
 import { Link, useLoaderData } from "react-router";
 import { storefrontApi } from "../lib/storefront-api-client";
@@ -37,6 +38,37 @@ export function CheckoutPage() {
     return session.clientSecret;
   }, []);
 
+  // called once the customer finishes entering their shipping address,
+  // before they can pay — this is what turns the placeholder "Calculating…"
+  // shipping option into real carrier rates
+  const onShippingDetailsChange = useCallback(
+    async (event: StripeEmbeddedCheckoutShippingDetailsChangeEvent) => {
+      const { name, address } = event.shippingDetails;
+      const result = await storefrontApi.checkout.getShippingOptions({
+        checkoutSessionId: event.checkoutSessionId,
+        shippingDetails: {
+          name,
+          address: {
+            country: address.country,
+            line1: address.line1 ?? undefined,
+            line2: address.line2 ?? undefined,
+            city: address.city ?? undefined,
+            postal_code: address.postal_code ?? undefined,
+            state: address.state ?? undefined,
+          },
+        },
+      });
+      if (!result?.ok) {
+        return {
+          type: "reject" as const,
+          errorMessage: result?.errorMessage ?? "We can't calculate shipping to that address",
+        };
+      }
+      return { type: "accept" as const };
+    },
+    [],
+  );
+
   if (!ready || !stripePromise) {
     return (
       <div className="mx-auto max-w-3xl px-6 py-12 text-center">
@@ -70,7 +102,10 @@ export function CheckoutPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-12">
-      <EmbeddedCheckoutProvider stripe={stripePromise} options={{ fetchClientSecret }}>
+      <EmbeddedCheckoutProvider
+        stripe={stripePromise}
+        options={{ fetchClientSecret, onShippingDetailsChange }}
+      >
         <EmbeddedCheckout />
       </EmbeddedCheckoutProvider>
     </div>

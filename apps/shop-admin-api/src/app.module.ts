@@ -13,6 +13,7 @@ import { ApiKeysModule } from './modules/api-keys/api-keys.module';
 import { CartsModule } from './modules/carts/carts.module';
 import { StripeConnectModule } from './modules/stripe-connect/stripe-connect.module';
 import { OrdersModule } from './modules/orders/orders.module';
+import { AccountModule } from './modules/account/account.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { OrdersModule } from './modules/orders/orders.module';
     CartsModule,
     StripeConnectModule,
     OrdersModule,
+    AccountModule,
   ],
   controllers: [AppController],
   providers: [AppService],

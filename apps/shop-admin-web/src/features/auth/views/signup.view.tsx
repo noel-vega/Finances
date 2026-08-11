@@ -26,6 +26,7 @@ export function SignUpView() {
       firstName: "",
       lastName: "",
       email: "",
+      phone: "",
       password: "",
     },
   });
@@ -99,6 +100,17 @@ export function SignUpView() {
               <Field>
                 <FieldLabel>Email</FieldLabel>
                 <Input type="email" placeholder="john.smith@example.com" {...field} />
+              </Field>
+            )}
+          />
+
+          <Controller
+            control={form.control}
+            name="phone"
+            render={({ field }) => (
+              <Field>
+                <FieldLabel>Phone</FieldLabel>
+                <Input type="tel" placeholder="(555) 555-5555" {...field} />
               </Field>
             )}
           />

@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "ui/dropdown-menu";
 import { MoreVerticalIcon, PackageIcon, PencilIcon } from "lucide-react";
-import { formatCents } from "./shared";
+import { formatCents } from "../../../lib/currency";
 
 const LOW_STOCK_THRESHOLD = 0;
 

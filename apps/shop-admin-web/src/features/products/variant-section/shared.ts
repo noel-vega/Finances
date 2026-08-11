@@ -7,15 +7,7 @@ import {
   useUpdateProductOptionMutation,
 } from "../products.hooks";
 import type { ProductOption, ProductVariant } from "admin-sdk";
-
-export const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-});
-
-export function formatCents(cents: number) {
-  return currencyFormatter.format(cents / 100);
-}
+import { formatCents } from "../../../lib/currency";
 
 export function formatPriceRange(variants: ProductVariant[]) {
   if (variants.length === 0) return "—";

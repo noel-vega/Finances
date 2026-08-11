@@ -1,7 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { CreateLocationDto } from './dto/create-location.dto';
+import { UpdateLocationDto } from './dto/update-location.dto';
 import { DRIZZLE } from 'src/database/database.constants';
-import { locationsTable, eq, type db as Db } from 'db';
+import { locationsTable, and, eq, type db as Db } from 'db';
 
 @Injectable()
 export class LocationsService {
@@ -20,5 +21,14 @@ export class LocationsService {
       .select()
       .from(locationsTable)
       .where(eq(locationsTable.accountId, accountId));
+  }
+
+  async update(id: number, updateLocationDto: UpdateLocationDto, accountId: number) {
+    const [location] = await this.db
+      .update(locationsTable)
+      .set({ ...updateLocationDto, updatedAt: new Date() })
+      .where(and(eq(locationsTable.id, id), eq(locationsTable.accountId, accountId)))
+      .returning();
+    return location;
   }
 }

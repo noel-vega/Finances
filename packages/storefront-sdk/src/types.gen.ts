@@ -132,6 +132,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/checkout/shipping-options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["CheckoutController_getShippingOptions"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/checkout/session/{sessionId}": {
         parameters: {
             query?: never;
@@ -249,6 +265,26 @@ export interface components {
         };
         CheckoutSession: {
             clientSecret: string;
+        };
+        ShippingAddressDto: {
+            country: string;
+            line1?: string;
+            line2?: string;
+            city?: string;
+            postal_code?: string;
+            state?: string;
+        };
+        ShippingDetailsDto: {
+            name: string;
+            address: components["schemas"]["ShippingAddressDto"];
+        };
+        GetShippingOptionsDto: {
+            checkoutSessionId: string;
+            shippingDetails: components["schemas"]["ShippingDetailsDto"];
+        };
+        ShippingOptionsResult: {
+            ok: boolean;
+            errorMessage?: string;
         };
         CheckoutSessionStatus: {
             status: string;
@@ -498,6 +534,29 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CheckoutSession"];
+                };
+            };
+        };
+    };
+    CheckoutController_getShippingOptions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetShippingOptionsDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShippingOptionsResult"];
                 };
             };
         };

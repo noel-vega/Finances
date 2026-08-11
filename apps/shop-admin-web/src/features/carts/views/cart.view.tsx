@@ -7,7 +7,7 @@ import { Button } from "ui/button";
 import { Separator } from "ui/separator";
 import { DataTable } from "../../../components/data-table";
 import { useCartQuery } from "../carts.hooks";
-import { formatCents } from "../carts.utils";
+import { formatCents } from "../../../lib/currency";
 
 type CartItem = CartDetail["items"][number];
 

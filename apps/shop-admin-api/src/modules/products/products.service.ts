@@ -170,6 +170,7 @@ export class ProductsService {
         productId: productVariantsTable.productId,
         priceCents: productVariantsTable.priceCents,
         sku: productVariantsTable.sku,
+        weightOz: productVariantsTable.weightOz,
         createdAt: productVariantsTable.createdAt,
         updatedAt: productVariantsTable.updatedAt,
         stock: sql<number>`coalesce(sum(${inventoryTable.stock}), 0)::int`,

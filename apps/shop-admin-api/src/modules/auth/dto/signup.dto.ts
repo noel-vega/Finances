@@ -21,6 +21,13 @@ export class SignUpDto {
   @IsEmail()
   email: string;
 
+  // the account's shipping contact, used as the addressFrom phone when
+  // purchasing carrier labels — required up front by carriers like USPS
+  @ApiProperty()
+  @IsString()
+  @MinLength(1)
+  phone: string;
+
   @ApiProperty()
   @IsString()
   @MinLength(8)
@@ -31,12 +38,14 @@ export class SignUpDto {
     firstName: string,
     lastName: string,
     email: string,
+    phone: string,
     password: string,
   ) {
     this.businessName = businessName;
     this.firstName = firstName;
     this.lastName = lastName;
     this.email = email;
+    this.phone = phone;
     this.password = password;
   }
 }

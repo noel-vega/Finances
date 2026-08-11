@@ -21,3 +21,16 @@ export function useCreateLocationMutation() {
     },
   })
 }
+
+export function useUpdateLocationMutation() {
+  return useMutation({
+    mutationFn: ({
+      id,
+      ...params
+    }: { id: number } & Parameters<typeof adminApi.locations.update>[1]) =>
+      adminApi.locations.update(id, params),
+    onSuccess: () => {
+      queryClient.invalidateQueries(getListLocationsQueryOptions())
+    },
+  })
+}
