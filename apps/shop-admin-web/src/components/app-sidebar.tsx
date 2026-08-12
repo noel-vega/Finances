@@ -30,7 +30,7 @@ import {
 } from "ui/sidebar";
 import { NavUser } from "./nav-user";
 
-const NAV_ITEMS = [
+export const NAV_ITEMS = [
   {
     key: "home",
     label: "Dashboard",
