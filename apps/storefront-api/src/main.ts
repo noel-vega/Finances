@@ -1,20 +1,22 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule } from '@nestjs/swagger';
+import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { createSwaggerConfig } from './swagger.config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { rawBody: true });
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
+  app.use(cookieParser());
 
-  // public and authenticated by static headers (x-app-key, x-cart-token)
-  // rather than cookies — unlike shop-admin-api there's no session to leak,
-  // so any storefront origin can call it
+  // customer signin now sets an httpOnly refresh cookie, so this can no
+  // longer be a wildcard origin like it used to be
   app.enableCors({
-    origin: true,
+    origin: 'http://localhost:3002',
+    credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'DELETE'],
-    allowedHeaders: ['content-type', 'x-app-key', 'x-cart-token'],
+    allowedHeaders: ['content-type', 'x-app-key', 'x-cart-token', 'authorization'],
   });
 
   const document = SwaggerModule.createDocument(app, createSwaggerConfig());

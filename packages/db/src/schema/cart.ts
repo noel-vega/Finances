@@ -2,6 +2,7 @@ import { integer, pgTable, text, unique } from "drizzle-orm/pg-core";
 import { timestampAt } from "../utils.js";
 import { accountsTable } from "./accounts.js";
 import { productVariantsTable } from "./products.js";
+import { customersTable } from "./customers.js";
 import { createInsertSchema, createSelectSchema } from "drizzle-orm/zod";
 import z from "zod";
 
@@ -10,10 +11,15 @@ export const cartsTable = pgTable("carts", {
   accountId: integer()
     .notNull()
     .references(() => accountsTable.id, { onDelete: "cascade" }),
-  // opaque, unauthenticated identifier handed to the client on first add-to-cart
-  // and sent back as x-cart-token — there's no customer login yet, so this is
-  // the only thing identifying "whose cart is this"
+  // opaque identifier handed to the client on first add-to-cart and sent
+  // back as x-cart-token — still how a guest cart is identified even after
+  // a customer signs in and claims it (see customerId below)
   token: text("token").notNull().unique(),
+  // null for a guest cart. Set once, at signin, when the cart matching the
+  // current x-cart-token is claimed by the signed-in customer.
+  customerId: integer().references(() => customersTable.id, {
+    onDelete: "set null",
+  }),
   createdAt: timestampAt("created_at"),
   updatedAt: timestampAt("updated_at"),
 });

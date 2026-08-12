@@ -131,6 +131,22 @@ export class CartService {
     return this.buildCart(cart);
   }
 
+  // attaches the guest cart matching this token (if any) to the customer
+  // who just signed in — last-guest-cart-wins, no merging item quantities
+  // across an older claimed cart and a newer guest one
+  async claimCart(
+    cartToken: string | undefined,
+    customerId: number,
+    accountId: number,
+  ): Promise<void> {
+    if (!cartToken) return;
+
+    await this.db
+      .update(cartsTable)
+      .set({ customerId, updatedAt: new Date() })
+      .where(and(eq(cartsTable.token, cartToken), eq(cartsTable.accountId, accountId)));
+  }
+
   private async findCart(cartToken: string | undefined, accountId: number) {
     if (!cartToken) return undefined;
 

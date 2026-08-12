@@ -14,6 +14,7 @@ import { CartsModule } from './modules/carts/carts.module';
 import { StripeConnectModule } from './modules/stripe-connect/stripe-connect.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { AccountModule } from './modules/account/account.module';
+import { CustomersModule } from './modules/customers/customers.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { AccountModule } from './modules/account/account.module';
     StripeConnectModule,
     OrdersModule,
     AccountModule,
+    CustomersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

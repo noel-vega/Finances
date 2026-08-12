@@ -12,6 +12,7 @@ import { createStripeConnectResource } from "./resources/stripe-connect.js";
 import { createOrdersResource } from "./resources/orders.js";
 import { createAccountResource } from "./resources/account.js";
 import { createUsersResource } from "./resources/users.js";
+import { createCustomersResource } from "./resources/customers.js";
 
 export type ApiKey = components["schemas"]["ApiKeyDto"];
 export type CartListItem = components["schemas"]["CartListItem"];
@@ -35,6 +36,7 @@ export type PaginatedOrders = components["schemas"]["PaginatedOrders"];
 export type Account = components["schemas"]["Account"];
 export type User = components["schemas"]["User"];
 export type CreateUserDto = components["schemas"]["CreateUserDto"];
+export type Customer = components["schemas"]["Customer"];
 export type AcceptInviteDto = components["schemas"]["AcceptInviteDto"];
 
 export class AdminClient {
@@ -52,6 +54,7 @@ export class AdminClient {
   orders: ReturnType<typeof createOrdersResource>;
   account: ReturnType<typeof createAccountResource>;
   users: ReturnType<typeof createUsersResource>;
+  customers: ReturnType<typeof createCustomersResource>;
 
   // every request needs the bearer token and the cross-origin cookie
   // (for the refresh_token) — centralized here instead of at each call site.
@@ -81,6 +84,7 @@ export class AdminClient {
     this.orders = createOrdersResource(this.client, doRequest);
     this.account = createAccountResource(this.client, doRequest);
     this.users = createUsersResource(this.client, doRequest);
+    this.customers = createCustomersResource(this.client, doRequest);
   }
 
   async signIn(credentials: components["schemas"]["SignInDto"]) {

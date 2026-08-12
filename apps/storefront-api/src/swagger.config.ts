@@ -8,5 +8,9 @@ export function createSwaggerConfig() {
       { type: 'apiKey', name: 'x-app-key', in: 'header' },
       'AppKey-auth',
     )
+    .addBearerAuth(
+      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+      'CustomerJWT-auth',
+    )
     .build();
 }

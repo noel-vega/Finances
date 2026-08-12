@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { createMailer } from 'email';
 
+const FROM = process.env.SMTP_FROM ?? 'Harbor <no-reply@harbor.local>';
+
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
@@ -8,7 +10,6 @@ export class EmailService {
   private readonly mailer = createMailer({
     host: process.env.SMTP_HOST ?? 'localhost',
     port: Number(process.env.SMTP_PORT ?? 1025),
-    from: process.env.SMTP_FROM ?? 'Harbor <no-reply@harbor.local>',
   });
 
   // a staff row is already committed by the time this is called — a
@@ -18,6 +19,7 @@ export class EmailService {
     try {
       await this.mailer.sendMail({
         to,
+        from: FROM,
         subject: "You've been invited to join Harbor",
         html: `
           <p>Hi ${params.firstName},</p>
