@@ -4,6 +4,7 @@ import {
   BookUserIcon,
   CreditCardIcon,
   KeyRoundIcon,
+  LayoutDashboardIcon,
   LibraryIcon,
   MapPinIcon,
   SettingsIcon,
@@ -30,6 +31,13 @@ import {
 import { NavUser } from "./nav-user";
 
 const NAV_ITEMS = [
+  {
+    key: "home",
+    label: "Dashboard",
+    icon: LayoutDashboardIcon,
+    to: "/app",
+    children: undefined,
+  },
   {
     key: "orders",
     label: "Orders",

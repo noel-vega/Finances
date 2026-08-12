@@ -3,7 +3,7 @@ import { Customer } from './entities/customer.entity';
 import { DRIZZLE } from 'src/database/database.constants';
 import { customersTable, eq, type db as Db } from 'db';
 
-function toCustomer(row: typeof customersTable.$inferSelect): Customer {
+export function toCustomer(row: typeof customersTable.$inferSelect): Customer {
   return {
     id: row.id,
     accountId: row.accountId,

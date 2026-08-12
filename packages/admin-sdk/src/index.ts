@@ -13,6 +13,7 @@ import { createOrdersResource } from "./resources/orders.js";
 import { createAccountResource } from "./resources/account.js";
 import { createUsersResource } from "./resources/users.js";
 import { createCustomersResource } from "./resources/customers.js";
+import { createDashboardResource } from "./resources/dashboard.js";
 
 export type ApiKey = components["schemas"]["ApiKeyDto"];
 export type CartListItem = components["schemas"]["CartListItem"];
@@ -38,6 +39,7 @@ export type User = components["schemas"]["User"];
 export type CreateUserDto = components["schemas"]["CreateUserDto"];
 export type Customer = components["schemas"]["Customer"];
 export type AcceptInviteDto = components["schemas"]["AcceptInviteDto"];
+export type DashboardSummary = components["schemas"]["DashboardSummary"];
 
 export class AdminClient {
   accessToken: string | undefined;
@@ -55,6 +57,7 @@ export class AdminClient {
   account: ReturnType<typeof createAccountResource>;
   users: ReturnType<typeof createUsersResource>;
   customers: ReturnType<typeof createCustomersResource>;
+  dashboard: ReturnType<typeof createDashboardResource>;
 
   // every request needs the bearer token and the cross-origin cookie
   // (for the refresh_token) — centralized here instead of at each call site.
@@ -85,6 +88,7 @@ export class AdminClient {
     this.account = createAccountResource(this.client, doRequest);
     this.users = createUsersResource(this.client, doRequest);
     this.customers = createCustomersResource(this.client, doRequest);
+    this.dashboard = createDashboardResource(this.client, doRequest);
   }
 
   async signIn(credentials: components["schemas"]["SignInDto"]) {

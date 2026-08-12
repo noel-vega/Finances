@@ -15,7 +15,6 @@ export const Route = createRootRoute({
     switch (location.pathname) {
       case "/signin":
       case "/signup":
-      case "/app":
       case "/":
         if (accessToken) {
           console.log("REDIRECT:", appConfig.homeRoute)
@@ -28,6 +27,9 @@ export const Route = createRootRoute({
         // own invite) — never bounce this route away
         break;
       default:
+        // /app is now homeRoute itself, so it belongs here rather than in
+        // the case above — bouncing an authenticated visit at /app to
+        // homeRoute (also /app) would just redirect to itself forever
         if (!accessToken) {
           console.log("REDIRECT: /signin")
           throw redirect({ to: "/signin" });

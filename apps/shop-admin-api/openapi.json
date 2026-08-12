@@ -1460,6 +1460,32 @@
           "Customers"
         ]
       }
+    },
+    "/dashboard": {
+      "get": {
+        "operationId": "DashboardController_getSummary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardSummary"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "Dashboard"
+        ]
+      }
     }
   },
   "info": {
@@ -2845,6 +2871,39 @@
           "email",
           "createdAt",
           "updatedAt"
+        ]
+      },
+      "DashboardSummary": {
+        "type": "object",
+        "properties": {
+          "orderCount": {
+            "type": "number"
+          },
+          "revenueCents": {
+            "type": "number"
+          },
+          "outOfStockCount": {
+            "type": "number"
+          },
+          "recentOrders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderListItem"
+            }
+          },
+          "recentCustomers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Customer"
+            }
+          }
+        },
+        "required": [
+          "orderCount",
+          "revenueCents",
+          "outOfStockCount",
+          "recentOrders",
+          "recentCustomers"
         ]
       }
     }

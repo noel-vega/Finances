@@ -1,3 +1,3 @@
 export const appConfig = {
-    homeRoute: "/app/products"
+    homeRoute: "/app"
 }
