@@ -27,6 +27,7 @@
     "db": "*",
     "dotenv": "^17.4.2",
     "email": "*",
+    "email-templates": "*",
     "queue": "*",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"

@@ -2,31 +2,18 @@ import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import type { Job } from 'bullmq';
 import { QUEUE_NAMES, type EmailJobData } from 'queue';
+import {
+  renderCustomerThankYouEmail,
+  renderOrderConfirmationEmail,
+  renderStaffInviteEmail,
+} from 'email-templates';
 import { MailerService } from './mailer.service';
 
-const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
-
-function formatCents(cents: number): string {
-  return currencyFormatter.format(cents / 100);
-}
-
-const HTML_ESCAPES: Record<string, string> = {
-  '&': '&amp;',
-  '<': '&lt;',
-  '>': '&gt;',
-  '"': '&quot;',
-  "'": '&#39;',
-};
-
-// every field below comes from the checkout form (or, for accountName, an
-// account's own signup) — none of it is safe to drop into an HTML template
-// unescaped, whether it lands in a text node or an href="..." attribute
-function escapeHtml(value: string): string {
-  return value.replace(/[&<>"']/g, (c) => HTML_ESCAPES[c]!);
-}
-
 // this is the only place email HTML gets built now — moved here verbatim
-// from shop-admin-api's/storefront-api's EmailService
+// from shop-admin-api's/storefront-api's EmailService. The HTML itself is
+// built by the `email-templates` package (React components rendered to a
+// string via react-email) — this file just maps a job's data onto template
+// props and sends the result
 @Processor(QUEUE_NAMES.EMAIL)
 export class EmailProcessor extends WorkerHost {
   private readonly logger = new Logger(EmailProcessor.name);
@@ -46,11 +33,7 @@ export class EmailProcessor extends WorkerHost {
         await this.mailerService.sendMail({
           to: data.to,
           subject: "You've been invited to join Harbor",
-          html: `
-            <p>Hi ${escapeHtml(data.firstName)},</p>
-            <p>You've been added as a user on Harbor. Click below to set your password and get started.</p>
-            <p><a href="${escapeHtml(data.inviteUrl)}">Set your password</a></p>
-          `,
+          html: await renderStaffInviteEmail({ firstName: data.firstName, inviteUrl: data.inviteUrl }),
         });
         return;
 
@@ -61,67 +44,39 @@ export class EmailProcessor extends WorkerHost {
           to: data.to,
           from: { name: data.accountName, address: 'no-reply@harbor.local' },
           subject: `Thanks for signing up, ${data.firstName}!`,
-          html: `
-            <p>Hi ${escapeHtml(data.firstName)},</p>
-            <p>Thanks for creating an account with ${escapeHtml(data.accountName)}. We're glad you're here.</p>
-            <p><a href="${escapeHtml(data.storefrontUrl)}/products">Start shopping</a></p>
-          `,
+          html: await renderCustomerThankYouEmail({
+            firstName: data.firstName,
+            accountName: data.accountName,
+            storefrontUrl: data.storefrontUrl,
+          }),
         });
         return;
 
       // same reasoning as customer-thank-you: sent as the shop the
       // customer bought from, not as "Harbor"
-      case 'order-confirmation': {
-        const itemRows = data.items
-          .map(
-            (item) => `
-            <tr>
-              <td style="padding: 8px 0;">
-                ${escapeHtml(item.productName)}${item.optionsLabel ? ` <span style="color: #666;">(${escapeHtml(item.optionsLabel)})</span>` : ''}
-                <br /><span style="color: #666; font-size: 0.9em;">Qty ${item.quantity}</span>
-              </td>
-              <td style="padding: 8px 0; text-align: right;">${formatCents(item.priceCents * item.quantity)}</td>
-            </tr>`,
-          )
-          .join('');
-
-        const addressLines = [
-          data.shippingLine1,
-          data.shippingLine2,
-          [data.shippingCity, data.shippingState, data.shippingPostalCode].filter(Boolean).join(', '),
-          data.shippingCountry,
-        ]
-          .filter(Boolean)
-          .map((line) => escapeHtml(line!));
-
+      case 'order-confirmation':
         await this.mailerService.sendMail({
           to: data.to,
           from: { name: data.accountName, address: 'no-reply@harbor.local' },
           subject: `Your order from ${data.accountName} is confirmed (#${data.orderId})`,
-          html: `
-            <p>Hi ${escapeHtml(data.customerName)},</p>
-            <p>Thanks for your order from ${escapeHtml(data.accountName)}! Here's a summary of order #${data.orderId}.</p>
-            <table style="width: 100%; border-collapse: collapse;">
-              ${itemRows}
-              <tr>
-                <td style="padding: 8px 0; border-top: 1px solid #ddd;">Subtotal</td>
-                <td style="padding: 8px 0; border-top: 1px solid #ddd; text-align: right;">${formatCents(data.subtotalCents)}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0;">Shipping</td>
-                <td style="padding: 8px 0; text-align: right;">${formatCents(data.shippingCents)}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; font-weight: bold;">Total</td>
-                <td style="padding: 8px 0; text-align: right; font-weight: bold;">${formatCents(data.amountTotalCents)}</td>
-              </tr>
-            </table>
-            <p>Shipping to:<br />${addressLines.join('<br />')}</p>
-            <p><a href="${escapeHtml(data.storefrontUrl)}/products">Continue shopping</a></p>
-          `,
+          html: await renderOrderConfirmationEmail({
+            customerName: data.customerName,
+            accountName: data.accountName,
+            orderId: data.orderId,
+            items: data.items,
+            subtotalCents: data.subtotalCents,
+            shippingCents: data.shippingCents,
+            amountTotalCents: data.amountTotalCents,
+            shippingLine1: data.shippingLine1,
+            shippingLine2: data.shippingLine2,
+            shippingCity: data.shippingCity,
+            shippingState: data.shippingState,
+            shippingPostalCode: data.shippingPostalCode,
+            shippingCountry: data.shippingCountry,
+            storefrontUrl: data.storefrontUrl,
+          }),
         });
         return;
-      }
 
       default: {
         // compile-time exhaustiveness check: adding a new EmailJobData
