@@ -1,35 +1,17 @@
 ---
 const features = [
-	{
-		title: 'Products & Inventory',
-		desc: 'Catalog, categories, and brands, with stock that holds steady across locations.',
-	},
-	{
-		title: 'Orders & Carts',
-		desc: 'Every order and open cart in one hold, ready to fulfill.',
-	},
-	{
-		title: 'Multi-Location',
-		desc: 'One store or a fleet of them — inventory stays true everywhere.',
-	},
-	{
-		title: 'Customers & Staff',
-		desc: 'Customer history kept safe, with access set by role for your crew.',
-	},
-	{
-		title: 'Payments',
-		desc: 'Stripe Connect below deck — payouts, refunds, and fees, handled.',
-	},
-	{
-		title: 'Developer API',
-		desc: 'A real API and webhooks for charting your own course.',
-	},
+	{ n: '01', title: 'Products & inventory', desc: 'Catalog, categories, brands, and stock tracked per location.' },
+	{ n: '02', title: 'Orders & carts', desc: 'Every order and open cart, in one view.' },
+	{ n: '03', title: 'Multi-location', desc: 'One store or a chain — inventory stays correct.' },
+	{ n: '04', title: 'Customers & staff', desc: 'History kept, access controlled by role.' },
+	{ n: '05', title: 'Payments', desc: 'Stripe Connect. Payouts and refunds, handled.' },
+	{ n: '06', title: 'Developer API', desc: 'Documented REST API. Build your own storefront.' },
 ];
 
-const stops = [
-	{ title: 'Cast off', desc: 'Create your free account.' },
-	{ title: 'Load the hold', desc: 'Add products and connect Stripe.' },
-	{ title: 'Open the gate', desc: 'Share your storefront and start selling.' },
+const steps = [
+	{ title: 'Create an account', desc: 'Free. No card required.' },
+	{ title: 'Add products, connect Stripe', desc: 'Your catalog, your payouts.' },
+	{ title: 'Share your storefront', desc: 'Start taking orders.' },
 ];
 
 const year = new Date().getFullYear();
@@ -44,418 +26,332 @@ const year = new Date().getFullYear();
 		<meta name="generator" content={Astro.generator} />
 		<meta
 			name="description"
-			content="Harbor is the back office for retailers — products, orders, inventory, and payouts, docked in one place."
+			content="Harbor — the back office for retailers. Products, orders, inventory, and payouts."
 		/>
-		<title>Harbor — Bring your store into harbor</title>
+		<title>Harbor</title>
 	</head>
 	<body>
-		<div class="h-wrap">
-			<div class="h-top">
-				<span class="h-mark">Harbor</span>
-				<nav class="h-nav">
-					<a href="#h-plaques">What's aboard</a>
-					<a href="#h-route">The route</a>
+		<div class="wrap">
+			<header class="top">
+				<span class="mark">Harbor</span>
+				<nav class="nav">
+					<a href="#index">Index</a>
+					<a href="#route">Process</a>
 				</nav>
-				<a class="h-cta-top" href="#get-started">Sign up free</a>
-			</div>
-			<div class="h-rope"></div>
+				<a class="cta-top" href="#get-started">Sign up</a>
+			</header>
 
-			<div class="h-hero">
-				<p class="h-kicker">A safe harbor for your store</p>
-				<h1 class="h-head">Bring your store into harbor.</h1>
-				<p class="h-sub">
-					Products, orders, inventory, and payouts — everything a retailer needs to run a tight
-					ship, docked in one place.
+			<section class="hero">
+				<p class="eyebrow">The back office for retail — Est. 2026</p>
+				<h1>Run the whole store. From one place.</h1>
+				<p class="lede">
+					Products, orders, inventory, and payouts. No separate tools, no
+					duct-taped integrations — just the systems a retailer actually needs.
 				</p>
-				<div class="h-actions">
-					<a class="h-btn" href="#get-started">Sign up free — no card needed</a>
-					<a class="h-btn-outline" href="#h-plaques">What's aboard</a>
+				<div class="actions">
+					<a class="btn-primary" href="#get-started">Sign up — free</a>
+					<a class="btn-line" href="#index">View the index</a>
 				</div>
-			</div>
+			</section>
 
-			<div class="h-plaques" id="h-plaques">
-				<h2>What's aboard</h2>
-				<p class="h-plaques-sub">
-					Six systems, docked together, so nothing has to be bolted on separately.
-				</p>
-				<div class="h-grid">
+			<hr class="rule" />
+
+			<section class="index" id="index">
+				<h2>Index</h2>
+				<div class="list">
 					{
 						features.map((f) => (
-							<div class="h-plaque">
-								<div class="h-rivets">
-									<i />
-									<i />
-									<i />
-									<i />
-								</div>
+							<div class="row">
+								<span class="row-n">{f.n}</span>
 								<h3>{f.title}</h3>
 								<p>{f.desc}</p>
 							</div>
 						))
 					}
 				</div>
-			</div>
+			</section>
 
-			<div class="h-route" id="h-route">
-				<h2>The route in</h2>
-				<div class="h-route-line">
+			<hr class="rule" />
+
+			<section class="route" id="route">
+				<h2>Process</h2>
+				<div class="route-list">
 					{
-						stops.map((s) => (
-							<div class="h-stop">
-								<span class="h-stop-mark" />
-								<h4>{s.title}</h4>
-								<p>{s.desc}</p>
+						steps.map((s, i) => (
+							<div class="rstep">
+								<span class="rstep-n">{String(i + 1).padStart(2, '0')}</span>
+								<div>
+									<h4>{s.title}</h4>
+									<p>{s.desc}</p>
+								</div>
 							</div>
 						))
 					}
 				</div>
-			</div>
+			</section>
 
-			<div class="h-final" id="get-started">
-				<h2>Your berth is ready.</h2>
-				<p>Free to start, no card required.</p>
-				<a class="h-btn" href="/signup">Sign up free today</a>
-			</div>
+			<section class="final" id="get-started">
+				<h2>Start today.</h2>
+				<p>Free while in beta. No credit card.</p>
+				<a class="btn-primary" href="/signup">Create your account →</a>
+			</section>
 
-			<div class="h-foot">
-				<span>Harbor — a safe harbor for your store</span>
-				<span>&copy; {year} Harbor</span>
-			</div>
+			<footer class="foot">
+				<span>Harbor</span>
+				<span>&copy; {year}</span>
+			</footer>
 		</div>
 	</body>
 </html>
 
 <style>
 	:root {
-		--stone: #edefec;
-		--ink: #0f2e30;
-		--ink-dim: #4c6a6b;
-		--brass: #b4802f;
-		--line: rgba(15, 46, 48, 0.2);
+		--bg: #ffffff;
+		--ink: #0a0a0a;
+		--ink-dim: #6b6b6b;
+		--line: #0a0a0a;
 	}
 	@media (prefers-color-scheme: dark) {
 		:root:not([data-theme='light']) {
-			--stone: #081a22;
-			--ink: #e7e9e3;
-			--ink-dim: #91a6a0;
-			--brass: #d9a34f;
-			--line: rgba(231, 233, 227, 0.2);
+			--bg: #0a0a0a;
+			--ink: #f5f5f5;
+			--ink-dim: #9a9a9a;
+			--line: #f5f5f5;
 		}
 	}
 	:root[data-theme='dark'] {
-		--stone: #081a22;
-		--ink: #e7e9e3;
-		--ink-dim: #91a6a0;
-		--brass: #d9a34f;
-		--line: rgba(231, 233, 227, 0.2);
+		--bg: #0a0a0a;
+		--ink: #f5f5f5;
+		--ink-dim: #9a9a9a;
+		--line: #f5f5f5;
 	}
 
 	:global(html) {
-		background: var(--stone);
+		background: var(--bg);
 	}
 	:global(body) {
 		margin: 0;
-		background: var(--stone);
+		background: var(--bg);
 		color: var(--ink);
-		font-family: Cambria, Georgia, serif;
+		font-family: Georgia, 'Times New Roman', serif;
 	}
 	:global(a) {
 		color: inherit;
 	}
 	:global(:focus-visible) {
-		outline: 2px solid var(--brass);
-		outline-offset: 2px;
+		outline: 2px solid var(--ink);
+		outline-offset: 3px;
 	}
 
-	.h-wrap {
-		max-width: 1080px;
+	.wrap {
+		max-width: 980px;
 		margin: 0 auto;
 		padding: 0 28px;
 	}
-	.h-top {
+
+	.top {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 22px 0;
-	}
-	.h-mark {
-		font-weight: 700;
-		font-size: 1.2rem;
-		letter-spacing: 0.01em;
-	}
-	.h-nav {
-		display: flex;
-		gap: 26px;
-		font-family: 'Trebuchet MS', system-ui, sans-serif;
-		font-size: 0.92rem;
-	}
-	.h-nav a {
-		text-decoration: none;
-	}
-	.h-nav a:hover {
-		color: var(--brass);
-	}
-	.h-cta-top {
-		text-decoration: none;
-		font-family: 'Trebuchet MS', system-ui, sans-serif;
-		font-weight: 700;
-		font-size: 0.88rem;
-		padding: 10px 18px;
-		border: 1px solid var(--brass);
-		color: var(--brass);
-		transition:
-			background 0.15s ease,
-			color 0.15s ease;
-	}
-	.h-cta-top:hover {
-		background: var(--brass);
-		color: var(--stone);
-	}
-
-	.h-rope {
-		height: 1px;
-		background-image: repeating-linear-gradient(
-			90deg,
-			var(--brass) 0 8px,
-			transparent 8px 16px
-		);
-		opacity: 0.6;
-		margin: 0 0 50px;
-	}
-
-	.h-hero {
-		padding: 10px 0 60px;
-		text-align: center;
-	}
-	.h-kicker {
+		padding: 30px 0;
 		font-family: ui-monospace, monospace;
-		font-size: 0.74rem;
-		letter-spacing: 0.16em;
-		text-transform: uppercase;
-		color: var(--brass);
-		margin: 0 0 18px;
 	}
-	.h-head {
-		font-size: clamp(2.4rem, 5vw, 3.6rem);
-		line-height: 1.1;
+	.mark {
 		font-weight: 700;
-		margin: 0 auto 22px;
-		max-width: 16ch;
-		text-wrap: balance;
+		font-size: 1rem;
+		letter-spacing: -0.01em;
 	}
-	.h-sub {
-		font-family: 'Trebuchet MS', system-ui, sans-serif;
-		font-size: 1.1rem;
+	.nav {
+		display: flex;
+		gap: 28px;
+		font-size: 0.82rem;
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+	}
+	.nav a {
+		text-decoration: none;
+	}
+	.nav a:hover {
+		text-decoration: underline;
+	}
+	.cta-top {
+		text-decoration: none;
+		font-size: 0.82rem;
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+		border-bottom: 1px solid var(--line);
+		padding-bottom: 2px;
+	}
+
+	.hero {
+		padding: 40px 0 70px;
+	}
+	.eyebrow {
+		font-family: ui-monospace, monospace;
+		font-size: 0.78rem;
+		text-transform: uppercase;
+		letter-spacing: 0.1em;
+		color: var(--ink-dim);
+		margin: 0 0 26px;
+	}
+	.hero h1 {
+		font-size: clamp(2.6rem, 7vw, 5.2rem);
+		line-height: 1;
+		font-weight: 400;
+		letter-spacing: -0.02em;
+		margin: 0 0 30px;
+		max-width: 15ch;
+	}
+	.lede {
+		font-family: system-ui, sans-serif;
+		font-size: 1.15rem;
 		line-height: 1.6;
 		color: var(--ink-dim);
-		max-width: 50ch;
-		margin: 0 auto 34px;
+		max-width: 48ch;
+		margin: 0 0 36px;
 	}
-	.h-actions {
+	.actions {
 		display: flex;
-		gap: 18px;
-		justify-content: center;
+		gap: 24px;
+		align-items: center;
 		flex-wrap: wrap;
 	}
-	.h-btn {
-		font-family: 'Trebuchet MS', system-ui, sans-serif;
+	.btn-primary {
 		text-decoration: none;
-		font-weight: 700;
-		padding: 14px 28px;
-		background: var(--brass);
-		color: #17150f;
-		border: 1px solid var(--brass);
-		transition:
-			background 0.15s ease,
-			color 0.15s ease;
+		font-family: ui-monospace, monospace;
+		font-size: 0.86rem;
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+		padding: 15px 26px;
+		background: var(--ink);
+		color: var(--bg);
 	}
-	.h-btn:hover {
-		background: transparent;
-		color: var(--brass);
-	}
-	.h-btn-outline {
-		font-family: 'Trebuchet MS', system-ui, sans-serif;
+	.btn-line {
 		text-decoration: none;
-		font-weight: 700;
-		padding: 14px 28px;
-		border: 1px solid var(--line);
-		color: var(--ink);
-		transition:
-			border-color 0.15s ease,
-			color 0.15s ease;
-	}
-	.h-btn-outline:hover {
-		border-color: var(--brass);
-		color: var(--brass);
+		font-family: ui-monospace, monospace;
+		font-size: 0.86rem;
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+		border-bottom: 1px solid var(--line);
+		padding-bottom: 3px;
 	}
 
-	.h-plaques {
-		padding: 20px 0 70px;
-	}
-	.h-plaques h2 {
-		text-align: center;
-		font-size: 1.9rem;
-		font-weight: 700;
-		margin: 0 0 10px;
-	}
-	.h-plaques-sub {
-		text-align: center;
-		font-family: 'Trebuchet MS', system-ui, sans-serif;
-		color: var(--ink-dim);
-		max-width: 50ch;
-		margin: 0 auto 44px;
-	}
-	.h-grid {
-		display: grid;
-		grid-template-columns: repeat(3, 1fr);
-		gap: 22px;
-	}
-	.h-plaque {
-		position: relative;
-		padding: 26px 24px;
-		background: color-mix(in srgb, var(--stone) 92%, var(--ink));
-		border: 1px solid var(--line);
-	}
-	.h-rivets {
-		position: absolute;
-		inset: 6px;
-		pointer-events: none;
-	}
-	.h-rivets i {
-		position: absolute;
-		width: 5px;
-		height: 5px;
-		border-radius: 50%;
-		background: var(--brass);
-		opacity: 0.65;
-	}
-	.h-rivets i:nth-child(1) {
-		top: 0;
-		left: 0;
-	}
-	.h-rivets i:nth-child(2) {
-		top: 0;
-		right: 0;
-	}
-	.h-rivets i:nth-child(3) {
-		bottom: 0;
-		left: 0;
-	}
-	.h-rivets i:nth-child(4) {
-		bottom: 0;
-		right: 0;
-	}
-	.h-plaque h3 {
-		font-family: 'Trebuchet MS', system-ui, sans-serif;
-		font-size: 1.02rem;
-		margin: 0 0 8px;
-	}
-	.h-plaque p {
-		font-family: 'Trebuchet MS', system-ui, sans-serif;
-		font-size: 0.92rem;
-		line-height: 1.55;
-		color: var(--ink-dim);
+	.rule {
+		border: none;
+		border-top: 1px solid var(--line);
 		margin: 0;
 	}
 
-	.h-route {
-		padding: 10px 0 70px;
+	.index {
+		padding: 60px 0;
 	}
-	.h-route h2 {
-		text-align: center;
-		font-size: 1.9rem;
-		font-weight: 700;
-		margin: 0 0 50px;
+	.index h2,
+	.route h2,
+	.final h2 {
+		font-family: ui-monospace, monospace;
+		font-size: 0.82rem;
+		text-transform: uppercase;
+		letter-spacing: 0.1em;
+		font-weight: 400;
+		color: var(--ink-dim);
+		margin: 0 0 40px;
 	}
-	.h-route-line {
-		position: relative;
+	.final h2 {
+		font-size: clamp(2rem, 4vw, 2.8rem);
+		color: var(--ink);
+		letter-spacing: -0.01em;
+		font-family: Georgia, serif;
+	}
+	.list {
 		display: flex;
-		justify-content: space-between;
+		flex-direction: column;
 	}
-	.h-route-line::before {
-		content: '';
-		position: absolute;
-		top: 9px;
-		left: 5%;
-		right: 5%;
-		height: 1px;
-		background-image: repeating-linear-gradient(
-			90deg,
-			var(--brass) 0 8px,
-			transparent 8px 16px
-		);
+	.row {
+		display: grid;
+		grid-template-columns: 60px 260px 1fr;
+		align-items: baseline;
+		gap: 20px;
+		padding: 22px 0;
+		border-top: 1px solid color-mix(in srgb, var(--line) 20%, transparent);
 	}
-	.h-stop {
-		position: relative;
-		width: 30%;
-		text-align: center;
+	.row:last-child {
+		border-bottom: 1px solid color-mix(in srgb, var(--line) 20%, transparent);
 	}
-	.h-stop-mark {
-		display: block;
-		width: 20px;
-		height: 20px;
-		border-radius: 50%;
-		background: var(--brass);
-		margin: 0 auto 18px;
-		border: 3px solid var(--stone);
-		box-shadow: 0 0 0 1px var(--brass);
+	.row-n {
+		font-family: ui-monospace, monospace;
+		font-size: 0.85rem;
+		color: var(--ink-dim);
 	}
-	.h-stop h4 {
-		font-size: 1rem;
-		margin: 0 0 6px;
+	.row h3 {
+		font-size: 1.15rem;
+		font-weight: 400;
+		margin: 0;
 	}
-	.h-stop p {
-		font-family: 'Trebuchet MS', system-ui, sans-serif;
-		font-size: 0.88rem;
+	.row p {
+		font-family: system-ui, sans-serif;
+		font-size: 0.95rem;
 		color: var(--ink-dim);
 		line-height: 1.5;
 		margin: 0;
 	}
 
-	.h-final {
-		margin: 0 0 70px;
-		padding: 54px 40px;
-		text-align: center;
-		border: 1px solid var(--brass);
-		background: color-mix(in srgb, var(--brass) 8%, transparent);
+	.route {
+		padding: 60px 0;
 	}
-	.h-final h2 {
-		font-size: 1.9rem;
-		font-weight: 700;
-		margin: 0 0 14px;
+	.route-list {
+		display: flex;
+		flex-direction: column;
+		gap: 30px;
 	}
-	.h-final p {
-		font-family: 'Trebuchet MS', system-ui, sans-serif;
+	.rstep {
+		display: flex;
+		gap: 26px;
+	}
+	.rstep-n {
+		font-family: ui-monospace, monospace;
+		font-size: 1.3rem;
 		color: var(--ink-dim);
-		margin: 0 0 28px;
+		flex-shrink: 0;
+	}
+	.rstep h4 {
+		font-size: 1.15rem;
+		font-weight: 400;
+		margin: 0 0 6px;
+	}
+	.rstep p {
+		font-family: system-ui, sans-serif;
+		font-size: 0.95rem;
+		color: var(--ink-dim);
+		margin: 0;
 	}
 
-	.h-foot {
+	.final {
+		padding: 90px 0;
+		text-align: center;
+	}
+	.final p {
+		font-family: system-ui, sans-serif;
+		color: var(--ink-dim);
+		margin: 0 0 32px;
+	}
+
+	.foot {
 		display: flex;
 		justify-content: space-between;
-		padding: 24px 0 44px;
+		padding: 26px 0 60px;
 		border-top: 1px solid var(--line);
-		font-family: 'Trebuchet MS', system-ui, sans-serif;
-		font-size: 0.85rem;
+		font-family: ui-monospace, monospace;
+		font-size: 0.8rem;
 		color: var(--ink-dim);
 	}
 
-	@media (max-width: 820px) {
-		.h-nav {
+	@media (max-width: 720px) {
+		.nav {
 			display: none;
 		}
-		.h-grid {
+		.row {
 			grid-template-columns: 1fr;
-		}
-		.h-route-line {
-			flex-direction: column;
-			gap: 30px;
-		}
-		.h-route-line::before {
-			display: none;
-		}
-		.h-stop {
-			width: 100%;
+			gap: 8px;
 		}
 	}
 </style>
