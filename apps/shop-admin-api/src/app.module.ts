@@ -21,7 +21,10 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
 
 @Module({
   imports: [
-    BullModule.forRoot({ connection: createRedisConnection() }),
+    // 5s command timeout — this app only ever enqueues, never blocks
+    // waiting on jobs, so a bounded timeout lets a Redis outage fail fast
+    // instead of hanging the request indefinitely (see createRedisConnection)
+    BullModule.forRoot({ connection: createRedisConnection({ commandTimeout: 5000 }) }),
     DatabaseModule,
     AuthModule,
     UsersModule,

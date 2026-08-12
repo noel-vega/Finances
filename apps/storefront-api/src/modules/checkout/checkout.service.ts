@@ -1,19 +1,17 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import type { Queue } from 'bullmq';
+import { QUEUE_NAMES, type OrderJobData } from 'queue';
 import { DRIZZLE } from '../../database/database.constants';
 import {
   and,
   cartItemsTable,
   cartsTable,
-  desc,
   eq,
-  inventoryMovementsTable,
-  inventoryTable,
   isNotNull,
   locationsTable,
-  orderItemsTable,
   ordersTable,
   productVariantsTable,
-  sql,
   stripeAccountsTable,
   type db as Db,
 } from 'db';
@@ -39,6 +37,7 @@ export class CheckoutService {
   constructor(
     @Inject(DRIZZLE) private readonly db: typeof Db,
     private readonly cartService: CartService,
+    @InjectQueue(QUEUE_NAMES.ORDERS) private readonly ordersQueue: Queue<OrderJobData>,
   ) {}
 
   async getConfig(accountId: number): Promise<CheckoutConfig> {
@@ -309,95 +308,42 @@ export class CheckoutService {
     const shipping = session.collected_information?.shipping_details;
     const customer = session.customer_details;
 
-    await this.db.transaction(async (tx) => {
-      const recordSoldMovement = async (
-        variantId: number,
-        locationId: number,
-        quantity: number,
-      ) => {
-        const delta = -quantity;
-        await tx
-          .insert(inventoryMovementsTable)
-          .values({ variantId, locationId, delta, reason: 'sold' });
-        await tx
-          .insert(inventoryTable)
-          .values({ variantId, locationId, stock: delta })
-          .onConflictDoUpdate({
-            target: [inventoryTable.variantId, inventoryTable.locationId],
-            set: {
-              stock: sql`${inventoryTable.stock} + ${delta}`,
-              updatedAt: new Date(),
-            },
-          });
-      };
-
-      const [order] = await tx
-        .insert(ordersTable)
-        .values({
-          accountId,
-          customerEmail: customer?.email ?? '',
-          customerName: customer?.name ?? shipping?.name ?? '',
-          shippingLine1: shipping?.address.line1 ?? '',
-          shippingLine2: shipping?.address.line2 ?? null,
-          shippingCity: shipping?.address.city ?? '',
-          shippingState: shipping?.address.state ?? null,
-          shippingPostalCode: shipping?.address.postal_code ?? '',
-          shippingCountry: shipping?.address.country ?? '',
-          subtotalCents: cart.subtotalCents,
-          amountTotalCents: session.amount_total ?? cart.subtotalCents,
-          shippingCents: session.shipping_cost?.amount_total ?? 0,
-          shippingLocationId: Number(session.metadata?.shippingLocationId) || null,
-          stripeCheckoutSessionId: session.id,
-          stripePaymentIntentId:
-            typeof session.payment_intent === 'string' ? session.payment_intent : null,
-        })
-        .returning();
-
-      for (const item of cart.items) {
-        // snapshotted so a later label purchase doesn't depend on the
-        // variant still existing, same reasoning as productName/sku above
-        const [variant] = await tx
-          .select({ weightOz: productVariantsTable.weightOz })
-          .from(productVariantsTable)
-          .where(eq(productVariantsTable.id, item.variantId));
-
-        await tx.insert(orderItemsTable).values({
-          orderId: order.id,
-          variantId: item.variantId,
-          productName: item.productName,
-          sku: item.sku,
-          optionsLabel: optionsLabel(item) || null,
-          priceCents: item.priceCents,
-          quantity: item.quantity,
-          weightOz: variant?.weightOz ?? null,
-        });
-
-        // greedy across locations, highest stock first — if stock runs out
-        // entirely the sale is still recorded against the last location and
-        // allowed to go negative; the payment already succeeded and can't
-        // be silently undone
-        const inventoryRows = await tx
-          .select({ locationId: inventoryTable.locationId, stock: inventoryTable.stock })
-          .from(inventoryTable)
-          .where(eq(inventoryTable.variantId, item.variantId))
-          .orderBy(desc(inventoryTable.stock));
-
-        let remaining = item.quantity;
-        for (const row of inventoryRows) {
-          if (remaining <= 0) break;
-          const take = Math.min(Math.max(row.stock, 0), remaining);
-          if (take <= 0) continue;
-          await recordSoldMovement(item.variantId, row.locationId, take);
-          remaining -= take;
-        }
-        if (remaining > 0 && inventoryRows.length > 0) {
-          await recordSoldMovement(item.variantId, inventoryRows[0].locationId, remaining);
-        }
-      }
-
-      await tx
-        .delete(cartsTable)
-        .where(and(eq(cartsTable.token, cartToken), eq(cartsTable.accountId, accountId)));
+    // Order creation (order + order items + inventory decrement + cart
+    // delete) happens in apps/worker, not here — this handler's job is just
+    // to validate the webhook and hand off a fully-resolved payload.
+    //
+    // Unlike EmailService, a failure to enqueue here is deliberately NOT
+    // caught and swallowed: losing a paid order silently would be far worse
+    // than a slow/failed webhook response, so letting this throw returns a
+    // non-2xx to Stripe, which redelivers the webhook — Stripe's own retry
+    // is the safety net if Redis is down, not a log line.
+    await this.ordersQueue.add('checkout-completed', {
+      type: 'checkout-completed',
+      accountId,
+      cartToken,
+      stripeCheckoutSessionId: session.id,
+      stripePaymentIntentId:
+        typeof session.payment_intent === 'string' ? session.payment_intent : null,
+      customerEmail: customer?.email ?? '',
+      customerName: customer?.name ?? shipping?.name ?? '',
+      shippingLine1: shipping?.address.line1 ?? '',
+      shippingLine2: shipping?.address.line2 ?? null,
+      shippingCity: shipping?.address.city ?? '',
+      shippingState: shipping?.address.state ?? null,
+      shippingPostalCode: shipping?.address.postal_code ?? '',
+      shippingCountry: shipping?.address.country ?? '',
+      subtotalCents: cart.subtotalCents,
+      amountTotalCents: session.amount_total ?? cart.subtotalCents,
+      shippingCents: session.shipping_cost?.amount_total ?? 0,
+      shippingLocationId: Number(session.metadata?.shippingLocationId) || null,
+      items: cart.items.map((item) => ({
+        variantId: item.variantId,
+        productName: item.productName,
+        sku: item.sku,
+        optionsLabel: optionsLabel(item) || null,
+        priceCents: item.priceCents,
+        quantity: item.quantity,
+      })),
     });
   }
 }
