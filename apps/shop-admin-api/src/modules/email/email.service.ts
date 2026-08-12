@@ -1,36 +1,23 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { createMailer } from 'email';
+import { InjectQueue } from '@nestjs/bullmq';
+import type { Queue } from 'bullmq';
+import { QUEUE_NAMES, type EmailJobData } from 'queue';
 
-const FROM = process.env.SMTP_FROM ?? 'Harbor <no-reply@harbor.local>';
-
+// this no longer talks to SMTP at all — it enqueues a job for apps/worker
+// to actually send. Send failures are retried by the worker; a failure to
+// even enqueue is caught below so it can't fail the request that triggered
+// it, same guarantee the old inline try/catch-and-log used to provide.
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
 
-  private readonly mailer = createMailer({
-    host: process.env.SMTP_HOST ?? 'localhost',
-    port: Number(process.env.SMTP_PORT ?? 1025),
-  });
+  constructor(@InjectQueue(QUEUE_NAMES.EMAIL) private readonly emailQueue: Queue<EmailJobData>) {}
 
-  // a staff row is already committed by the time this is called — a
-  // delivery failure (e.g. Mailpit not running) shouldn't fail the request
-  // that created it, so this swallows and logs instead of throwing
   async sendInviteEmail(to: string, params: { firstName: string; inviteUrl: string }) {
     try {
-      await this.mailer.sendMail({
-        to,
-        from: FROM,
-        subject: "You've been invited to join Harbor",
-        html: `
-          <p>Hi ${params.firstName},</p>
-          <p>You've been added as a user on Harbor. Click below to set your password and get started.</p>
-          <p><a href="${params.inviteUrl}">Set your password</a></p>
-        `,
-      });
+      await this.emailQueue.add('staff-invite', { type: 'staff-invite', to, ...params });
     } catch (err) {
-      this.logger.warn(
-        `Failed to send invite email to ${to}: ${err instanceof Error ? err.message : err}`,
-      );
+      this.logger.error(`Failed to enqueue invite email for ${to}`, err instanceof Error ? err.stack : err);
     }
   }
 }

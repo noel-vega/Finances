@@ -1,37 +1,29 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { createMailer } from 'email';
+import { InjectQueue } from '@nestjs/bullmq';
+import type { Queue } from 'bullmq';
+import { QUEUE_NAMES, type EmailJobData } from 'queue';
 
+// this no longer talks to SMTP at all — it enqueues a job for apps/worker
+// to actually send. Send failures are retried by the worker; a failure to
+// even enqueue is caught below so it can't fail the request that triggered
+// it, same guarantee the old inline try/catch-and-log used to provide.
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
 
-  private readonly mailer = createMailer({
-    host: process.env.SMTP_HOST ?? 'localhost',
-    port: Number(process.env.SMTP_PORT ?? 1025),
-  });
+  constructor(@InjectQueue(QUEUE_NAMES.EMAIL) private readonly emailQueue: Queue<EmailJobData>) {}
 
-  // the customer's relationship is with the shop they signed up at, not
-  // with the platform — sent as that shop, not as "Harbor". A signup row is
-  // already committed by the time this is called, so a delivery failure
-  // (e.g. Mailpit not running) shouldn't fail the request — swallow + log.
   async sendThankYouEmail(to: string, params: { firstName: string; accountName: string }) {
     const storefrontUrl = process.env.STOREFRONT_WEB_URL ?? 'http://localhost:3002';
-
     try {
-      await this.mailer.sendMail({
+      await this.emailQueue.add('customer-thank-you', {
+        type: 'customer-thank-you',
         to,
-        from: { name: params.accountName, address: 'no-reply@harbor.local' },
-        subject: `Thanks for signing up, ${params.firstName}!`,
-        html: `
-          <p>Hi ${params.firstName},</p>
-          <p>Thanks for creating an account with ${params.accountName}. We're glad you're here.</p>
-          <p><a href="${storefrontUrl}/products">Start shopping</a></p>
-        `,
+        ...params,
+        storefrontUrl,
       });
     } catch (err) {
-      this.logger.warn(
-        `Failed to send thank-you email to ${to}: ${err instanceof Error ? err.message : err}`,
-      );
+      this.logger.error(`Failed to enqueue thank-you email for ${to}`, err instanceof Error ? err.stack : err);
     }
   }
 }
