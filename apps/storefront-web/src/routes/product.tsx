@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Link,
   useFetcher,
@@ -50,6 +51,8 @@ export function ProductPage() {
         ← Back to products
       </Link>
 
+      {product.images.length > 0 && <ProductGallery images={product.images} />}
+
       <div className="mt-4 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-medium">{product.name}</h1>
@@ -78,6 +81,7 @@ export function ProductPage() {
       <Table className="mt-3">
         <TableHeader>
           <TableRow>
+            <TableHead></TableHead>
             <TableHead>Options</TableHead>
             <TableHead>SKU</TableHead>
             <TableHead>Price</TableHead>
@@ -88,6 +92,15 @@ export function ProductPage() {
         <TableBody>
           {product.variants.map((variant) => (
             <TableRow key={variant.id}>
+              <TableCell>
+                {variant.images.length > 0 && (
+                  <img
+                    src={variant.images[0].url}
+                    alt=""
+                    className="size-10 rounded-md object-cover"
+                  />
+                )}
+              </TableCell>
               <TableCell>
                 {variant.optionValues.length > 0
                   ? variant.optionValues
@@ -112,6 +125,38 @@ export function ProductPage() {
           ))}
         </TableBody>
       </Table>
+    </div>
+  );
+}
+
+function ProductGallery({ images }: { images: { id: number; url: string }[] }) {
+  const [activeUrl, setActiveUrl] = useState(images[0].url);
+
+  return (
+    <div className="mt-4">
+      <img
+        src={activeUrl}
+        alt=""
+        className="aspect-square w-full rounded-lg object-cover"
+      />
+      {images.length > 1 && (
+        <div className="mt-2 flex gap-2">
+          {images.map((image) => (
+            <button
+              key={image.id}
+              type="button"
+              onClick={() => setActiveUrl(image.url)}
+            >
+              <img
+                src={image.url}
+                alt=""
+                className="size-16 rounded-md object-cover"
+                style={{ opacity: image.url === activeUrl ? 1 : 0.6 }}
+              />
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

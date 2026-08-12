@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { ProductImage } from './product-image.entity';
 
 class ProductDetailBrand {
   @ApiProperty({ type: Number })
@@ -61,6 +62,11 @@ class ProductDetailVariant {
 
   @ApiProperty({ type: () => [VariantOptionValue] })
   optionValues!: VariantOptionValue[];
+
+  // this variant's own images — empty means no override, fall back to the
+  // product-level gallery below
+  @ApiProperty({ type: () => [ProductImage] })
+  images!: ProductImage[];
 }
 
 export class ProductDetail {
@@ -84,4 +90,8 @@ export class ProductDetail {
 
   @ApiProperty({ type: () => [ProductDetailVariant] })
   variants!: ProductDetailVariant[];
+
+  // product-level images only — the default/base gallery
+  @ApiProperty({ type: () => [ProductImage] })
+  images!: ProductImage[];
 }

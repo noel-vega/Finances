@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  NotFoundException,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -13,6 +14,9 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { CreateVariantsDto } from './dto/create-variant.dto';
 import { UpdateProductOptionDto } from './dto/update-product-option.dto';
 import { UpdateVariantDto } from './dto/update-variant.dto';
+import { GetImageUploadUrlDto } from './dto/get-image-upload-url.dto';
+import { CreateProductImageDto } from './dto/create-product-image.dto';
+import { ReorderProductImagesDto } from './dto/reorder-product-images.dto';
 import {
   ApiBearerAuth,
   ApiCreatedResponse,
@@ -22,6 +26,8 @@ import { Product } from './entities/product.entity';
 import { ProductDetail } from './entities/product-detail.entity';
 import { ProductVariant } from './entities/product-variant.entity';
 import { ProductOption } from './entities/product-option.entity';
+import { ProductImage } from './entities/product-image.entity';
+import { ImageUploadUrl } from './entities/image-upload-url.entity';
 import { CurrentUser, type AuthenticatedUser } from '../auth/auth.decorators';
 
 @Controller('products')
@@ -160,5 +166,57 @@ export class ProductsController {
   @ApiOkResponse({ type: Product })
   remove(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
     return this.productsService.remove(+id, user.accountId);
+  }
+
+  @Post(':id/images/upload-url')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOkResponse({ type: ImageUploadUrl })
+  async getImageUploadUrl(
+    @Param('id') id: string,
+    @Body() dto: GetImageUploadUrlDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    const result = await this.productsService.getImageUploadUrl(+id, user.accountId, dto);
+    if (!result) throw new NotFoundException();
+    return result;
+  }
+
+  @Post(':id/images')
+  @ApiBearerAuth('JWT-auth')
+  @ApiCreatedResponse({ type: ProductImage })
+  async createImage(
+    @Param('id') id: string,
+    @Body() dto: CreateProductImageDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    const image = await this.productsService.createImage(+id, user.accountId, dto);
+    if (!image) throw new NotFoundException();
+    return image;
+  }
+
+  @Patch(':id/images/order')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOkResponse({ type: [ProductImage] })
+  async reorderImages(
+    @Param('id') id: string,
+    @Body() dto: ReorderProductImagesDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    const images = await this.productsService.reorderImages(+id, user.accountId, dto);
+    if (!images) throw new NotFoundException();
+    return images;
+  }
+
+  @Delete(':id/images/:imageId')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOkResponse({ type: ProductImage })
+  async removeImage(
+    @Param('id') id: string,
+    @Param('imageId') imageId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    const image = await this.productsService.removeImage(+id, user.accountId, +imageId);
+    if (!image) throw new NotFoundException();
+    return image;
   }
 }

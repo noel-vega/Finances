@@ -44,6 +44,7 @@ import { BrandCombobox } from "../../brands/components/brand-combobox";
 import { CategoryCombobox } from "../../categories/components/category-combobox";
 import { VariantSection } from "../variant-section";
 import { ProductInventoryTab } from "./product-inventory-tab";
+import { ProductImagesTab } from "./product-images-tab";
 import { Separator } from "ui/separator";
 
 
@@ -115,7 +116,7 @@ export function ProductView({ id }: { id: number }) {
   const { isDirty, isValid } = detailsForm.formState;
 
   return (
-    <div className="max-w-6xl mx-auto w-full">
+    <div>
       <header className="mb-8">
         <div className="flex items-start gap-3">
           <Link to="/app/products">
@@ -184,6 +185,7 @@ export function ProductView({ id }: { id: number }) {
             Variants & Pricing
           </TabsTrigger>
           <TabsTrigger value="inventory" className="px-4">Inventory</TabsTrigger>
+          <TabsTrigger value="images" className="px-4">Images</TabsTrigger>
         </TabsList>
         <Separator className="mt-0" />
 
@@ -282,6 +284,10 @@ export function ProductView({ id }: { id: number }) {
 
         <TabsContent value="inventory" className="pt-6">
           <ProductInventoryTab records={productInventory} />
+        </TabsContent>
+
+        <TabsContent value="images" className="pt-6">
+          <ProductImagesTab productId={id} images={data.images} />
         </TabsContent>
       </Tabs>
     </div>

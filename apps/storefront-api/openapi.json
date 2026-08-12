@@ -687,6 +687,10 @@
           "maxPriceCents": {
             "type": "number",
             "nullable": true
+          },
+          "thumbnailUrl": {
+            "type": "string",
+            "nullable": true
           }
         },
         "required": [
@@ -696,7 +700,8 @@
           "brand",
           "categories",
           "minPriceCents",
-          "maxPriceCents"
+          "maxPriceCents",
+          "thumbnailUrl"
         ]
       },
       "PaginatedProducts": {
@@ -807,6 +812,25 @@
           "value"
         ]
       },
+      "ProductImage": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "url": {
+            "type": "string"
+          },
+          "position": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "url",
+          "position"
+        ]
+      },
       "ProductDetailVariant": {
         "type": "object",
         "properties": {
@@ -828,6 +852,12 @@
             "items": {
               "$ref": "#/components/schemas/VariantOptionValue"
             }
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductImage"
+            }
           }
         },
         "required": [
@@ -835,7 +865,8 @@
           "sku",
           "priceCents",
           "stock",
-          "optionValues"
+          "optionValues",
+          "images"
         ]
       },
       "ProductDetail": {
@@ -877,6 +908,12 @@
             "items": {
               "$ref": "#/components/schemas/ProductDetailVariant"
             }
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductImage"
+            }
           }
         },
         "required": [
@@ -886,7 +923,8 @@
           "brand",
           "categories",
           "options",
-          "variants"
+          "variants",
+          "images"
         ]
       },
       "AddCartItemDto": {

@@ -4,6 +4,9 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { CreateVariantsDto } from './dto/create-variant.dto';
 import { UpdateProductOptionDto } from './dto/update-product-option.dto';
 import { UpdateVariantDto } from './dto/update-variant.dto';
+import { GetImageUploadUrlDto } from './dto/get-image-upload-url.dto';
+import { CreateProductImageDto } from './dto/create-product-image.dto';
+import { ReorderProductImagesDto } from './dto/reorder-product-images.dto';
 import { DRIZZLE } from 'src/database/database.constants';
 import {
   and,
@@ -12,9 +15,11 @@ import {
   eq,
   inArray,
   inventoryTable,
+  isNull,
   locationsTable,
   notInArray,
   productCategoriesTable,
+  productImagesTable,
   productOptionsTable,
   productOptionValuesTable,
   productsTable,
@@ -24,9 +29,22 @@ import {
   type db as Db,
   type SQL,
 } from 'db';
+import { Product } from './entities/product.entity';
 import { ProductVariant } from './entities/product-variant.entity';
 import { ProductOption } from './entities/product-option.entity';
 import { ProductDetail } from './entities/product-detail.entity';
+import { ProductImage } from './entities/product-image.entity';
+import { StorageService } from '../storage/storage.service';
+import { generateToken } from '../../common/generate-token.util';
+
+function toProductImage(row: typeof productImagesTable.$inferSelect): ProductImage {
+  return {
+    id: row.id,
+    url: row.url,
+    position: row.position,
+    variantId: row.variantId,
+  };
+}
 
 // every combination of one value per option, e.g. [[1,2],[3,4]] -> [[1,3],[1,4],[2,3],[2,4]]
 function cartesianProduct<T>(groups: T[][]): T[][] {
@@ -38,7 +56,10 @@ function cartesianProduct<T>(groups: T[][]): T[][] {
 
 @Injectable()
 export class ProductsService {
-  constructor(@Inject(DRIZZLE) private readonly db: typeof Db) {}
+  constructor(
+    @Inject(DRIZZLE) private readonly db: typeof Db,
+    private readonly storageService: StorageService,
+  ) {}
   async create(createProductDto: CreateProductDto, accountId: number) {
     const [brand] = await this.db
       .select({ id: brandsTable.id })
@@ -111,11 +132,43 @@ export class ProductsService {
     return product;
   }
 
-  async findAll(accountId: number) {
-    return await this.db
+  async findAll(accountId: number): Promise<Product[]> {
+    const products = await this.db
       .select()
       .from(productsTable)
       .where(eq(productsTable.accountId, accountId));
+    if (products.length === 0) return [];
+
+    // first product-level image per product, for the list-view thumbnail —
+    // a single batched query rather than N+1 per row
+    const thumbnailRows = await this.db
+      .select({
+        productId: productImagesTable.productId,
+        url: productImagesTable.url,
+      })
+      .from(productImagesTable)
+      .where(
+        and(
+          inArray(
+            productImagesTable.productId,
+            products.map((p) => p.id),
+          ),
+          isNull(productImagesTable.variantId),
+        ),
+      )
+      .orderBy(productImagesTable.position);
+
+    const thumbnailByProduct = new Map<number, string>();
+    for (const row of thumbnailRows) {
+      if (!thumbnailByProduct.has(row.productId)) {
+        thumbnailByProduct.set(row.productId, row.url);
+      }
+    }
+
+    return products.map((product) => ({
+      ...product,
+      thumbnailUrl: thumbnailByProduct.get(product.id) ?? null,
+    }));
   }
 
   async findOne(id: number, accountId: number): Promise<ProductDetail | undefined> {
@@ -134,12 +187,58 @@ export class ProductsService {
       .from(productCategoriesTable)
       .where(eq(productCategoriesTable.productId, id));
 
+    const images = await this.selectImages(
+      and(eq(productImagesTable.productId, id), isNull(productImagesTable.variantId)),
+    );
+
     const { brandId, ...rest } = product;
     return {
       ...rest,
       brand: brand ?? null,
       categoryIds: categoryLinks.map((link) => link.categoryId),
+      images,
     };
+  }
+
+  private async selectImages(where: SQL | undefined): Promise<ProductImage[]> {
+    const rows = await this.db
+      .select()
+      .from(productImagesTable)
+      .where(where)
+      .orderBy(productImagesTable.position);
+    return rows.map(toProductImage);
+  }
+
+  // folds each variant's own images in (empty when it has none) — a
+  // separate query since it's keyed off variantId, not the option-value join
+  private async attachImages<T extends { id: number }>(
+    variants: T[],
+  ): Promise<(T & { images: ProductImage[] })[]> {
+    if (variants.length === 0) return [];
+
+    const rows = await this.db
+      .select()
+      .from(productImagesTable)
+      .where(
+        inArray(
+          productImagesTable.variantId,
+          variants.map((v) => v.id),
+        ),
+      )
+      .orderBy(productImagesTable.position);
+
+    const imagesByVariant = new Map<number, ProductImage[]>();
+    for (const row of rows) {
+      if (row.variantId === null) continue;
+      const images = imagesByVariant.get(row.variantId) ?? [];
+      images.push(toProductImage(row));
+      imagesByVariant.set(row.variantId, images);
+    }
+
+    return variants.map((variant) => ({
+      ...variant,
+      images: imagesByVariant.get(variant.id) ?? [],
+    }));
   }
 
   // every nested product resource (variants/options) is reached only via a
@@ -158,7 +257,8 @@ export class ProductsService {
     const variants = await this.selectVariants(
       eq(productVariantsTable.productId, productId),
     );
-    return await this.attachOptionValues(variants);
+    const withOptions = await this.attachOptionValues(variants);
+    return await this.attachImages(withOptions);
   }
 
   // stock is derived — summed across a variant's per-location inventory
@@ -205,7 +305,8 @@ export class ProductsService {
     const variants = await this.selectVariants(eq(productVariantsTable.id, variantId));
     if (variants.length === 0) return undefined;
 
-    const [record] = await this.attachOptionValues(variants);
+    const withOptions = await this.attachOptionValues(variants);
+    const [record] = await this.attachImages(withOptions);
     return record;
   }
 
@@ -547,6 +648,123 @@ export class ProductsService {
     const variants = await this.selectVariants(
       inArray(productVariantsTable.id, variantIds),
     );
-    return await this.attachOptionValues(variants);
+    const withOptions = await this.attachOptionValues(variants);
+    return await this.attachImages(withOptions);
+  }
+
+  async getImageUploadUrl(
+    productId: number,
+    accountId: number,
+    dto: GetImageUploadUrlDto,
+  ): Promise<{ uploadUrl: string; key: string } | undefined> {
+    if (!(await this.productExists(productId, accountId))) return undefined;
+
+    const extension = dto.contentType.split('/')[1];
+    const key = `products/${productId}/${generateToken(16)}.${extension}`;
+    const uploadUrl = await this.storageService.getUploadUrl(key, dto.contentType);
+    return { uploadUrl, key };
+  }
+
+  async createImage(
+    productId: number,
+    accountId: number,
+    dto: CreateProductImageDto,
+  ): Promise<ProductImage | undefined> {
+    if (!(await this.productExists(productId, accountId))) return undefined;
+
+    if (dto.variantId !== undefined) {
+      const [variant] = await this.db
+        .select({ id: productVariantsTable.id })
+        .from(productVariantsTable)
+        .where(
+          and(
+            eq(productVariantsTable.id, dto.variantId),
+            eq(productVariantsTable.productId, productId),
+          ),
+        );
+      if (!variant) return undefined;
+    }
+
+    const groupWhere =
+      dto.variantId !== undefined
+        ? eq(productImagesTable.variantId, dto.variantId)
+        : and(
+            eq(productImagesTable.productId, productId),
+            isNull(productImagesTable.variantId),
+          );
+
+    const [{ maxPosition }] = await this.db
+      .select({
+        maxPosition: sql<number>`coalesce(max(${productImagesTable.position}), -1)`,
+      })
+      .from(productImagesTable)
+      .where(groupWhere);
+
+    const [row] = await this.db
+      .insert(productImagesTable)
+      .values({
+        productId,
+        variantId: dto.variantId ?? null,
+        key: dto.key,
+        url: this.storageService.getPublicUrl(dto.key),
+        position: maxPosition + 1,
+      })
+      .returning();
+
+    return toProductImage(row);
+  }
+
+  async reorderImages(
+    productId: number,
+    accountId: number,
+    dto: ReorderProductImagesDto,
+  ): Promise<ProductImage[] | undefined> {
+    if (!(await this.productExists(productId, accountId))) return undefined;
+
+    await this.db.transaction(async (tx) => {
+      for (const [index, imageId] of dto.imageIds.entries()) {
+        await tx
+          .update(productImagesTable)
+          .set({ position: index })
+          .where(
+            and(
+              eq(productImagesTable.id, imageId),
+              eq(productImagesTable.productId, productId),
+            ),
+          );
+      }
+    });
+
+    const rows = await this.db
+      .select()
+      .from(productImagesTable)
+      .where(
+        and(
+          eq(productImagesTable.productId, productId),
+          inArray(productImagesTable.id, dto.imageIds),
+        ),
+      )
+      .orderBy(productImagesTable.position);
+
+    return rows.map(toProductImage);
+  }
+
+  async removeImage(
+    productId: number,
+    accountId: number,
+    imageId: number,
+  ): Promise<ProductImage | undefined> {
+    if (!(await this.productExists(productId, accountId))) return undefined;
+
+    const [row] = await this.db
+      .delete(productImagesTable)
+      .where(
+        and(eq(productImagesTable.id, imageId), eq(productImagesTable.productId, productId)),
+      )
+      .returning();
+    if (!row) return undefined;
+
+    await this.storageService.deleteObject(row.key);
+    return toProductImage(row);
   }
 }

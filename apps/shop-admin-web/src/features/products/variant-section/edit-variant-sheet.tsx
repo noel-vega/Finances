@@ -16,6 +16,8 @@ import { Button } from "ui/button";
 import { LoaderCircleIcon } from "lucide-react";
 import { useUpdateVariantMutation } from "../products.hooks";
 import { centsToDollars, dollarsToCents } from "../../../lib/currency";
+import { ImageManager } from "../components/image-manager";
+import { Separator } from "ui/separator";
 
 const EditVariantFormSchema = z.object({
   sku: z.string().nullable(),
@@ -146,6 +148,20 @@ function EditVariantForm(props: {
             </Field>
           )}
         />
+
+        <Separator />
+
+        <Field>
+          <FieldLabel>Images</FieldLabel>
+          <p className="text-sm text-muted-foreground">
+            Optional — overrides the product's default images for this variant only.
+          </p>
+          <ImageManager
+            productId={props.productId}
+            variantId={props.variant.id}
+            images={props.variant.images}
+          />
+        </Field>
       </div>
 
       <SheetFooter className="flex-row justify-end">

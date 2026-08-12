@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { productStatusEnum } from 'db/schema';
 import { Brand } from '../../brands/entities/brand.entity';
+import { ProductImage } from './product-image.entity';
 
 // the shape returned by GET /products/:id — unlike the list endpoint, it's
 // cheap here to resolve the brand relation and category links since it's a
@@ -32,4 +33,8 @@ export class ProductDetail {
 
   @ApiProperty({ type: [Number] })
   categoryIds!: number[];
+
+  // product-level images only (variantId null) — the default/base gallery
+  @ApiProperty({ type: [ProductImage] })
+  images!: ProductImage[];
 }

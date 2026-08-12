@@ -7,7 +7,9 @@ import {
   eq,
   inArray,
   inventoryTable,
+  isNull,
   productCategoriesTable,
+  productImagesTable,
   productOptionsTable,
   productOptionValuesTable,
   productsTable,
@@ -15,11 +17,13 @@ import {
   sql,
   variantOptionValuesTable,
   type db as Db,
+  type SQL,
 } from 'db';
 import { ListProductsQueryDto } from './dto/list-products-query.dto';
 import { ProductListItem } from './entities/product-list-item.entity';
 import { PaginatedProducts } from './entities/paginated-products.entity';
 import { ProductDetail } from './entities/product-detail.entity';
+import { ProductImage } from './entities/product-image.entity';
 
 @Injectable()
 export class ProductsService {
@@ -63,17 +67,19 @@ export class ProductsService {
         .where(where),
     ]);
 
-    const [brandsById, categoriesByProduct] = await Promise.all([
+    const [brandsById, categoriesByProduct, thumbnailByProduct] = await Promise.all([
       this.selectBrands(
         [...new Set(rows.map((r) => r.brandId).filter((id) => id !== null))],
       ),
       this.selectCategories(rows.map((r) => r.id)),
+      this.selectThumbnails(rows.map((r) => r.id)),
     ]);
 
     const items: ProductListItem[] = rows.map(({ brandId, ...row }) => ({
       ...row,
       brand: brandId !== null ? (brandsById.get(brandId) ?? null) : null,
       categories: categoriesByProduct.get(row.id) ?? [],
+      thumbnailUrl: thumbnailByProduct.get(row.id) ?? null,
     }));
 
     return { items, total, limit, offset };
@@ -97,11 +103,14 @@ export class ProductsService {
       );
     if (!product) return undefined;
 
-    const [brandsById, categoriesByProduct, options, variants] = await Promise.all([
+    const [brandsById, categoriesByProduct, options, variants, images] = await Promise.all([
       product.brandId !== null ? this.selectBrands([product.brandId]) : undefined,
       this.selectCategories([product.id]),
       this.selectOptions(product.id),
       this.selectVariants(product.id),
+      this.selectImages(
+        and(eq(productImagesTable.productId, product.id), isNull(productImagesTable.variantId)),
+      ),
     ]);
 
     const { brandId, ...rest } = product;
@@ -111,6 +120,7 @@ export class ProductsService {
       categories: categoriesByProduct.get(product.id) ?? [],
       options,
       variants,
+      images,
     };
   }
 
@@ -197,10 +207,59 @@ export class ProductsService {
       optionValuesByVariant.set(row.variantId, values);
     }
 
+    const imageRows = await this.db
+      .select()
+      .from(productImagesTable)
+      .where(
+        inArray(
+          productImagesTable.variantId,
+          variants.map((v) => v.id),
+        ),
+      )
+      .orderBy(productImagesTable.position);
+
+    const imagesByVariant = new Map<number, ProductImage[]>();
+    for (const row of imageRows) {
+      if (row.variantId === null) continue;
+      const images = imagesByVariant.get(row.variantId) ?? [];
+      images.push({ id: row.id, url: row.url, position: row.position });
+      imagesByVariant.set(row.variantId, images);
+    }
+
     return variants.map((variant) => ({
       ...variant,
       optionValues: optionValuesByVariant.get(variant.id) ?? [],
+      images: imagesByVariant.get(variant.id) ?? [],
     }));
+  }
+
+  private async selectImages(where: SQL | undefined): Promise<ProductImage[]> {
+    const rows = await this.db
+      .select()
+      .from(productImagesTable)
+      .where(where)
+      .orderBy(productImagesTable.position);
+    return rows.map((row) => ({ id: row.id, url: row.url, position: row.position }));
+  }
+
+  private async selectThumbnails(productIds: number[]): Promise<Map<number, string>> {
+    const map = new Map<number, string>();
+    if (productIds.length === 0) return map;
+
+    const rows = await this.db
+      .select({ productId: productImagesTable.productId, url: productImagesTable.url })
+      .from(productImagesTable)
+      .where(
+        and(inArray(productImagesTable.productId, productIds), isNull(productImagesTable.variantId)),
+      )
+      .orderBy(productImagesTable.position);
+
+    for (const row of rows) {
+      if (!map.has(row.productId)) {
+        map.set(row.productId, row.url);
+      }
+    }
+    return map;
   }
 
   private async selectBrands(

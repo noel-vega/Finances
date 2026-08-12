@@ -161,5 +161,63 @@ export function createProductsResource(client: Client<paths>, doRequest: DoFn) {
         },
       },
     },
+
+    images: {
+      // step 1: get a presigned URL, then PUT the file directly to storage
+      // (not through this API) before calling images.create with the key
+      getUploadUrl: async (
+        productId: number,
+        params: components["schemas"]["GetImageUploadUrlDto"],
+      ) => {
+        const path: paths["/products/{id}/images/upload-url"]["post"]["parameters"]["path"] =
+          { id: String(productId) };
+        const { data } = await doRequest(() =>
+          client.POST("/products/{id}/images/upload-url", {
+            params: { path },
+            body: params,
+          }),
+        );
+        return data;
+      },
+
+      create: async (
+        productId: number,
+        params: components["schemas"]["CreateProductImageDto"],
+      ) => {
+        const path: paths["/products/{id}/images"]["post"]["parameters"]["path"] =
+          { id: String(productId) };
+        const { data } = await doRequest(() =>
+          client.POST("/products/{id}/images", {
+            params: { path },
+            body: params,
+          }),
+        );
+        return data;
+      },
+
+      reorder: async (
+        productId: number,
+        params: components["schemas"]["ReorderProductImagesDto"],
+      ) => {
+        const path: paths["/products/{id}/images/order"]["patch"]["parameters"]["path"] =
+          { id: String(productId) };
+        const { data } = await doRequest(() =>
+          client.PATCH("/products/{id}/images/order", {
+            params: { path },
+            body: params,
+          }),
+        );
+        return data;
+      },
+
+      remove: async (productId: number, imageId: number) => {
+        const path: paths["/products/{id}/images/{imageId}"]["delete"]["parameters"]["path"] =
+          { id: String(productId), imageId: String(imageId) };
+        const { data } = await doRequest(() =>
+          client.DELETE("/products/{id}/images/{imageId}", { params: { path } }),
+        );
+        return data;
+      },
+    },
   };
 }

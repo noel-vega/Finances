@@ -29,4 +29,8 @@ export class Product implements SelectProduct {
   // only populated by findOne — findAll skips the extra join for list views
   @ApiProperty({ type: [Number], required: false })
   categoryIds?: number[];
+
+  // first product-level image, for a list-view thumbnail — null if none
+  @ApiProperty({ type: 'string', nullable: true, required: false })
+  thumbnailUrl?: string | null;
 }

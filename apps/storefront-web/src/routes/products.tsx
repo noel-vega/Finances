@@ -33,6 +33,13 @@ export function ProductsPage() {
           {products.items.map((product) => (
             <Link key={product.id} to={`/products/${product.id}`}>
               <Card className="h-full transition-shadow hover:shadow-md">
+                {product.thumbnailUrl && (
+                  <img
+                    src={product.thumbnailUrl}
+                    alt={product.name}
+                    className="aspect-square w-full object-cover"
+                  />
+                )}
                 <CardHeader>
                   <CardTitle>{product.name}</CardTitle>
                   {product.brand && (

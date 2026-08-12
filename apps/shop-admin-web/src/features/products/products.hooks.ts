@@ -1,6 +1,7 @@
 import { queryOptions, useMutation, useQuery } from "@tanstack/react-query"
 import { adminApi } from "../../lib/admin-api-client"
 import { queryClient } from "../../lib/react-query-client";
+import type { GetImageUploadUrlDto } from "admin-sdk";
 
 export function getListProductsQueryOptions() {
     return queryOptions({
@@ -135,6 +136,55 @@ export function useUpdateVariantMutation(productId: number) {
       typeof adminApi.products.variants.update
     >[2]) => adminApi.products.variants.update(productId, variantId, params),
     onSuccess: () => {
+      queryClient.invalidateQueries(getProductVariantsQueryOptions(productId));
+    },
+  });
+}
+
+// three-step upload: get a presigned URL, PUT the file directly to storage
+// (never through this API), then confirm the record with the returned key
+export function useUploadProductImageMutation(productId: number) {
+  return useMutation({
+    mutationFn: async ({ file, variantId }: { file: File; variantId?: number }) => {
+      const uploadInfo = await adminApi.products.images.getUploadUrl(productId, {
+        contentType: file.type as GetImageUploadUrlDto["contentType"],
+      });
+      if (!uploadInfo) throw new Error("Could not get an upload URL");
+
+      await fetch(uploadInfo.uploadUrl, {
+        method: "PUT",
+        body: file,
+        headers: { "Content-Type": file.type },
+      });
+
+      return adminApi.products.images.create(productId, {
+        key: uploadInfo.key,
+        variantId,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(getProductQueryOptions(productId));
+      queryClient.invalidateQueries(getProductVariantsQueryOptions(productId));
+    },
+  });
+}
+
+export function useReorderProductImagesMutation(productId: number) {
+  return useMutation({
+    mutationFn: (imageIds: number[]) =>
+      adminApi.products.images.reorder(productId, { imageIds }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(getProductQueryOptions(productId));
+      queryClient.invalidateQueries(getProductVariantsQueryOptions(productId));
+    },
+  });
+}
+
+export function useDeleteProductImageMutation(productId: number) {
+  return useMutation({
+    mutationFn: (imageId: number) => adminApi.products.images.remove(productId, imageId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(getProductQueryOptions(productId));
       queryClient.invalidateQueries(getProductVariantsQueryOptions(productId));
     },
   });

@@ -38,4 +38,8 @@ export class ProductListItem {
 
   @ApiProperty({ type: 'number', nullable: true })
   maxPriceCents!: number | null;
+
+  // first product-level image, for a grid thumbnail — null if none
+  @ApiProperty({ type: 'string', nullable: true })
+  thumbnailUrl!: string | null;
 }

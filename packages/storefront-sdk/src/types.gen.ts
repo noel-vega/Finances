@@ -264,6 +264,7 @@ export interface components {
             categories: components["schemas"]["ProductListCategory"][];
             minPriceCents: number | null;
             maxPriceCents: number | null;
+            thumbnailUrl: string | null;
         };
         PaginatedProducts: {
             items: components["schemas"]["ProductListItem"][];
@@ -292,12 +293,18 @@ export interface components {
             optionName: string;
             value: string;
         };
+        ProductImage: {
+            id: number;
+            url: string;
+            position: number;
+        };
         ProductDetailVariant: {
             id: number;
             sku: string | null;
             priceCents: number;
             stock: number;
             optionValues: components["schemas"]["VariantOptionValue"][];
+            images: components["schemas"]["ProductImage"][];
         };
         ProductDetail: {
             id: number;
@@ -307,6 +314,7 @@ export interface components {
             categories: components["schemas"]["ProductDetailCategory"][];
             options: components["schemas"]["ProductDetailOption"][];
             variants: components["schemas"]["ProductDetailVariant"][];
+            images: components["schemas"]["ProductImage"][];
         };
         AddCartItemDto: {
             variantId: number;

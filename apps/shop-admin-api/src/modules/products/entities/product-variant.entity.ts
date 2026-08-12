@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { SelectProductVariant } from 'db/schema';
+import { ProductImage } from './product-image.entity';
 
 export class VariantOptionValue {
   @ApiProperty({ type: String })
@@ -37,4 +38,9 @@ export class ProductVariant implements SelectProductVariant {
 
   @ApiProperty({ type: [VariantOptionValue] })
   optionValues!: VariantOptionValue[];
+
+  // this variant's own images only — empty means it has no override and the
+  // UI should fall back to the product-level gallery
+  @ApiProperty({ type: [ProductImage] })
+  images!: ProductImage[];
 }

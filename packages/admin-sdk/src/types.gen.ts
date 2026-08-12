@@ -228,6 +228,70 @@ export interface paths {
         patch: operations["ProductsController_updateVariant"];
         trace?: never;
     };
+    "/products/{id}/images/upload-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ProductsController_getImageUploadUrl"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/products/{id}/images": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ProductsController_createImage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/products/{id}/images/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["ProductsController_reorderImages"];
+        trace?: never;
+    };
+    "/products/{id}/images/{imageId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["ProductsController_removeImage"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/brands": {
         parameters: {
             query?: never;
@@ -582,6 +646,7 @@ export interface components {
             updatedAt: string;
             brandId: number | null;
             categoryIds?: number[];
+            thumbnailUrl?: string | null;
         };
         Brand: {
             id: number;
@@ -591,6 +656,12 @@ export interface components {
             createdAt: string;
             /** Format: date-time */
             updatedAt: string;
+        };
+        ProductImage: {
+            id: number;
+            url: string;
+            position: number;
+            variantId: number | null;
         };
         ProductDetail: {
             id: number;
@@ -605,6 +676,7 @@ export interface components {
             updatedAt: string;
             brand: components["schemas"]["Brand"] | null;
             categoryIds: number[];
+            images: components["schemas"]["ProductImage"][];
         };
         VariantOptionValue: {
             optionName: string;
@@ -622,6 +694,7 @@ export interface components {
             updatedAt: string;
             stock: number;
             optionValues: components["schemas"]["VariantOptionValue"][];
+            images: components["schemas"]["ProductImage"][];
         };
         ProductOptionValue: {
             id: number;
@@ -658,6 +731,21 @@ export interface components {
             priceCents?: number;
             sku?: string | null;
             weightOz?: number | null;
+        };
+        GetImageUploadUrlDto: {
+            /** @enum {string} */
+            contentType: "image/jpeg" | "image/png" | "image/webp" | "image/gif";
+        };
+        ImageUploadUrl: {
+            uploadUrl: string;
+            key: string;
+        };
+        CreateProductImageDto: {
+            key: string;
+            variantId?: number;
+        };
+        ReorderProductImagesDto: {
+            imageIds: number[];
         };
         CreateBrandDto: {
             name: string;
@@ -1350,6 +1438,103 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProductVariant"];
+                };
+            };
+        };
+    };
+    ProductsController_getImageUploadUrl: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetImageUploadUrlDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImageUploadUrl"];
+                };
+            };
+        };
+    };
+    ProductsController_createImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateProductImageDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductImage"];
+                };
+            };
+        };
+    };
+    ProductsController_reorderImages: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderProductImagesDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductImage"][];
+                };
+            };
+        };
+    };
+    ProductsController_removeImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                imageId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductImage"];
                 };
             };
         };

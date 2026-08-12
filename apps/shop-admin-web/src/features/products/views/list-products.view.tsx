@@ -13,6 +13,20 @@ import { Separator } from "ui/separator";
 
 const columns: ColumnDef<Product>[] = [
   {
+    id: "thumbnail",
+    header: "",
+    cell: ({ row }) =>
+      row.original.thumbnailUrl ? (
+        <img
+          src={row.original.thumbnailUrl}
+          alt=""
+          className="size-10 rounded-md object-cover"
+        />
+      ) : (
+        <div className="size-10 rounded-md bg-muted" />
+      ),
+  },
+  {
     accessorKey: "id",
     header: "ID",
   },

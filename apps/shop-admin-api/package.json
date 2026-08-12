@@ -38,6 +38,7 @@
     "db": "*",
     "email": "*",
     "fastify": "^5.10.0",
+    "storage": "*",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "shippo": "^2.18.0",
