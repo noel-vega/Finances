@@ -1,0 +1,461 @@
+---
+const features = [
+	{
+		title: 'Products & Inventory',
+		desc: 'Catalog, categories, and brands, with stock that holds steady across locations.',
+	},
+	{
+		title: 'Orders & Carts',
+		desc: 'Every order and open cart in one hold, ready to fulfill.',
+	},
+	{
+		title: 'Multi-Location',
+		desc: 'One store or a fleet of them — inventory stays true everywhere.',
+	},
+	{
+		title: 'Customers & Staff',
+		desc: 'Customer history kept safe, with access set by role for your crew.',
+	},
+	{
+		title: 'Payments',
+		desc: 'Stripe Connect below deck — payouts, refunds, and fees, handled.',
+	},
+	{
+		title: 'Developer API',
+		desc: 'A real API and webhooks for charting your own course.',
+	},
+];
+
+const stops = [
+	{ title: 'Cast off', desc: 'Create your free account.' },
+	{ title: 'Load the hold', desc: 'Add products and connect Stripe.' },
+	{ title: 'Open the gate', desc: 'Share your storefront and start selling.' },
+];
+
+const year = new Date().getFullYear();
+---
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="icon" href="/favicon.ico" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="generator" content={Astro.generator} />
+		<meta
+			name="description"
+			content="Harbor is the back office for retailers — products, orders, inventory, and payouts, docked in one place."
+		/>
+		<title>Harbor — Bring your store into harbor</title>
+	</head>
+	<body>
+		<div class="h-wrap">
+			<div class="h-top">
+				<span class="h-mark">Harbor</span>
+				<nav class="h-nav">
+					<a href="#h-plaques">What's aboard</a>
+					<a href="#h-route">The route</a>
+				</nav>
+				<a class="h-cta-top" href="#get-started">Sign up free</a>
+			</div>
+			<div class="h-rope"></div>
+
+			<div class="h-hero">
+				<p class="h-kicker">A safe harbor for your store</p>
+				<h1 class="h-head">Bring your store into harbor.</h1>
+				<p class="h-sub">
+					Products, orders, inventory, and payouts — everything a retailer needs to run a tight
+					ship, docked in one place.
+				</p>
+				<div class="h-actions">
+					<a class="h-btn" href="#get-started">Sign up free — no card needed</a>
+					<a class="h-btn-outline" href="#h-plaques">What's aboard</a>
+				</div>
+			</div>
+
+			<div class="h-plaques" id="h-plaques">
+				<h2>What's aboard</h2>
+				<p class="h-plaques-sub">
+					Six systems, docked together, so nothing has to be bolted on separately.
+				</p>
+				<div class="h-grid">
+					{
+						features.map((f) => (
+							<div class="h-plaque">
+								<div class="h-rivets">
+									<i />
+									<i />
+									<i />
+									<i />
+								</div>
+								<h3>{f.title}</h3>
+								<p>{f.desc}</p>
+							</div>
+						))
+					}
+				</div>
+			</div>
+
+			<div class="h-route" id="h-route">
+				<h2>The route in</h2>
+				<div class="h-route-line">
+					{
+						stops.map((s) => (
+							<div class="h-stop">
+								<span class="h-stop-mark" />
+								<h4>{s.title}</h4>
+								<p>{s.desc}</p>
+							</div>
+						))
+					}
+				</div>
+			</div>
+
+			<div class="h-final" id="get-started">
+				<h2>Your berth is ready.</h2>
+				<p>Free to start, no card required.</p>
+				<a class="h-btn" href="/signup">Sign up free today</a>
+			</div>
+
+			<div class="h-foot">
+				<span>Harbor — a safe harbor for your store</span>
+				<span>&copy; {year} Harbor</span>
+			</div>
+		</div>
+	</body>
+</html>
+
+<style>
+	:root {
+		--stone: #edefec;
+		--ink: #0f2e30;
+		--ink-dim: #4c6a6b;
+		--brass: #b4802f;
+		--line: rgba(15, 46, 48, 0.2);
+	}
+	@media (prefers-color-scheme: dark) {
+		:root:not([data-theme='light']) {
+			--stone: #081a22;
+			--ink: #e7e9e3;
+			--ink-dim: #91a6a0;
+			--brass: #d9a34f;
+			--line: rgba(231, 233, 227, 0.2);
+		}
+	}
+	:root[data-theme='dark'] {
+		--stone: #081a22;
+		--ink: #e7e9e3;
+		--ink-dim: #91a6a0;
+		--brass: #d9a34f;
+		--line: rgba(231, 233, 227, 0.2);
+	}
+
+	:global(html) {
+		background: var(--stone);
+	}
+	:global(body) {
+		margin: 0;
+		background: var(--stone);
+		color: var(--ink);
+		font-family: Cambria, Georgia, serif;
+	}
+	:global(a) {
+		color: inherit;
+	}
+	:global(:focus-visible) {
+		outline: 2px solid var(--brass);
+		outline-offset: 2px;
+	}
+
+	.h-wrap {
+		max-width: 1080px;
+		margin: 0 auto;
+		padding: 0 28px;
+	}
+	.h-top {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 22px 0;
+	}
+	.h-mark {
+		font-weight: 700;
+		font-size: 1.2rem;
+		letter-spacing: 0.01em;
+	}
+	.h-nav {
+		display: flex;
+		gap: 26px;
+		font-family: 'Trebuchet MS', system-ui, sans-serif;
+		font-size: 0.92rem;
+	}
+	.h-nav a {
+		text-decoration: none;
+	}
+	.h-nav a:hover {
+		color: var(--brass);
+	}
+	.h-cta-top {
+		text-decoration: none;
+		font-family: 'Trebuchet MS', system-ui, sans-serif;
+		font-weight: 700;
+		font-size: 0.88rem;
+		padding: 10px 18px;
+		border: 1px solid var(--brass);
+		color: var(--brass);
+		transition:
+			background 0.15s ease,
+			color 0.15s ease;
+	}
+	.h-cta-top:hover {
+		background: var(--brass);
+		color: var(--stone);
+	}
+
+	.h-rope {
+		height: 1px;
+		background-image: repeating-linear-gradient(
+			90deg,
+			var(--brass) 0 8px,
+			transparent 8px 16px
+		);
+		opacity: 0.6;
+		margin: 0 0 50px;
+	}
+
+	.h-hero {
+		padding: 10px 0 60px;
+		text-align: center;
+	}
+	.h-kicker {
+		font-family: ui-monospace, monospace;
+		font-size: 0.74rem;
+		letter-spacing: 0.16em;
+		text-transform: uppercase;
+		color: var(--brass);
+		margin: 0 0 18px;
+	}
+	.h-head {
+		font-size: clamp(2.4rem, 5vw, 3.6rem);
+		line-height: 1.1;
+		font-weight: 700;
+		margin: 0 auto 22px;
+		max-width: 16ch;
+		text-wrap: balance;
+	}
+	.h-sub {
+		font-family: 'Trebuchet MS', system-ui, sans-serif;
+		font-size: 1.1rem;
+		line-height: 1.6;
+		color: var(--ink-dim);
+		max-width: 50ch;
+		margin: 0 auto 34px;
+	}
+	.h-actions {
+		display: flex;
+		gap: 18px;
+		justify-content: center;
+		flex-wrap: wrap;
+	}
+	.h-btn {
+		font-family: 'Trebuchet MS', system-ui, sans-serif;
+		text-decoration: none;
+		font-weight: 700;
+		padding: 14px 28px;
+		background: var(--brass);
+		color: #17150f;
+		border: 1px solid var(--brass);
+		transition:
+			background 0.15s ease,
+			color 0.15s ease;
+	}
+	.h-btn:hover {
+		background: transparent;
+		color: var(--brass);
+	}
+	.h-btn-outline {
+		font-family: 'Trebuchet MS', system-ui, sans-serif;
+		text-decoration: none;
+		font-weight: 700;
+		padding: 14px 28px;
+		border: 1px solid var(--line);
+		color: var(--ink);
+		transition:
+			border-color 0.15s ease,
+			color 0.15s ease;
+	}
+	.h-btn-outline:hover {
+		border-color: var(--brass);
+		color: var(--brass);
+	}
+
+	.h-plaques {
+		padding: 20px 0 70px;
+	}
+	.h-plaques h2 {
+		text-align: center;
+		font-size: 1.9rem;
+		font-weight: 700;
+		margin: 0 0 10px;
+	}
+	.h-plaques-sub {
+		text-align: center;
+		font-family: 'Trebuchet MS', system-ui, sans-serif;
+		color: var(--ink-dim);
+		max-width: 50ch;
+		margin: 0 auto 44px;
+	}
+	.h-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 22px;
+	}
+	.h-plaque {
+		position: relative;
+		padding: 26px 24px;
+		background: color-mix(in srgb, var(--stone) 92%, var(--ink));
+		border: 1px solid var(--line);
+	}
+	.h-rivets {
+		position: absolute;
+		inset: 6px;
+		pointer-events: none;
+	}
+	.h-rivets i {
+		position: absolute;
+		width: 5px;
+		height: 5px;
+		border-radius: 50%;
+		background: var(--brass);
+		opacity: 0.65;
+	}
+	.h-rivets i:nth-child(1) {
+		top: 0;
+		left: 0;
+	}
+	.h-rivets i:nth-child(2) {
+		top: 0;
+		right: 0;
+	}
+	.h-rivets i:nth-child(3) {
+		bottom: 0;
+		left: 0;
+	}
+	.h-rivets i:nth-child(4) {
+		bottom: 0;
+		right: 0;
+	}
+	.h-plaque h3 {
+		font-family: 'Trebuchet MS', system-ui, sans-serif;
+		font-size: 1.02rem;
+		margin: 0 0 8px;
+	}
+	.h-plaque p {
+		font-family: 'Trebuchet MS', system-ui, sans-serif;
+		font-size: 0.92rem;
+		line-height: 1.55;
+		color: var(--ink-dim);
+		margin: 0;
+	}
+
+	.h-route {
+		padding: 10px 0 70px;
+	}
+	.h-route h2 {
+		text-align: center;
+		font-size: 1.9rem;
+		font-weight: 700;
+		margin: 0 0 50px;
+	}
+	.h-route-line {
+		position: relative;
+		display: flex;
+		justify-content: space-between;
+	}
+	.h-route-line::before {
+		content: '';
+		position: absolute;
+		top: 9px;
+		left: 5%;
+		right: 5%;
+		height: 1px;
+		background-image: repeating-linear-gradient(
+			90deg,
+			var(--brass) 0 8px,
+			transparent 8px 16px
+		);
+	}
+	.h-stop {
+		position: relative;
+		width: 30%;
+		text-align: center;
+	}
+	.h-stop-mark {
+		display: block;
+		width: 20px;
+		height: 20px;
+		border-radius: 50%;
+		background: var(--brass);
+		margin: 0 auto 18px;
+		border: 3px solid var(--stone);
+		box-shadow: 0 0 0 1px var(--brass);
+	}
+	.h-stop h4 {
+		font-size: 1rem;
+		margin: 0 0 6px;
+	}
+	.h-stop p {
+		font-family: 'Trebuchet MS', system-ui, sans-serif;
+		font-size: 0.88rem;
+		color: var(--ink-dim);
+		line-height: 1.5;
+		margin: 0;
+	}
+
+	.h-final {
+		margin: 0 0 70px;
+		padding: 54px 40px;
+		text-align: center;
+		border: 1px solid var(--brass);
+		background: color-mix(in srgb, var(--brass) 8%, transparent);
+	}
+	.h-final h2 {
+		font-size: 1.9rem;
+		font-weight: 700;
+		margin: 0 0 14px;
+	}
+	.h-final p {
+		font-family: 'Trebuchet MS', system-ui, sans-serif;
+		color: var(--ink-dim);
+		margin: 0 0 28px;
+	}
+
+	.h-foot {
+		display: flex;
+		justify-content: space-between;
+		padding: 24px 0 44px;
+		border-top: 1px solid var(--line);
+		font-family: 'Trebuchet MS', system-ui, sans-serif;
+		font-size: 0.85rem;
+		color: var(--ink-dim);
+	}
+
+	@media (max-width: 820px) {
+		.h-nav {
+			display: none;
+		}
+		.h-grid {
+			grid-template-columns: 1fr;
+		}
+		.h-route-line {
+			flex-direction: column;
+			gap: 30px;
+		}
+		.h-route-line::before {
+			display: none;
+		}
+		.h-stop {
+			width: 100%;
+		}
+	}
+</style>
