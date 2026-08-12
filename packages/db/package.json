@@ -24,13 +24,15 @@
     "generate": "drizzle-kit generate",
     "migrate": "drizzle-kit migrate",
     "push": "drizzle-kit push",
-    "studio": "drizzle-kit studio"
+    "studio": "drizzle-kit studio",
+    "seed": "tsx scripts/seed.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
   "devDependencies": {
+    "@types/bcryptjs": "^3.0.0",
     "@types/node": "^26.1.1",
     "@types/pg": "^8.20.0",
     "drizzle-kit": "^1.0.0-rc.4",
@@ -38,6 +40,7 @@
     "typescript": "^7.0.2"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^1.0.0-rc.4",
     "pg": "^8.22.0",
