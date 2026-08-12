@@ -4,7 +4,7 @@ import { getListUsersQueryOptions } from '../../../features/users/users.hooks'
 import { queryClient } from '../../../lib/react-query-client'
 
 export const Route = createFileRoute('/app/users/')({
-  staticData: { breadcrumb: 'Staff' },
+  staticData: { breadcrumb: 'Users' },
   beforeLoad: async () => {
     await queryClient.ensureQueryData(getListUsersQueryOptions())
   },

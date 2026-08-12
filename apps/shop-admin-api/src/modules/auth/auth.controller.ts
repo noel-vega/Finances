@@ -10,6 +10,7 @@ import {
 import { AuthService } from './auth.service';
 import { SignInDto } from './dto/signin.dto';
 import { SignUpDto } from './dto/signup.dto';
+import { AcceptInviteDto } from './dto/accept-invite.dto';
 import { AccessTokenDto } from './dto/access-token.dto';
 import { Public } from './auth.decorators';
 import type { FastifyReply, FastifyRequest } from 'fastify';
@@ -59,6 +60,34 @@ export class AuthController {
     @Res({ passthrough: true }) res: FastifyReply,
   ): Promise<AccessTokenDto> {
     const result = await this.authService.signup(signupDto);
+
+    const refreshToken = await this.authService.createRefreshToken(
+      result.userId,
+      result.email,
+      result.accountId,
+      result.firstName,
+      result.lastName,
+    );
+
+    res.setCookie(REFRESH_TOKEN_COOKIE, refreshToken, {
+      httpOnly: true,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7,
+    });
+
+    return { access_token: result.access_token };
+  }
+
+  @Public()
+  @Post('accept-invite')
+  @ApiOkResponse({ type: AccessTokenDto })
+  @ApiUnauthorizedResponse()
+  async acceptInvite(
+    @Body() acceptInviteDto: AcceptInviteDto,
+    @Res({ passthrough: true }) res: FastifyReply,
+  ): Promise<AccessTokenDto> {
+    const result = await this.authService.acceptInvite(acceptInviteDto);
 
     const refreshToken = await this.authService.createRefreshToken(
       result.userId,

@@ -34,7 +34,7 @@ export function CreateUserView() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold">Add Staff</h1>
+      <h1 className="text-xl font-semibold">Add User</h1>
       <form onSubmit={handleSubmit} className="max-w-sm space-y-4">
         <Controller
           control={form.control}
@@ -93,7 +93,7 @@ export function CreateUserView() {
         />
 
         <Button type="submit" disabled={createUser.isPending}>
-          {createUser.isPending ? "Adding..." : "Add staff"}
+          {createUser.isPending ? "Adding..." : "Add user"}
         </Button>
       </form>
     </div>

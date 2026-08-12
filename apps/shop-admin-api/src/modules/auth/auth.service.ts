@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { SignInDto } from './dto/signin.dto';
 import { SignUpDto } from './dto/signup.dto';
+import { AcceptInviteDto } from './dto/accept-invite.dto';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { DRIZZLE } from 'src/database/database.constants';
@@ -134,6 +135,38 @@ export class AuthService {
       }
       throw err;
     }
+  }
+
+  async acceptInvite(dto: AcceptInviteDto) {
+    const invite = await this.usersService.getByInviteToken(dto.token);
+
+    if (!invite || invite.expiresAt < new Date()) {
+      throw new UnauthorizedException('Invalid or expired invite');
+    }
+
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
+    const user = await this.usersService.activate(invite.user.id, hashedPassword);
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid or expired invite');
+    }
+
+    const access_token = await this.createAccessToken(
+      user.id,
+      user.email,
+      user.accountId,
+      user.firstName,
+      user.lastName,
+    );
+
+    return {
+      userId: user.id,
+      email: user.email,
+      accountId: user.accountId,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      access_token,
+    };
   }
 
   private async createToken(

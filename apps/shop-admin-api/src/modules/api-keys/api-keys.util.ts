@@ -1,5 +1,5 @@
-import { randomBytes } from 'crypto';
+import { generateToken } from '../../common/generate-token.util';
 
 export function generateApiKey(): string {
-  return `sfk_${randomBytes(24).toString('base64url')}`;
+  return `sfk_${generateToken(24)}`;
 }

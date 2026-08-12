@@ -15,6 +15,13 @@ export function useSignUpMutation(){
     })
 }
 
+export function useAcceptInviteMutation(){
+    return useMutation({
+        mutationFn: (params: Parameters<typeof adminApi.acceptInvite>[0]) =>
+            adminApi.acceptInvite(params)
+    })
+}
+
 export function useLogoutMutation(){
     return useMutation({
         mutationFn: () => adminApi.logout()

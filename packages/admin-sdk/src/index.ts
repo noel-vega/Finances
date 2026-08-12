@@ -35,6 +35,7 @@ export type PaginatedOrders = components["schemas"]["PaginatedOrders"];
 export type Account = components["schemas"]["Account"];
 export type User = components["schemas"]["User"];
 export type CreateUserDto = components["schemas"]["CreateUserDto"];
+export type AcceptInviteDto = components["schemas"]["AcceptInviteDto"];
 
 export class AdminClient {
   accessToken: string | undefined;
@@ -94,6 +95,15 @@ export class AdminClient {
   async signUp(signup: components["schemas"]["SignUpDto"]) {
     const { data } = await this.client.POST("/auth/signup", {
       body: signup,
+    });
+
+    this.accessToken = data?.access_token;
+    return this.accessToken;
+  }
+
+  async acceptInvite(params: components["schemas"]["AcceptInviteDto"]) {
+    const { data } = await this.client.POST("/auth/accept-invite", {
+      body: params,
     });
 
     this.accessToken = data?.access_token;

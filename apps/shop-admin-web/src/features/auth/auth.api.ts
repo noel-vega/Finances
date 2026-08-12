@@ -21,3 +21,10 @@ export const SignUpRequestBodySchema = z.object({
 });
 
 export type SignUpRequestBody = z.infer<typeof SignUpRequestBodySchema>
+
+export const AcceptInviteRequestBodySchema = z.object({
+  token: z.string(),
+  password: z.string().min(8),
+});
+
+export type AcceptInviteRequestBody = z.infer<typeof AcceptInviteRequestBodySchema>

@@ -77,7 +77,7 @@ const NAV_ITEMS = [
   },
   {
     key: "users",
-    label: "Staff",
+    label: "Users",
     icon: UsersIcon,
     to: "/app/users",
     children: undefined,

@@ -22,6 +22,11 @@ export const Route = createRootRoute({
           throw redirect({ to: appConfig.homeRoute });
         }
         break;
+      case "/join":
+        // an invite link must work even if this browser already has an
+        // unrelated session active (e.g. the account owner testing their
+        // own invite) — never bounce this route away
+        break;
       default:
         if (!accessToken) {
           console.log("REDIRECT: /signin")

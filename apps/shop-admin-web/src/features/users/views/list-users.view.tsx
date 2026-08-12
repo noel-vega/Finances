@@ -42,7 +42,7 @@ export function ListUsersView() {
         <Field className="max-w-xs">
           <FieldLabel>Search</FieldLabel>
           <InputGroup>
-            <InputGroupInput placeholder="Search staff..." />
+            <InputGroupInput placeholder="Search users..." />
             <InputGroupAddon>
               <SearchIcon />
             </InputGroupAddon>
@@ -50,7 +50,7 @@ export function ListUsersView() {
         </Field>
         <Link to="/app/users/create">
           <Button>
-            <PlusIcon /> Add staff
+            <PlusIcon /> Add user
           </Button>
         </Link>
       </div>
