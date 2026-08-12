@@ -32,7 +32,9 @@ export class AuthService {
   async signin(signinDto: SignInDto) {
     const user = await this.usersService.getByEmail(signinDto.email);
 
-    if (!user) {
+    // staff created from the dashboard have no password until they join via
+    // an invite link — treat that the same as a wrong password, not a crash
+    if (!user || !user.password) {
       throw new UnauthorizedException();
     }
 

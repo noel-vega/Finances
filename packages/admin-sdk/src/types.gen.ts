@@ -93,27 +93,11 @@ export interface paths {
         };
         get: operations["UsersController_findAll"];
         put?: never;
-        post?: never;
+        post: operations["UsersController_create"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
-        trace?: never;
-    };
-    "/users/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["UsersController_findOne"];
-        put?: never;
-        post?: never;
-        delete: operations["UsersController_remove"];
-        options?: never;
-        head?: never;
-        patch: operations["UsersController_update"];
         trace?: never;
     };
     "/products": {
@@ -503,7 +487,24 @@ export interface components {
             phone: string;
             password: string;
         };
-        UpdateUserDto: Record<string, never>;
+        CreateUserDto: {
+            firstName: string;
+            lastName: string;
+            phone: string;
+            email: string;
+        };
+        User: {
+            id: number;
+            accountId: number;
+            firstName: string;
+            lastName: string;
+            phone: string | null;
+            email: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
         CreateProductDto: {
             name: string;
             description: string;
@@ -952,68 +953,32 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
-            };
-        };
-    };
-    UsersController_findOne: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
+                content: {
+                    "application/json": components["schemas"]["User"][];
                 };
-                content?: never;
             };
         };
     };
-    UsersController_remove: {
+    UsersController_create: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    UsersController_update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
+            path?: never;
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UpdateUserDto"];
+                "application/json": components["schemas"]["CreateUserDto"];
             };
         };
         responses: {
-            200: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["User"];
+                };
             };
         };
     };

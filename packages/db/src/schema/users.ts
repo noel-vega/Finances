@@ -11,8 +11,11 @@ export const usersTable = pgTable("users", {
     .references(() => accountsTable.id, { onDelete: "cascade" }),
   firstname: text("first_name").notNull(),
   lastname: text("last_name").notNull(),
+  phone: text("phone"),
   email: varchar({ length: 255 }).notNull().unique(),
-  password: varchar({ length: 255 }).notNull(),
+  // null until the user joins via the invite link and sets one — staff
+  // created from the admin dashboard don't get a password up front
+  password: varchar({ length: 255 }),
   createdAt: timestampAt("created_at"),
   updatedAt: timestampAt("updated_at"),
 });
