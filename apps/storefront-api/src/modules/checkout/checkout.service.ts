@@ -336,6 +336,7 @@ export class CheckoutService {
       amountTotalCents: session.amount_total ?? cart.subtotalCents,
       shippingCents: session.shipping_cost?.amount_total ?? 0,
       shippingLocationId: Number(session.metadata?.shippingLocationId) || null,
+      storefrontUrl: process.env.STOREFRONT_WEB_URL ?? 'http://localhost:3002',
       items: cart.items.map((item) => ({
         variantId: item.variantId,
         productName: item.productName,

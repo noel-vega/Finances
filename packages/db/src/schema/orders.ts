@@ -1,4 +1,4 @@
-import { integer, pgTable, text, varchar } from "drizzle-orm/pg-core";
+import { integer, pgTable, text, timestamp, varchar } from "drizzle-orm/pg-core";
 import { timestampAt } from "../utils.js";
 import { accountsTable } from "./accounts.js";
 import { productVariantsTable } from "./products.js";
@@ -44,6 +44,10 @@ export const ordersTable = pgTable("orders", {
   // doubles as the webhook's idempotency key
   stripeCheckoutSessionId: text().notNull().unique(),
   stripePaymentIntentId: text(),
+  // null until the order-confirmation email job is successfully enqueued —
+  // lets the worker tell "already emailed" apart from "order committed but
+  // the process died before the email went out" on a stalled-job redelivery
+  confirmationEmailQueuedAt: timestamp("confirmation_email_queued_at"),
   createdAt: timestampAt("created_at"),
   updatedAt: timestampAt("updated_at"),
 });

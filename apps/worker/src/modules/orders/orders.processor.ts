@@ -1,8 +1,9 @@
-import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
+import { InjectQueue, OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Inject, Logger } from '@nestjs/common';
-import type { Job } from 'bullmq';
-import { QUEUE_NAMES, type OrderJobData } from 'queue';
+import type { Job, Queue } from 'bullmq';
+import { QUEUE_NAMES, type EmailJobData, type OrderJobData } from 'queue';
 import {
+  accountsTable,
   and,
   cartsTable,
   desc,
@@ -24,7 +25,10 @@ import { DRIZZLE } from '../../database/database.constants';
 export class OrdersProcessor extends WorkerHost {
   private readonly logger = new Logger(OrdersProcessor.name);
 
-  constructor(@Inject(DRIZZLE) private readonly db: typeof Db) {
+  constructor(
+    @Inject(DRIZZLE) private readonly db: typeof Db,
+    @InjectQueue(QUEUE_NAMES.EMAIL) private readonly emailQueue: Queue<EmailJobData>,
+  ) {
     super();
   }
 
@@ -57,10 +61,21 @@ export class OrdersProcessor extends WorkerHost {
     // before enqueueing, but this guards against BullMQ retries or a
     // duplicate Stripe delivery racing a job that's still in flight
     const [existing] = await this.db
-      .select({ id: ordersTable.id })
+      .select({ id: ordersTable.id, confirmationEmailQueuedAt: ordersTable.confirmationEmailQueuedAt })
       .from(ordersTable)
       .where(eq(ordersTable.stripeCheckoutSessionId, data.stripeCheckoutSessionId));
-    if (existing) return;
+    if (existing) {
+      // the order itself is done, but if the worker died between the
+      // transaction below committing and the email enqueueing (BullMQ
+      // redelivers on a stalled job the same way it does on failure), this
+      // redelivery is the only remaining chance to send it
+      if (!existing.confirmationEmailQueuedAt) {
+        await this.enqueueOrderConfirmationEmail(existing.id, data);
+      }
+      return;
+    }
+
+    let orderId!: number;
 
     await this.db.transaction(async (tx) => {
       const recordSoldMovement = async (
@@ -104,6 +119,7 @@ export class OrdersProcessor extends WorkerHost {
           stripePaymentIntentId: data.stripePaymentIntentId,
         })
         .returning();
+      orderId = order.id;
 
       for (const item of data.items) {
         // snapshotted so a later label purchase doesn't depend on the
@@ -151,6 +167,58 @@ export class OrdersProcessor extends WorkerHost {
         .delete(cartsTable)
         .where(and(eq(cartsTable.token, data.cartToken), eq(cartsTable.accountId, data.accountId)));
     });
+
+    await this.enqueueOrderConfirmationEmail(orderId, data);
+  }
+
+  // deliberately caught, not thrown — the order is already committed at
+  // this point, and throwing would just make BullMQ retry the whole job.
+  // confirmationEmailQueuedAt staying null on failure is what actually makes
+  // that retry (or a stalled-job redelivery) useful: the top-of-function
+  // idempotency check re-attempts this specific call instead of returning
+  // immediately. A logged failure here is recoverable via redelivery; a lost
+  // order is not.
+  private async enqueueOrderConfirmationEmail(
+    orderId: number,
+    data: Extract<OrderJobData, { type: 'checkout-completed' }>,
+  ): Promise<void> {
+    try {
+      const [account] = await this.db
+        .select({ name: accountsTable.name })
+        .from(accountsTable)
+        .where(eq(accountsTable.id, data.accountId));
+
+      await this.emailQueue.add('order-confirmation', {
+        type: 'order-confirmation',
+        to: data.customerEmail,
+        customerName: data.customerName,
+        accountName: account?.name ?? '',
+        orderId,
+        items: data.items,
+        subtotalCents: data.subtotalCents,
+        shippingCents: data.shippingCents,
+        amountTotalCents: data.amountTotalCents,
+        shippingLine1: data.shippingLine1,
+        shippingLine2: data.shippingLine2,
+        shippingCity: data.shippingCity,
+        shippingState: data.shippingState,
+        shippingPostalCode: data.shippingPostalCode,
+        shippingCountry: data.shippingCountry,
+        storefrontUrl: data.storefrontUrl,
+      });
+
+      // if this update fails/crashes right after the add() above succeeds,
+      // the next redelivery enqueues a duplicate email rather than none —
+      // same "duplicate over lost" trade-off ORDER_JOB_OPTIONS already makes
+      await this.db
+        .update(ordersTable)
+        .set({ confirmationEmailQueuedAt: new Date() })
+        .where(eq(ordersTable.id, orderId));
+    } catch (err) {
+      this.logger.error(
+        `Order ${orderId} was created but failed to enqueue its confirmation email: ${err instanceof Error ? err.message : err}`,
+      );
+    }
   }
 
   @OnWorkerEvent('failed')

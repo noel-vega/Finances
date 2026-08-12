@@ -17,6 +17,30 @@ export type EmailJobData =
       firstName: string;
       accountName: string;
       storefrontUrl: string;
+    }
+  | {
+      type: "order-confirmation";
+      to: string;
+      customerName: string;
+      accountName: string;
+      orderId: number;
+      items: {
+        productName: string;
+        sku: string | null;
+        optionsLabel: string | null;
+        priceCents: number;
+        quantity: number;
+      }[];
+      subtotalCents: number;
+      shippingCents: number;
+      amountTotalCents: number;
+      shippingLine1: string;
+      shippingLine2: string | null;
+      shippingCity: string;
+      shippingState: string | null;
+      shippingPostalCode: string;
+      shippingCountry: string;
+      storefrontUrl: string;
     };
 
 // a flattened snapshot of everything the order-creation transaction needs
@@ -41,6 +65,10 @@ export type OrderJobData = {
   amountTotalCents: number;
   shippingCents: number;
   shippingLocationId: number | null;
+  // carried through so OrdersProcessor can build the order-confirmation
+  // email's link without guessing STOREFRONT_WEB_URL itself — same
+  // producer-builds-URLs convention as EmailJobData
+  storefrontUrl: string;
   items: {
     variantId: number;
     productName: string;
