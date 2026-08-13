@@ -9,10 +9,15 @@ export const QUEUE_NAMES = {
 // URLs are built by the producer (it already knows which frontend's env var
 // applies) and carried fully-formed in the payload — the worker never needs
 // to know about SHOP_ADMIN_WEB_URL/STOREFRONT_WEB_URL itself
+//
+// correlationId rides along on every job so a worker log line can be traced
+// back to the request (or the upstream job) that produced it — see
+// the `logging` package's runWithCorrelationId/getCorrelationId
 export type EmailJobData =
-  | { type: "staff-invite"; to: string; firstName: string; inviteUrl: string }
+  | { type: "staff-invite"; correlationId: string; to: string; firstName: string; inviteUrl: string }
   | {
       type: "customer-thank-you";
+      correlationId: string;
       to: string;
       firstName: string;
       accountName: string;
@@ -20,6 +25,7 @@ export type EmailJobData =
     }
   | {
       type: "order-confirmation";
+      correlationId: string;
       to: string;
       customerName: string;
       accountName: string;
@@ -49,6 +55,7 @@ export type EmailJobData =
 // has to touch cart-domain tables/queries itself
 export type OrderJobData = {
   type: "checkout-completed";
+  correlationId: string;
   accountId: number;
   cartToken: string;
   stripeCheckoutSessionId: string;

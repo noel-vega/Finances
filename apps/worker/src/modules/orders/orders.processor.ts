@@ -1,7 +1,8 @@
 import { InjectQueue, OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
-import { Inject, Logger } from '@nestjs/common';
+import { Inject } from '@nestjs/common';
 import type { Job, Queue } from 'bullmq';
 import { QUEUE_NAMES, type EmailJobData, type OrderJobData } from 'queue';
+import { Logger, runWithCorrelationId } from 'logging';
 import {
   accountsTable,
   and,
@@ -33,26 +34,32 @@ export class OrdersProcessor extends WorkerHost {
     super();
   }
 
-  async process(job: Job<OrderJobData>): Promise<void> {
-    const data = job.data;
+  // wrapping the whole method in the job's correlation ID means every log
+  // line from here down — including inside db/services this calls — is
+  // traceable back to the request that enqueued it, without threading an
+  // id through every method signature
+  process(job: Job<OrderJobData>): Promise<void> {
+    return runWithCorrelationId(job.data.correlationId, async () => {
+      const data = job.data;
 
-    switch (data.type) {
-      case 'checkout-completed':
-        await this.processCheckoutCompleted(data);
-        return;
+      switch (data.type) {
+        case 'checkout-completed':
+          await this.processCheckoutCompleted(data);
+          return;
 
-      default: {
-        // OrderJobData has only one variant today, so TypeScript can't
-        // narrow this branch to `never` (a single-member discriminated
-        // union doesn't narrow the same way EmailJobData's two members
-        // do) — this becomes a real compile-time exhaustiveness check the
-        // moment a second variant is added, same pattern as
-        // EmailProcessor. Until then it's a runtime guard against a
-        // malformed job (Redis doesn't enforce this type).
-        const unexpected = data as OrderJobData;
-        throw new Error(`Unrecognized order job type: ${unexpected.type}`);
+        default: {
+          // OrderJobData has only one variant today, so TypeScript can't
+          // narrow this branch to `never` (a single-member discriminated
+          // union doesn't narrow the same way EmailJobData's two members
+          // do) — this becomes a real compile-time exhaustiveness check the
+          // moment a second variant is added, same pattern as
+          // EmailProcessor. Until then it's a runtime guard against a
+          // malformed job (Redis doesn't enforce this type).
+          const unexpected = data as OrderJobData;
+          throw new Error(`Unrecognized order job type: ${unexpected.type}`);
+        }
       }
-    }
+    });
   }
 
   private async processCheckoutCompleted(
@@ -195,6 +202,9 @@ export class OrdersProcessor extends WorkerHost {
 
       await this.emailQueue.add('order-confirmation', {
         type: 'order-confirmation',
+        // forwarded, not regenerated — keeps the order and its confirmation
+        // email traceable under the same id as the original checkout request
+        correlationId: data.correlationId,
         to: data.customerEmail,
         customerName: data.customerName,
         accountName: account?.name ?? '',
@@ -240,29 +250,36 @@ export class OrdersProcessor extends WorkerHost {
     return { isRunning: this.worker.isRunning(), isPaused: this.worker.isPaused(), lastActiveAt: this.lastActiveAt };
   }
 
+  // BullMQ emits worker events outside of process()'s own async chain, so
+  // its ambient correlation ID can't be relied on here — re-establish it
+  // explicitly from job.data, same id either way
   @OnWorkerEvent('failed')
   onFailed(job: Job<OrderJobData>, err: Error) {
-    const attempts = job.opts.attempts ?? 1;
-    const exhausted = job.attemptsMade >= attempts;
+    runWithCorrelationId(job.data.correlationId, () => {
+      const attempts = job.opts.attempts ?? 1;
+      const exhausted = job.attemptsMade >= attempts;
 
-    if (exhausted) {
-      // all retries used up — this represents a paid customer with no
-      // order created, and (per ORDER_JOB_OPTIONS) this job is NOT
-      // auto-removed from Redis, so it stays visible until someone acts on it
-      this.logger.error(
-        `Job ${job.id} (${job.name}) failed permanently after ${job.attemptsMade} attempts — needs manual review: ${err.message}`,
+      if (exhausted) {
+        // all retries used up — this represents a paid customer with no
+        // order created, and (per ORDER_JOB_OPTIONS) this job is NOT
+        // auto-removed from Redis, so it stays visible until someone acts on it
+        this.logger.error(
+          `Job ${job.id} (${job.name}) failed permanently after ${job.attemptsMade} attempts — needs manual review: ${err.message}`,
+        );
+        return;
+      }
+
+      this.logger.warn(
+        `Job ${job.id} (${job.name}) failed on attempt ${job.attemptsMade}/${attempts}: ${err.message}`,
       );
-      return;
-    }
-
-    this.logger.warn(
-      `Job ${job.id} (${job.name}) failed on attempt ${job.attemptsMade}/${attempts}: ${err.message}`,
-    );
+    });
   }
 
   @OnWorkerEvent('completed')
   onCompleted(job: Job<OrderJobData>) {
-    const sessionId = job.data.type === 'checkout-completed' ? job.data.stripeCheckoutSessionId : '';
-    this.logger.log(`Job ${job.id} (${job.name}) created order for session ${sessionId}`);
+    runWithCorrelationId(job.data.correlationId, () => {
+      const sessionId = job.data.type === 'checkout-completed' ? job.data.stripeCheckoutSessionId : '';
+      this.logger.log(`Job ${job.id} (${job.name}) created order for session ${sessionId}`);
+    });
   }
 }

@@ -1,7 +1,7 @@
 import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
-import { Logger } from '@nestjs/common';
 import type { Job } from 'bullmq';
 import { QUEUE_NAMES, type EmailJobData } from 'queue';
+import { Logger, runWithCorrelationId } from 'logging';
 import {
   renderCustomerThankYouEmail,
   renderOrderConfirmationEmail,
@@ -25,8 +25,16 @@ export class EmailProcessor extends WorkerHost {
 
   // errors are intentionally left to propagate — BullMQ marks the job
   // failed and retries per queue.EMAIL_JOB_OPTIONS's backoff, instead of the
-  // old inline try/catch that logged and gave up after one attempt
-  async process(job: Job<EmailJobData>): Promise<void> {
+  // old inline try/catch that logged and gave up after one attempt.
+  //
+  // wrapped in the job's correlation ID so every log line here — and inside
+  // mailerService — is traceable back to whatever enqueued it (a request, or
+  // an order job forwarding its own id)
+  process(job: Job<EmailJobData>): Promise<void> {
+    return runWithCorrelationId(job.data.correlationId, () => this.processJob(job));
+  }
+
+  private async processJob(job: Job<EmailJobData>): Promise<void> {
     const data = job.data;
 
     switch (data.type) {
@@ -103,15 +111,22 @@ export class EmailProcessor extends WorkerHost {
     return { isRunning: this.worker.isRunning(), isPaused: this.worker.isPaused(), lastActiveAt: this.lastActiveAt };
   }
 
+  // BullMQ emits worker events outside of process()'s own async chain, so
+  // its ambient correlation ID can't be relied on here — re-establish it
+  // explicitly from job.data, same id either way
   @OnWorkerEvent('failed')
   onFailed(job: Job<EmailJobData>, err: Error) {
-    this.logger.warn(
-      `Job ${job.id} (${job.name}) failed on attempt ${job.attemptsMade}: ${err.message}`,
-    );
+    runWithCorrelationId(job.data.correlationId, () => {
+      this.logger.warn(
+        `Job ${job.id} (${job.name}) failed on attempt ${job.attemptsMade}: ${err.message}`,
+      );
+    });
   }
 
   @OnWorkerEvent('completed')
   onCompleted(job: Job<EmailJobData>) {
-    this.logger.log(`Job ${job.id} (${job.name}) sent to ${job.data.to}`);
+    runWithCorrelationId(job.data.correlationId, () => {
+      this.logger.log(`Job ${job.id} (${job.name}) sent to ${job.data.to}`);
+    });
   }
 }

@@ -1,7 +1,9 @@
+import { randomUUID } from 'node:crypto';
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import type { Queue } from 'bullmq';
 import { QUEUE_NAMES, type OrderJobData } from 'queue';
+import { getCorrelationId } from 'logging';
 import { DRIZZLE } from '../../database/database.constants';
 import {
   and,
@@ -319,6 +321,7 @@ export class CheckoutService {
     // is the safety net if Redis is down, not a log line.
     await this.ordersQueue.add('checkout-completed', {
       type: 'checkout-completed',
+      correlationId: getCorrelationId() ?? randomUUID(),
       accountId,
       cartToken,
       stripeCheckoutSessionId: session.id,

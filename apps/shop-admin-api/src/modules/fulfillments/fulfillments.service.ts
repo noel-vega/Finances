@@ -1,4 +1,5 @@
-import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Logger } from 'logging';
 import { DRIZZLE } from 'src/database/database.constants';
 import {
   accountsTable,

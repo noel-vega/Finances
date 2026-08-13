@@ -3,6 +3,7 @@
 // which pick it up transitively via `db`) — loaded explicitly here instead
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
+import { CorrelatedLogger } from 'logging';
 import { AppModule } from './app.module';
 
 // still no user-facing HTTP API — this only keeps @Processor classes alive
@@ -10,7 +11,9 @@ import { AppModule } from './app.module';
 // modules/health), so an orchestrator/liveness probe can tell this process
 // apart from one that's silently wedged (e.g. after a Redis outage)
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: new CorrelatedLogger(undefined, { json: process.env.NODE_ENV === 'production' }),
+  });
   await app.listen(process.env.PORT ?? 3003);
 }
 bootstrap();

@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
@@ -7,15 +8,28 @@ import {
 } from '@nestjs/platform-fastify';
 import fastifyCookie from '@fastify/cookie';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { CorrelatedLogger, runWithCorrelationId } from 'logging';
 import { createSwaggerConfig } from './swagger.config';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter(),
-    { rawBody: true },
+    { rawBody: true, logger: new CorrelatedLogger(undefined, { json: process.env.NODE_ENV === 'production' }) },
   );
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
+
+  // reuses an inbound x-request-id if the caller already set one, otherwise
+  // mints a fresh one — either way it's echoed back and threaded through
+  // every log line this request produces, including ones emitted from
+  // BullMQ jobs it enqueues. FastifyAdapter's use() runs this as connect-style
+  // middleware (raw Node req/res), same as storefront-api's Express version.
+  app.use((req, res, next) => {
+    const header = req.headers['x-request-id'];
+    const correlationId = (Array.isArray(header) ? header[0] : header) || randomUUID();
+    res.setHeader('x-request-id', correlationId);
+    runWithCorrelationId(correlationId, next);
+  });
 
   const document = SwaggerModule.createDocument(app, createSwaggerConfig());
   SwaggerModule.setup('swagger', app, document, {
