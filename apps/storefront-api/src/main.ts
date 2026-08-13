@@ -7,13 +7,13 @@ import { createSwaggerConfig } from './swagger.config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { rawBody: true });
-  app.useGlobalPipes(new ValidationPipe({ transform: true }));
+  app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
   app.use(cookieParser());
 
   // customer signin now sets an httpOnly refresh cookie, so this can no
   // longer be a wildcard origin like it used to be
   app.enableCors({
-    origin: 'http://localhost:3002',
+    origin: process.env.STOREFRONT_WEB_URL ?? 'http://localhost:3002',
     credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'DELETE'],
     allowedHeaders: ['content-type', 'x-app-key', 'x-cart-token', 'authorization'],

@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import {
   FastifyAdapter,
@@ -14,6 +15,7 @@ async function bootstrap() {
     new FastifyAdapter(),
     { rawBody: true },
   );
+  app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
 
   const document = SwaggerModule.createDocument(app, createSwaggerConfig());
   SwaggerModule.setup('swagger', app, document, {
@@ -21,7 +23,7 @@ async function bootstrap() {
   });
 
   app.enableCors({
-    origin: 'http://localhost:5000',
+    origin: process.env.SHOP_ADMIN_WEB_URL ?? 'http://localhost:5000',
     credentials: true,
     methods: ["GET", "POST", "PATCH", "DELETE"]
   });
