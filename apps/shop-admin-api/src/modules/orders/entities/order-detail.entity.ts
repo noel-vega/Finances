@@ -1,4 +1,18 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Fulfillment } from '../../fulfillments/entities/fulfillment.entity';
+
+export type FulfillmentStatus = 'unfulfilled' | 'partially_fulfilled' | 'fulfilled';
+
+class OrderItemAllocation {
+  @ApiProperty({ type: Number })
+  locationId!: number;
+
+  @ApiProperty()
+  locationName!: string;
+
+  @ApiProperty({ type: Number })
+  quantity!: number;
+}
 
 class OrderDetailItem {
   @ApiProperty({ type: Number })
@@ -21,6 +35,19 @@ class OrderDetailItem {
 
   @ApiProperty({ type: Number })
   quantity!: number;
+
+  @ApiProperty({ type: Number })
+  fulfilledQuantity!: number;
+
+  @ApiProperty({ type: Number })
+  remainingQuantity!: number;
+
+  // where this item's stock was actually pulled from at order time (see
+  // inventoryMovementsTable.orderItemId) — informs which location(s) a
+  // merchant can realistically ship this item from, but isn't a hard limit
+  // enforced by the fulfillment endpoints (see FulfillmentsService)
+  @ApiProperty({ type: () => [OrderItemAllocation] })
+  allocations!: OrderItemAllocation[];
 }
 
 export class OrderDetail {
@@ -63,24 +90,17 @@ export class OrderDetail {
   @ApiProperty({ type: Number, nullable: true })
   shippingLocationId!: number | null;
 
-  @ApiProperty({ type: 'string', nullable: true })
-  shippingCarrier!: string | null;
-
-  @ApiProperty({ type: 'string', nullable: true })
-  shippingServiceLevel!: string | null;
-
-  @ApiProperty({ type: 'string', nullable: true })
-  trackingNumber!: string | null;
-
-  @ApiProperty({ type: 'string', nullable: true })
-  trackingUrl!: string | null;
-
-  @ApiProperty({ type: 'string', nullable: true })
-  labelUrl!: string | null;
+  // derived from items[].fulfilledQuantity vs .quantity at read time, not
+  // stored — can't drift out of sync with the fulfillments that back it
+  @ApiProperty({ enum: ['unfulfilled', 'partially_fulfilled', 'fulfilled'] })
+  fulfillmentStatus!: FulfillmentStatus;
 
   @ApiProperty()
   createdAt!: Date;
 
   @ApiProperty({ type: () => [OrderDetailItem] })
   items!: OrderDetailItem[];
+
+  @ApiProperty({ type: () => [Fulfillment] })
+  fulfillments!: Fulfillment[];
 }

@@ -79,6 +79,7 @@ export class OrdersProcessor extends WorkerHost {
 
     await this.db.transaction(async (tx) => {
       const recordSoldMovement = async (
+        orderItemId: number,
         variantId: number,
         locationId: number,
         quantity: number,
@@ -86,7 +87,7 @@ export class OrdersProcessor extends WorkerHost {
         const delta = -quantity;
         await tx
           .insert(inventoryMovementsTable)
-          .values({ variantId, locationId, delta, reason: 'sold' });
+          .values({ orderItemId, variantId, locationId, delta, reason: 'sold' });
         await tx
           .insert(inventoryTable)
           .values({ variantId, locationId, stock: delta })
@@ -129,16 +130,19 @@ export class OrdersProcessor extends WorkerHost {
           .from(productVariantsTable)
           .where(eq(productVariantsTable.id, item.variantId));
 
-        await tx.insert(orderItemsTable).values({
-          orderId: order.id,
-          variantId: item.variantId,
-          productName: item.productName,
-          sku: item.sku,
-          optionsLabel: item.optionsLabel,
-          priceCents: item.priceCents,
-          quantity: item.quantity,
-          weightOz: variant?.weightOz ?? null,
-        });
+        const [orderItem] = await tx
+          .insert(orderItemsTable)
+          .values({
+            orderId: order.id,
+            variantId: item.variantId,
+            productName: item.productName,
+            sku: item.sku,
+            optionsLabel: item.optionsLabel,
+            priceCents: item.priceCents,
+            quantity: item.quantity,
+            weightOz: variant?.weightOz ?? null,
+          })
+          .returning();
 
         // greedy across locations, highest stock first — if stock runs out
         // entirely the sale is still recorded against the last location and
@@ -155,11 +159,11 @@ export class OrdersProcessor extends WorkerHost {
           if (remaining <= 0) break;
           const take = Math.min(Math.max(row.stock, 0), remaining);
           if (take <= 0) continue;
-          await recordSoldMovement(item.variantId, row.locationId, take);
+          await recordSoldMovement(orderItem.id, item.variantId, row.locationId, take);
           remaining -= take;
         }
         if (remaining > 0 && inventoryRows.length > 0) {
-          await recordSoldMovement(item.variantId, inventoryRows[0].locationId, remaining);
+          await recordSoldMovement(orderItem.id, item.variantId, inventoryRows[0].locationId, remaining);
         }
       }
 

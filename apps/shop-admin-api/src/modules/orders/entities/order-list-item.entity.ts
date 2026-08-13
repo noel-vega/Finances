@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import type { FulfillmentStatus } from './order-detail.entity';
 
 export class OrderListItem {
   @ApiProperty({ type: Number })
@@ -15,6 +16,9 @@ export class OrderListItem {
 
   @ApiProperty({ type: Number })
   amountTotalCents!: number;
+
+  @ApiProperty({ enum: ['unfulfilled', 'partially_fulfilled', 'fulfilled'] })
+  fulfillmentStatus!: FulfillmentStatus;
 
   @ApiProperty()
   createdAt!: Date;

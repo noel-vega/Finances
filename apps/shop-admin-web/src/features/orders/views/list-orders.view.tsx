@@ -6,6 +6,7 @@ import type { OrderListItem } from "admin-sdk";
 import { getListOrdersQueryOptions } from "../orders.hooks";
 import { formatCents } from "../../../lib/currency";
 import { DataTable } from "../../../components/data-table";
+import { FulfillmentStatusBadge } from "../components/fulfillment-status-badge";
 
 const columns: ColumnDef<OrderListItem>[] = [
   {
@@ -32,6 +33,11 @@ const columns: ColumnDef<OrderListItem>[] = [
     accessorKey: "amountTotalCents",
     header: "Total",
     cell: ({ row }) => formatCents(row.original.amountTotalCents),
+  },
+  {
+    accessorKey: "fulfillmentStatus",
+    header: "Fulfillment",
+    cell: ({ row }) => <FulfillmentStatusBadge status={row.original.fulfillmentStatus} />,
   },
   {
     accessorKey: "createdAt",

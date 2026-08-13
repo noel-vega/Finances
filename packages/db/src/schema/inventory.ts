@@ -6,6 +6,7 @@ import { integer, pgEnum, pgTable, unique, varchar } from "drizzle-orm/pg-core";
 import { productVariantsTable } from "./products.js";
 import { usersTable } from "./users.js";
 import { accountsTable } from "./accounts.js";
+import { orderItemsTable } from "./orders.js";
 import { timestampAt } from "../utils.js";
 import { createInsertSchema, createSelectSchema } from "drizzle-orm/zod";
 import z from "zod";
@@ -84,6 +85,11 @@ export const inventoryMovementsTable = pgTable("inventory_movements", {
   // positive = stock in, negative = stock out
   delta: integer().notNull(),
   reason: inventoryMovementReasonEnum().notNull(),
+  // set only for reason: "sold" movements written by the checkout worker —
+  // lets fulfillment ask "which order item did this stock come from, and
+  // from which location(s)" (SUM(-delta) GROUP BY locationId) instead of
+  // needing a separate allocation table kept in sync with this ledger
+  orderItemId: integer().references(() => orderItemsTable.id, { onDelete: "set null" }),
   note: varchar({ length: 500 }),
   createdByUserId: integer().references(() => usersTable.id, {
     onDelete: "set null",

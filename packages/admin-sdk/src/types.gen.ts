@@ -500,7 +500,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/orders/{id}/shipping-rates": {
+    "/fulfillments/rates": {
         parameters: {
             query?: never;
             header?: never;
@@ -509,14 +509,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["OrdersController_getShippingRates"];
+        post: operations["FulfillmentsController_getRates"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/orders/{id}/shipping-label": {
+    "/fulfillments": {
         parameters: {
             query?: never;
             header?: never;
@@ -525,7 +525,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["OrdersController_buyShippingLabel"];
+        post: operations["FulfillmentsController_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -886,6 +886,8 @@ export interface components {
             customerEmail: string;
             itemCount: number;
             amountTotalCents: number;
+            /** @enum {string} */
+            fulfillmentStatus: "unfulfilled" | "partially_fulfilled" | "fulfilled";
             /** Format: date-time */
             createdAt: string;
         };
@@ -895,6 +897,11 @@ export interface components {
             limit: number;
             offset: number;
         };
+        OrderItemAllocation: {
+            locationId: number;
+            locationName: string;
+            quantity: number;
+        };
         OrderDetailItem: {
             id: number;
             variantId: number | null;
@@ -903,6 +910,27 @@ export interface components {
             optionsLabel: string | null;
             priceCents: number;
             quantity: number;
+            fulfilledQuantity: number;
+            remainingQuantity: number;
+            allocations: components["schemas"]["OrderItemAllocation"][];
+        };
+        FulfillmentItem: {
+            orderItemId: number;
+            quantity: number;
+        };
+        Fulfillment: {
+            id: number;
+            locationId: number;
+            locationName: string;
+            shippingCarrier: string | null;
+            shippingServiceLevel: string | null;
+            trackingNumber: string | null;
+            trackingUrl: string | null;
+            labelUrl: string | null;
+            amountCents: number;
+            /** Format: date-time */
+            createdAt: string;
+            items: components["schemas"]["FulfillmentItem"][];
         };
         OrderDetail: {
             id: number;
@@ -918,14 +946,21 @@ export interface components {
             amountTotalCents: number;
             shippingCents: number;
             shippingLocationId: number | null;
-            shippingCarrier: string | null;
-            shippingServiceLevel: string | null;
-            trackingNumber: string | null;
-            trackingUrl: string | null;
-            labelUrl: string | null;
+            /** @enum {string} */
+            fulfillmentStatus: "unfulfilled" | "partially_fulfilled" | "fulfilled";
             /** Format: date-time */
             createdAt: string;
             items: components["schemas"]["OrderDetailItem"][];
+            fulfillments: components["schemas"]["Fulfillment"][];
+        };
+        FulfillmentItemInput: {
+            orderItemId: number;
+            quantity: number;
+        };
+        GetFulfillmentRatesDto: {
+            orderId: number;
+            locationId: number;
+            items: components["schemas"]["FulfillmentItemInput"][];
         };
         ShippingRate: {
             objectId: string;
@@ -934,7 +969,10 @@ export interface components {
             amountCents: number;
             estimatedDays: number | null;
         };
-        BuyShippingLabelDto: {
+        CreateFulfillmentDto: {
+            orderId: number;
+            locationId: number;
+            items: components["schemas"]["FulfillmentItemInput"][];
             rateObjectId: string;
             provider: string;
             servicelevel: string;
@@ -1896,16 +1934,18 @@ export interface operations {
             };
         };
     };
-    OrdersController_getShippingRates: {
+    FulfillmentsController_getRates: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                id: string;
-            };
+            path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetFulfillmentRatesDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -1917,18 +1957,16 @@ export interface operations {
             };
         };
     };
-    OrdersController_buyShippingLabel: {
+    FulfillmentsController_create: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                id: string;
-            };
+            path?: never;
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BuyShippingLabelDto"];
+                "application/json": components["schemas"]["CreateFulfillmentDto"];
             };
         };
         responses: {

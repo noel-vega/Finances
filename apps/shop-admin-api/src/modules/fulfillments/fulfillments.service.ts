@@ -1,0 +1,249 @@
+import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { DRIZZLE } from 'src/database/database.constants';
+import {
+  accountsTable,
+  and,
+  eq,
+  fulfillmentItemsTable,
+  fulfillmentsTable,
+  inArray,
+  locationsTable,
+  orderItemsTable,
+  ordersTable,
+  type db as Db,
+} from 'db';
+import { OrdersService } from '../orders/orders.service';
+import { OrderDetail } from '../orders/entities/order-detail.entity';
+import { ShippingRate } from './entities/shipping-rate.entity';
+import { GetFulfillmentRatesDto } from './dto/get-fulfillment-rates.dto';
+import { CreateFulfillmentDto } from './dto/create-fulfillment.dto';
+import { shippo } from './shippo.client';
+
+// same defaults used by storefront-api's checkout-time quoting and the old
+// orders.service.ts's getShippingRates — see that module's comment for why
+// box dimensions aren't modeled per-product
+const DEFAULT_ITEM_WEIGHT_OZ = 16;
+const DEFAULT_PARCEL_DIMENSIONS_IN = { length: '12', width: '9', height: '6' };
+
+@Injectable()
+export class FulfillmentsService {
+  private readonly logger = new Logger(FulfillmentsService.name);
+
+  constructor(
+    @Inject(DRIZZLE) private readonly db: typeof Db,
+    private readonly ordersService: OrdersService,
+  ) {}
+
+  async getRates(dto: GetFulfillmentRatesDto, accountId: number): Promise<ShippingRate[]> {
+    const { order, location, totalWeightOz } = await this.resolveRequest(dto, accountId);
+
+    const [account] = await this.db
+      .select({ phone: accountsTable.phone, email: accountsTable.email })
+      .from(accountsTable)
+      .where(eq(accountsTable.id, accountId));
+
+    const shipment = await shippo.shipments
+      .create({
+        addressFrom: {
+          name: location.name,
+          street1: location.addressLine1!,
+          street2: location.addressLine2 ?? undefined,
+          city: location.addressCity ?? undefined,
+          state: location.addressState ?? undefined,
+          zip: location.addressPostalCode ?? undefined,
+          country: location.addressCountry ?? 'US',
+          phone: account?.phone,
+          email: account?.email,
+        },
+        addressTo: {
+          name: order.customerName,
+          street1: order.shippingLine1,
+          street2: order.shippingLine2 ?? undefined,
+          city: order.shippingCity,
+          state: order.shippingState ?? undefined,
+          zip: order.shippingPostalCode,
+          country: order.shippingCountry,
+        },
+        parcels: [
+          {
+            massUnit: 'oz',
+            weight: String(totalWeightOz || DEFAULT_ITEM_WEIGHT_OZ),
+            distanceUnit: 'in',
+            ...DEFAULT_PARCEL_DIMENSIONS_IN,
+          },
+        ],
+        async: false,
+      })
+      .catch((err) => {
+        this.logger.error(`Shippo shipment creation failed for order ${dto.orderId}`, err);
+        return null;
+      });
+
+    if (!shipment || shipment.rates.length === 0) {
+      throw new BadRequestException("Couldn't get shipping rates for this order");
+    }
+
+    return [...shipment.rates]
+      .sort((a, b) => parseFloat(a.amount) - parseFloat(b.amount))
+      .map((rate) => ({
+        objectId: rate.objectId,
+        provider: rate.provider,
+        servicelevel: rate.servicelevel.name ?? '',
+        amountCents: Math.round(parseFloat(rate.amount) * 100),
+        estimatedDays: rate.estimatedDays ?? null,
+      }));
+  }
+
+  async create(dto: CreateFulfillmentDto, accountId: number): Promise<OrderDetail> {
+    await this.resolveRequest(dto, accountId);
+
+    // commit the quantity reservation *before* the slow external call, not
+    // after — see reserve()'s comment for why this is what actually closes
+    // the over-fulfillment race
+    const fulfillmentId = await this.reserve(dto);
+
+    const transaction = await shippo.transactions
+      .create({ rate: dto.rateObjectId, labelFileType: 'PDF', async: false })
+      .catch((err) => {
+        this.logger.error(`Shippo transaction creation failed for order ${dto.orderId}`, err);
+        return null;
+      });
+
+    if (!transaction || transaction.status !== 'SUCCESS') {
+      const reason = transaction?.messages?.map((m) => m.text).filter(Boolean).join('; ');
+      this.logger.error(
+        `Shippo transaction for order ${dto.orderId} did not succeed: status=${transaction?.status ?? 'none'} ${reason ?? ''}`,
+      );
+      // release the reservation — nothing was actually shipped, so this
+      // quantity is available for a retry or a different fulfillment
+      await this.db.delete(fulfillmentsTable).where(eq(fulfillmentsTable.id, fulfillmentId));
+      throw new BadRequestException(
+        reason ? `Couldn't purchase a label for that rate: ${reason}` : "Couldn't purchase a label for that rate",
+      );
+    }
+
+    await this.db
+      .update(fulfillmentsTable)
+      .set({
+        shippoTransactionId: transaction.objectId ?? null,
+        trackingNumber: transaction.trackingNumber ?? null,
+        trackingUrl: transaction.trackingUrlProvider ?? null,
+        labelUrl: transaction.labelUrl ?? null,
+        updatedAt: new Date(),
+      })
+      .where(eq(fulfillmentsTable.id, fulfillmentId));
+
+    return (await this.ordersService.findOne(dto.orderId, accountId))!;
+  }
+
+  // atomically reserves the requested quantities against each order item.
+  // `FOR UPDATE` locks the requested order_items rows so a concurrent
+  // create() for the same item blocks here until this transaction commits
+  // or rolls back — that's what closes the race resolveRequest's plain
+  // SELECT can't close on its own (two concurrent callers could both read
+  // the same pre-insert "already fulfilled" sum and both pass validation).
+  // Runs — and commits — before the Shippo call in create() so the
+  // quantity commitment lands before the slow external request, not after.
+  private async reserve(dto: CreateFulfillmentDto): Promise<number> {
+    return this.db.transaction(async (tx) => {
+      const requestedIds = dto.items.map((i) => i.orderItemId);
+      const lockedItems = await tx
+        .select({ id: orderItemsTable.id, quantity: orderItemsTable.quantity })
+        .from(orderItemsTable)
+        .where(inArray(orderItemsTable.id, requestedIds))
+        .for('update');
+
+      const fulfilledByItem = await this.ordersService.getFulfilledQuantityByItem(requestedIds, tx);
+
+      for (const requested of dto.items) {
+        const item = lockedItems.find((i) => i.id === requested.orderItemId)!;
+        const remaining = item.quantity - (fulfilledByItem.get(item.id) ?? 0);
+        if (requested.quantity > remaining) {
+          throw new BadRequestException(
+            `Requested quantity for order item ${item.id} (${requested.quantity}) exceeds what's still unfulfilled (${remaining})`,
+          );
+        }
+      }
+
+      const [fulfillment] = await tx
+        .insert(fulfillmentsTable)
+        .values({
+          orderId: dto.orderId,
+          locationId: dto.locationId,
+          shippingCarrier: dto.provider,
+          shippingServiceLevel: dto.servicelevel,
+          amountCents: dto.amountCents,
+        })
+        .returning();
+
+      await tx.insert(fulfillmentItemsTable).values(
+        dto.items.map((item) => ({
+          fulfillmentId: fulfillment.id,
+          orderItemId: item.orderItemId,
+          quantity: item.quantity,
+        })),
+      );
+
+      return fulfillment.id;
+    });
+  }
+
+  // shared by getRates and create — loads + validates the order, ship-from
+  // location, and requested items all belong to this account/order, and
+  // that none of the requested quantities exceed what's still unfulfilled.
+  // Deliberately does NOT check the requested items against their
+  // inventoryMovements allocations for this locationId — allocations are
+  // informational (they tell a merchant where stock physically is), not a
+  // hard constraint on which location a fulfillment can claim to ship from.
+  private async resolveRequest(
+    dto: { orderId: number; locationId: number; items: { orderItemId: number; quantity: number }[] },
+    accountId: number,
+  ) {
+    const [order] = await this.db
+      .select()
+      .from(ordersTable)
+      .where(and(eq(ordersTable.id, dto.orderId), eq(ordersTable.accountId, accountId)));
+    if (!order) throw new NotFoundException('Order not found');
+
+    const [location] = await this.db
+      .select()
+      .from(locationsTable)
+      .where(and(eq(locationsTable.id, dto.locationId), eq(locationsTable.accountId, accountId)));
+    if (!location?.addressLine1) {
+      throw new BadRequestException('That location has no shipping address on file');
+    }
+
+    const requestedIds = dto.items.map((i) => i.orderItemId);
+    const items = await this.db
+      .select({
+        id: orderItemsTable.id,
+        quantity: orderItemsTable.quantity,
+        weightOz: orderItemsTable.weightOz,
+      })
+      .from(orderItemsTable)
+      .where(and(eq(orderItemsTable.orderId, dto.orderId), inArray(orderItemsTable.id, requestedIds)));
+    if (items.length !== requestedIds.length) {
+      throw new BadRequestException("One or more items don't belong to this order");
+    }
+
+    // upfront fail-fast check — avoids a pointless Shippo call in the
+    // common case. The authoritative check that actually prevents a race
+    // is the locked recheck in reserve(), not this one.
+    const fulfilledByItem = await this.ordersService.getFulfilledQuantityByItem(requestedIds);
+
+    let totalWeightOz = 0;
+    for (const requested of dto.items) {
+      const item = items.find((i) => i.id === requested.orderItemId)!;
+      const alreadyFulfilled = fulfilledByItem.get(item.id) ?? 0;
+      const remaining = item.quantity - alreadyFulfilled;
+      if (requested.quantity > remaining) {
+        throw new BadRequestException(
+          `Requested quantity for order item ${item.id} (${requested.quantity}) exceeds what's still unfulfilled (${remaining})`,
+        );
+      }
+      totalWeightOz += (item.weightOz ?? DEFAULT_ITEM_WEIGHT_OZ) * requested.quantity;
+    }
+
+    return { order, location, totalWeightOz };
+  }
+}

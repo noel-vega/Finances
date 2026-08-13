@@ -1470,19 +1470,20 @@
         ]
       }
     },
-    "/orders/{id}/shipping-rates": {
+    "/fulfillments/rates": {
       "post": {
-        "operationId": "OrdersController_getShippingRates",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
+        "operationId": "FulfillmentsController_getRates",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetFulfillmentRatesDto"
+              }
             }
           }
-        ],
+        },
         "responses": {
           "200": {
             "description": "",
@@ -1504,29 +1505,20 @@
           }
         ],
         "tags": [
-          "Orders"
+          "Fulfillments"
         ]
       }
     },
-    "/orders/{id}/shipping-label": {
+    "/fulfillments": {
       "post": {
-        "operationId": "OrdersController_buyShippingLabel",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "operationId": "FulfillmentsController_create",
+        "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/BuyShippingLabelDto"
+                "$ref": "#/components/schemas/CreateFulfillmentDto"
               }
             }
           }
@@ -1549,7 +1541,7 @@
           }
         ],
         "tags": [
-          "Orders"
+          "Fulfillments"
         ]
       }
     },
@@ -2847,6 +2839,14 @@
           "amountTotalCents": {
             "type": "number"
           },
+          "fulfillmentStatus": {
+            "type": "string",
+            "enum": [
+              "unfulfilled",
+              "partially_fulfilled",
+              "fulfilled"
+            ]
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string"
@@ -2858,6 +2858,7 @@
           "customerEmail",
           "itemCount",
           "amountTotalCents",
+          "fulfillmentStatus",
           "createdAt"
         ]
       },
@@ -2887,6 +2888,25 @@
           "offset"
         ]
       },
+      "OrderItemAllocation": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "number"
+          },
+          "locationName": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "locationId",
+          "locationName",
+          "quantity"
+        ]
+      },
       "OrderDetailItem": {
         "type": "object",
         "properties": {
@@ -2913,6 +2933,18 @@
           },
           "quantity": {
             "type": "number"
+          },
+          "fulfilledQuantity": {
+            "type": "number"
+          },
+          "remainingQuantity": {
+            "type": "number"
+          },
+          "allocations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderItemAllocation"
+            }
           }
         },
         "required": [
@@ -2922,7 +2954,85 @@
           "sku",
           "optionsLabel",
           "priceCents",
+          "quantity",
+          "fulfilledQuantity",
+          "remainingQuantity",
+          "allocations"
+        ]
+      },
+      "FulfillmentItem": {
+        "type": "object",
+        "properties": {
+          "orderItemId": {
+            "type": "number"
+          },
+          "quantity": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "orderItemId",
           "quantity"
+        ]
+      },
+      "Fulfillment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "locationId": {
+            "type": "number"
+          },
+          "locationName": {
+            "type": "string"
+          },
+          "shippingCarrier": {
+            "type": "string",
+            "nullable": true
+          },
+          "shippingServiceLevel": {
+            "type": "string",
+            "nullable": true
+          },
+          "trackingNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "trackingUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "labelUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "amountCents": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FulfillmentItem"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "locationId",
+          "locationName",
+          "shippingCarrier",
+          "shippingServiceLevel",
+          "trackingNumber",
+          "trackingUrl",
+          "labelUrl",
+          "amountCents",
+          "createdAt",
+          "items"
         ]
       },
       "OrderDetail": {
@@ -2970,25 +3080,13 @@
             "type": "number",
             "nullable": true
           },
-          "shippingCarrier": {
+          "fulfillmentStatus": {
             "type": "string",
-            "nullable": true
-          },
-          "shippingServiceLevel": {
-            "type": "string",
-            "nullable": true
-          },
-          "trackingNumber": {
-            "type": "string",
-            "nullable": true
-          },
-          "trackingUrl": {
-            "type": "string",
-            "nullable": true
-          },
-          "labelUrl": {
-            "type": "string",
-            "nullable": true
+            "enum": [
+              "unfulfilled",
+              "partially_fulfilled",
+              "fulfilled"
+            ]
           },
           "createdAt": {
             "format": "date-time",
@@ -2998,6 +3096,12 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/OrderDetailItem"
+            }
+          },
+          "fulfillments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Fulfillment"
             }
           }
         },
@@ -3015,12 +3119,46 @@
           "amountTotalCents",
           "shippingCents",
           "shippingLocationId",
-          "shippingCarrier",
-          "shippingServiceLevel",
-          "trackingNumber",
-          "trackingUrl",
-          "labelUrl",
+          "fulfillmentStatus",
           "createdAt",
+          "items",
+          "fulfillments"
+        ]
+      },
+      "FulfillmentItemInput": {
+        "type": "object",
+        "properties": {
+          "orderItemId": {
+            "type": "number"
+          },
+          "quantity": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "orderItemId",
+          "quantity"
+        ]
+      },
+      "GetFulfillmentRatesDto": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "number"
+          },
+          "locationId": {
+            "type": "number"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FulfillmentItemInput"
+            }
+          }
+        },
+        "required": [
+          "orderId",
+          "locationId",
           "items"
         ]
       },
@@ -3052,9 +3190,21 @@
           "estimatedDays"
         ]
       },
-      "BuyShippingLabelDto": {
+      "CreateFulfillmentDto": {
         "type": "object",
         "properties": {
+          "orderId": {
+            "type": "number"
+          },
+          "locationId": {
+            "type": "number"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FulfillmentItemInput"
+            }
+          },
           "rateObjectId": {
             "type": "string"
           },
@@ -3069,6 +3219,9 @@
           }
         },
         "required": [
+          "orderId",
+          "locationId",
+          "items",
           "rateObjectId",
           "provider",
           "servicelevel",

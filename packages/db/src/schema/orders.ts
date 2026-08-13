@@ -29,18 +29,13 @@ export const ordersTable = pgTable("orders", {
   // from Stripe's shipping_cost.amount_total at checkout time
   shippingCents: integer().notNull().default(0),
   // which location's address was quoted as ship-from at checkout — carried
-  // through via the Checkout Session's metadata into the webhook
+  // through via the Checkout Session's metadata into the webhook. This is
+  // only a rate-estimation input; it's independent of where fulfillment
+  // actually ships from (see fulfillmentsTable.locationId below), since an
+  // order's inventory can be allocated across more than one location.
   shippingLocationId: integer().references(() => locationsTable.id, {
     onDelete: "set null",
   }),
-  // all null until a label is actually purchased (a separate, manual,
-  // later step — see modules/orders shipping-label endpoint)
-  shippoTransactionId: text(),
-  trackingNumber: text(),
-  trackingUrl: text(),
-  labelUrl: text(),
-  shippingCarrier: text(),
-  shippingServiceLevel: text(),
   // doubles as the webhook's idempotency key
   stripeCheckoutSessionId: text().notNull().unique(),
   stripePaymentIntentId: text(),
@@ -84,3 +79,56 @@ export const SelectOrderItemSchema = createSelectSchema(orderItemsTable);
 export type SelectOrderItem = z.infer<typeof SelectOrderItemSchema>;
 export const InsertOrderItemSchema = createInsertSchema(orderItemsTable);
 export type InsertOrderItem = z.infer<typeof InsertOrderItemSchema>;
+
+// one row per label actually purchased — an order can have any number of
+// these (partial shipments, or split across locations because inventory for
+// the order was allocated across more than one, see inventoryMovementsTable
+// .orderItemId). Unlike orderItemsTable this is never created at checkout
+// time, only later via the admin fulfillment flow.
+export const fulfillmentsTable = pgTable("fulfillments", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  orderId: integer()
+    .notNull()
+    .references(() => ordersTable.id, { onDelete: "cascade" }),
+  // the ship-from address actually used for this shipment — deliberately
+  // not deletable out from under a purchased label's history, unlike
+  // ordersTable.shippingLocationId's "set null" (that one's just a
+  // checkout-time estimate, this one is what Shippo actually shipped from)
+  locationId: integer()
+    .notNull()
+    .references(() => locationsTable.id),
+  shippoTransactionId: text(),
+  trackingNumber: text(),
+  trackingUrl: text(),
+  labelUrl: text(),
+  shippingCarrier: text(),
+  shippingServiceLevel: text(),
+  amountCents: integer().notNull(),
+  createdAt: timestampAt("created_at"),
+  updatedAt: timestampAt("updated_at"),
+});
+
+export const SelectFulfillmentSchema = createSelectSchema(fulfillmentsTable);
+export type SelectFulfillment = z.infer<typeof SelectFulfillmentSchema>;
+export const InsertFulfillmentSchema = createInsertSchema(fulfillmentsTable);
+export type InsertFulfillment = z.infer<typeof InsertFulfillmentSchema>;
+
+// which order item(s), and how much of each, a fulfillment covers — an
+// order item's quantity can be split across multiple fulfillments over time
+// (e.g. some in stock now, the rest backordered and shipped later)
+export const fulfillmentItemsTable = pgTable("fulfillment_items", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  fulfillmentId: integer()
+    .notNull()
+    .references(() => fulfillmentsTable.id, { onDelete: "cascade" }),
+  orderItemId: integer()
+    .notNull()
+    .references(() => orderItemsTable.id, { onDelete: "cascade" }),
+  quantity: integer().notNull(),
+  createdAt: timestampAt("created_at"),
+});
+
+export const SelectFulfillmentItemSchema = createSelectSchema(fulfillmentItemsTable);
+export type SelectFulfillmentItem = z.infer<typeof SelectFulfillmentItemSchema>;
+export const InsertFulfillmentItemSchema = createInsertSchema(fulfillmentItemsTable);
+export type InsertFulfillmentItem = z.infer<typeof InsertFulfillmentItemSchema>;

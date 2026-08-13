@@ -7,15 +7,27 @@ import { ArrowLeftIcon, LoaderCircleIcon, TruckIcon } from "lucide-react";
 import { Button } from "ui/button";
 import { Separator } from "ui/separator";
 import { cn } from "ui/utils";
-import { DataTable } from "../../../components/data-table";
 import {
-  useBuyShippingLabelMutation,
-  useGetShippingRatesMutation,
-  useOrderQuery,
-} from "../orders.hooks";
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "ui/select";
+import { Input } from "ui/input";
+import { DataTable } from "../../../components/data-table";
+import { useOrderQuery } from "../orders.hooks";
+import {
+  useCreateFulfillmentMutation,
+  useGetFulfillmentRatesMutation,
+} from "../../fulfillments/fulfillments.hooks";
+import { useListLocationsQuery } from "../../locations/locations.hooks";
 import { formatCents } from "../../../lib/currency";
+import { FulfillmentStatusBadge } from "../components/fulfillment-status-badge";
 
 type OrderItem = OrderDetail["items"][number];
+type OrderFulfillment = OrderDetail["fulfillments"][number];
 
 const columns: ColumnDef<OrderItem>[] = [
   {
@@ -55,62 +67,212 @@ const columns: ColumnDef<OrderItem>[] = [
   },
 ];
 
-function ShippingLabelSection({ order }: { order: OrderDetail }) {
-  const getShippingRates = useGetShippingRatesMutation();
-  const buyShippingLabel = useBuyShippingLabelMutation(order.id);
+function ExistingFulfillments({ order }: { order: OrderDetail }) {
+  if (order.fulfillments.length === 0) return null;
+
+  return (
+    <div className="space-y-3">
+      {order.fulfillments.map((fulfillment: OrderFulfillment) => (
+        <div key={fulfillment.id} className="rounded-lg border p-3">
+          <p className="text-sm font-medium">
+            {fulfillment.shippingCarrier} {fulfillment.shippingServiceLevel}
+            <span className="text-muted-foreground font-normal">
+              {" "}
+              · from {fulfillment.locationName}
+            </span>
+          </p>
+          {fulfillment.trackingNumber && (
+            <p className="text-sm text-muted-foreground">
+              Tracking:{" "}
+              {fulfillment.trackingUrl ? (
+                <a
+                  href={fulfillment.trackingUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline hover:text-foreground"
+                >
+                  {fulfillment.trackingNumber}
+                </a>
+              ) : (
+                fulfillment.trackingNumber
+              )}
+            </p>
+          )}
+          <ul className="text-sm text-muted-foreground mt-1 list-disc list-inside">
+            {fulfillment.items.map((fi) => {
+              const item = order.items.find((i) => i.id === fi.orderItemId);
+              return (
+                <li key={fi.orderItemId}>
+                  {fi.quantity} × {item?.productName ?? `Item #${fi.orderItemId}`}
+                </li>
+              );
+            })}
+          </ul>
+          {fulfillment.labelUrl && (
+            <a href={fulfillment.labelUrl} target="_blank" rel="noreferrer">
+              <Button type="button" variant="outline" size="sm" className="mt-2">
+                Download label
+              </Button>
+            </a>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// how much of `item` to default to shipping from `locationId` — capped at
+// both what's still unfulfilled overall and what was actually allocated to
+// that location, but the latter isn't enforced past this default (see
+// FulfillmentsService.resolveRequest on the backend)
+function defaultQuantity(item: OrderItem, locationId: number): number {
+  const allocation = item.allocations.find((a) => a.locationId === locationId);
+  return Math.min(item.remainingQuantity, allocation?.quantity ?? item.remainingQuantity);
+}
+
+function CreateFulfillmentFlow({ order }: { order: OrderDetail }) {
+  const fulfillableItems = order.items.filter((item) => item.remainingQuantity > 0);
+  const { data: locations } = useListLocationsQuery();
+
+  // orders placed before allocation tracking existed have no allocation
+  // data on any item — fall back to every addressed account location
+  // rather than leaving the order unfulfillable through the UI. Orders
+  // that do have allocation data keep the tighter, allocation-scoped list.
+  const hasAllocationData = fulfillableItems.some((item) => item.allocations.length > 0);
+  const locationOptions = hasAllocationData
+    ? fulfillableItems
+        .flatMap((item) => item.allocations)
+        .reduce<{ id: number; name: string }[]>((options, allocation) => {
+          if (!options.some((o) => o.id === allocation.locationId)) {
+            options.push({ id: allocation.locationId, name: allocation.locationName });
+          }
+          return options;
+        }, [])
+    : (locations ?? [])
+        .filter((location) => location.addressLine1)
+        .map((location) => ({ id: location.id, name: location.name }));
+
+  // null until the merchant picks one — the effective locationId below
+  // falls back to the first option, computed at render time rather than as
+  // this state's initial value, so it stays correct once locationOptions
+  // updates (e.g. once useListLocationsQuery resolves) instead of freezing
+  // on whatever was available on the very first render
+  const [selectedLocationId, setSelectedLocationId] = useState<number | null>(null);
+  const [quantities, setQuantities] = useState<Record<number, number>>({});
   const [rates, setRates] = useState<ShippingRate[] | null>(null);
   const [selectedRate, setSelectedRate] = useState<ShippingRate | null>(null);
 
-  if (order.labelUrl) {
+  const getRates = useGetFulfillmentRatesMutation();
+  const createFulfillment = useCreateFulfillmentMutation(order.id);
+
+  if (fulfillableItems.length === 0) return null;
+
+  const locationId = selectedLocationId ?? locationOptions[0]?.id ?? null;
+
+  if (locationOptions.length === 0 || locationId === null) {
     return (
       <div>
-        <h2 className="font-medium mb-1">Shipping label</h2>
-        <p className="text-sm">
-          {order.shippingCarrier} {order.shippingServiceLevel}
+        <h2 className="font-medium mb-1">Create a fulfillment</h2>
+        <p className="text-sm text-muted-foreground">
+          No source location is recorded for the remaining items on this order yet.
         </p>
-        {order.trackingNumber && (
-          <p className="text-sm text-muted-foreground">
-            Tracking:{" "}
-            {order.trackingUrl ? (
-              <a
-                href={order.trackingUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="underline hover:text-foreground"
-              >
-                {order.trackingNumber}
-              </a>
-            ) : (
-              order.trackingNumber
-            )}
-          </p>
-        )}
-        <a href={order.labelUrl} target="_blank" rel="noreferrer">
-          <Button type="button" variant="outline" size="sm" className="mt-2">
-            Download label
-          </Button>
-        </a>
       </div>
     );
   }
 
+  // items with no allocation data at all show up under every location
+  // (nothing to scope by); items that do have allocation data stay scoped
+  // to the location(s) they were actually pulled from
+  const itemsForLocation = fulfillableItems.filter(
+    (item) =>
+      item.allocations.length === 0 || item.allocations.some((a) => a.locationId === locationId),
+  );
+  const requestItems = itemsForLocation
+    .map((item) => ({
+      orderItemId: item.id,
+      quantity: quantities[item.id] ?? defaultQuantity(item, locationId),
+    }))
+    .filter((i) => i.quantity > 0);
+
+  const resetQuoting = () => {
+    setRates(null);
+    setSelectedRate(null);
+  };
+
   return (
     <div>
-      <h2 className="font-medium mb-1">Shipping label</h2>
+      <h2 className="font-medium mb-2">Create a fulfillment</h2>
+
+      <div className="max-w-sm space-y-1 mb-3">
+        <Select
+          value={String(locationId)}
+          onValueChange={(value) => {
+            setSelectedLocationId(Number(value));
+            setQuantities({});
+            resetQuoting();
+          }}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Ship from…" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              {locationOptions.map((location) => (
+                <SelectItem key={location.id} value={String(location.id)}>
+                  {location.name}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="max-w-sm space-y-2 mb-3">
+        {itemsForLocation.map((item) => {
+          const quantity = quantities[item.id] ?? defaultQuantity(item, locationId);
+          return (
+            <div key={item.id} className="flex items-center justify-between gap-3 text-sm">
+              <span className="flex-1">
+                {item.productName}
+                <span className="text-muted-foreground">
+                  {" "}
+                  ({item.remainingQuantity} remaining)
+                </span>
+              </span>
+              <Input
+                type="number"
+                min={0}
+                max={item.remainingQuantity}
+                value={quantity}
+                className="w-20"
+                onChange={(e) => {
+                  const next = Math.max(
+                    0,
+                    Math.min(item.remainingQuantity, Number(e.target.value) || 0),
+                  );
+                  setQuantities((q) => ({ ...q, [item.id]: next }));
+                  resetQuoting();
+                }}
+              />
+            </div>
+          );
+        })}
+      </div>
 
       {!rates && (
         <Button
           type="button"
           variant="outline"
           size="sm"
-          disabled={getShippingRates.isPending}
+          disabled={requestItems.length === 0 || getRates.isPending}
           onClick={() =>
-            getShippingRates.mutate(order.id, {
-              onSuccess: (data) => setRates(data ?? []),
-            })
+            getRates.mutate(
+              { orderId: order.id, locationId, items: requestItems },
+              { onSuccess: (data) => setRates(data ?? []) },
+            )
           }
         >
-          {getShippingRates.isPending ? (
+          {getRates.isPending ? (
             <>
               <LoaderCircleIcon className="animate-spin" /> Getting rates...
             </>
@@ -122,7 +284,7 @@ function ShippingLabelSection({ order }: { order: OrderDetail }) {
         </Button>
       )}
 
-      {getShippingRates.isError && (
+      {getRates.isError && (
         <p className="text-sm text-destructive mt-1">
           Couldn't get shipping rates for this order.
         </p>
@@ -161,18 +323,29 @@ function ShippingLabelSection({ order }: { order: OrderDetail }) {
 
           <Button
             type="button"
-            disabled={!selectedRate || buyShippingLabel.isPending}
+            disabled={!selectedRate || createFulfillment.isPending}
             onClick={() =>
               selectedRate &&
-              buyShippingLabel.mutate({
-                rateObjectId: selectedRate.objectId,
-                provider: selectedRate.provider,
-                servicelevel: selectedRate.servicelevel,
-                amountCents: selectedRate.amountCents,
-              })
+              createFulfillment.mutate(
+                {
+                  orderId: order.id,
+                  locationId,
+                  items: requestItems,
+                  rateObjectId: selectedRate.objectId,
+                  provider: selectedRate.provider,
+                  servicelevel: selectedRate.servicelevel,
+                  amountCents: selectedRate.amountCents,
+                },
+                {
+                  onSuccess: () => {
+                    setQuantities({});
+                    resetQuoting();
+                  },
+                },
+              )
             }
           >
-            {buyShippingLabel.isPending ? (
+            {createFulfillment.isPending ? (
               <>
                 <LoaderCircleIcon className="animate-spin" /> Buying label...
               </>
@@ -181,7 +354,7 @@ function ShippingLabelSection({ order }: { order: OrderDetail }) {
             )}
           </Button>
 
-          {buyShippingLabel.isError && (
+          {createFulfillment.isError && (
             <p className="text-sm text-destructive">
               Couldn't purchase a label for that rate.
             </p>
@@ -209,7 +382,10 @@ export function OrderView({ id }: { id: number }) {
             </Button>
           </Link>
           <div className="flex-1">
-            <h1 className="text-lg font-semibold">Order #{data.id}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg font-semibold">Order #{data.id}</h1>
+              <FulfillmentStatusBadge status={data.fulfillmentStatus} />
+            </div>
             <p className="text-sm text-muted-foreground">
               Placed {format(new Date(data.createdAt), "MM/dd/yyyy hh:mm a")}
             </p>
@@ -247,7 +423,10 @@ export function OrderView({ id }: { id: number }) {
 
       <Separator className="my-4" />
 
-      <ShippingLabelSection order={data} />
+      <div className="space-y-6">
+        <ExistingFulfillments order={data} />
+        <CreateFulfillmentFlow order={data} />
+      </div>
     </div>
   );
 }

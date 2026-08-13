@@ -1,16 +1,13 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { DRIZZLE } from 'src/database/database.constants';
 import {
-  accountsTable,
   and,
   desc,
   eq,
+  fulfillmentItemsTable,
+  fulfillmentsTable,
+  inArray,
+  inventoryMovementsTable,
   locationsTable,
   orderItemsTable,
   ordersTable,
@@ -18,21 +15,22 @@ import {
   type db as Db,
 } from 'db';
 import { PaginatedOrders } from './entities/paginated-orders.entity';
-import { OrderDetail } from './entities/order-detail.entity';
-import { ShippingRate } from './entities/shipping-rate.entity';
-import { BuyShippingLabelDto } from './dto/buy-shipping-label.dto';
-import { shippo } from './shippo.client';
+import { OrderDetail, type FulfillmentStatus } from './entities/order-detail.entity';
+import type { Fulfillment } from '../fulfillments/entities/fulfillment.entity';
 
 const MAX_LIMIT = 100;
-// same defaults used by storefront-api's checkout-time quoting — see that
-// module's comment for why box dimensions aren't modeled per-product
-const DEFAULT_ITEM_WEIGHT_OZ = 16;
-const DEFAULT_PARCEL_DIMENSIONS_IN = { length: '12', width: '9', height: '6' };
+
+function deriveFulfillmentStatus(
+  totalQuantity: number,
+  fulfilledQuantity: number,
+): FulfillmentStatus {
+  if (fulfilledQuantity <= 0) return 'unfulfilled';
+  if (fulfilledQuantity >= totalQuantity) return 'fulfilled';
+  return 'partially_fulfilled';
+}
 
 @Injectable()
 export class OrdersService {
-  private readonly logger = new Logger(OrdersService.name);
-
   constructor(@Inject(DRIZZLE) private readonly db: typeof Db) {}
 
   async findAll(
@@ -66,7 +64,20 @@ export class OrdersService {
         .where(eq(ordersTable.accountId, accountId)),
     ]);
 
-    return { items, total, limit: clampedLimit, offset: clampedOffset };
+    const fulfilledByOrder = await this.getFulfilledQuantityByOrder(items.map((o) => o.id));
+
+    return {
+      items: items.map((order) => ({
+        ...order,
+        fulfillmentStatus: deriveFulfillmentStatus(
+          order.itemCount,
+          fulfilledByOrder.get(order.id) ?? 0,
+        ),
+      })),
+      total,
+      limit: clampedLimit,
+      offset: clampedOffset,
+    };
   }
 
   async findOne(id: number, accountId: number): Promise<OrderDetail | undefined> {
@@ -76,7 +87,7 @@ export class OrdersService {
       .where(and(eq(ordersTable.id, id), eq(ordersTable.accountId, accountId)));
     if (!order) return undefined;
 
-    const items = await this.db
+    const itemRows = await this.db
       .select({
         id: orderItemsTable.id,
         variantId: orderItemsTable.variantId,
@@ -88,6 +99,28 @@ export class OrdersService {
       })
       .from(orderItemsTable)
       .where(eq(orderItemsTable.orderId, order.id));
+    const itemIds = itemRows.map((i) => i.id);
+
+    const [allocationRows, fulfilledByItem, fulfillments] = await Promise.all([
+      this.getAllocations(itemIds),
+      this.getFulfilledQuantityByItem(itemIds),
+      this.getFulfillments(order.id),
+    ]);
+
+    const items = itemRows.map((item) => {
+      const fulfilledQuantity = fulfilledByItem.get(item.id) ?? 0;
+      return {
+        ...item,
+        fulfilledQuantity,
+        remainingQuantity: item.quantity - fulfilledQuantity,
+        allocations: allocationRows
+          .filter((a) => a.orderItemId === item.id)
+          .map(({ locationId, locationName, quantity }) => ({ locationId, locationName, quantity })),
+      };
+    });
+
+    const totalQuantity = itemRows.reduce((sum, i) => sum + i.quantity, 0);
+    const totalFulfilled = items.reduce((sum, i) => sum + i.fulfilledQuantity, 0);
 
     return {
       id: order.id,
@@ -103,144 +136,123 @@ export class OrdersService {
       amountTotalCents: order.amountTotalCents,
       shippingCents: order.shippingCents,
       shippingLocationId: order.shippingLocationId,
-      shippingCarrier: order.shippingCarrier,
-      shippingServiceLevel: order.shippingServiceLevel,
-      trackingNumber: order.trackingNumber,
-      trackingUrl: order.trackingUrl,
-      labelUrl: order.labelUrl,
+      fulfillmentStatus: deriveFulfillmentStatus(totalQuantity, totalFulfilled),
       createdAt: order.createdAt,
       items,
+      fulfillments,
     };
   }
 
-  // re-queries Shippo fresh rather than reusing the checkout-time quote,
-  // which may have since expired — this can happen well after checkout,
-  // whenever the merchant is ready to fulfill
-  async getShippingRates(id: number, accountId: number): Promise<ShippingRate[]> {
-    const [order] = await this.db
-      .select()
-      .from(ordersTable)
-      .where(and(eq(ordersTable.id, id), eq(ordersTable.accountId, accountId)));
-    if (!order) throw new NotFoundException();
-    if (!order.shippingLocationId) {
-      throw new BadRequestException('No ship-from location recorded for this order');
-    }
+  // sum of fulfillment_items.quantity per order, for the given order ids —
+  // a separate query rather than joining fulfillmentItemsTable into the
+  // paginated query above, which would fan out and double-count itemCount
+  // once an item has more than one fulfillment
+  private async getFulfilledQuantityByOrder(orderIds: number[]): Promise<Map<number, number>> {
+    if (orderIds.length === 0) return new Map();
 
-    const [location] = await this.db
-      .select()
-      .from(locationsTable)
-      .where(eq(locationsTable.id, order.shippingLocationId));
-    if (!location?.addressLine1) {
-      throw new BadRequestException("This order's ship-from location has no address");
-    }
-
-    const [account] = await this.db
-      .select({ phone: accountsTable.phone, email: accountsTable.email })
-      .from(accountsTable)
-      .where(eq(accountsTable.id, accountId));
-
-    const items = await this.db
-      .select({ quantity: orderItemsTable.quantity, weightOz: orderItemsTable.weightOz })
-      .from(orderItemsTable)
-      .where(eq(orderItemsTable.orderId, order.id));
-    const totalWeightOz = items.reduce(
-      (sum, item) => sum + (item.weightOz ?? DEFAULT_ITEM_WEIGHT_OZ) * item.quantity,
-      0,
-    );
-
-    const shipment = await shippo.shipments
-      .create({
-        addressFrom: {
-          name: location.name,
-          street1: location.addressLine1,
-          street2: location.addressLine2 ?? undefined,
-          city: location.addressCity ?? undefined,
-          state: location.addressState ?? undefined,
-          zip: location.addressPostalCode ?? undefined,
-          country: location.addressCountry ?? 'US',
-          phone: account?.phone,
-          email: account?.email,
-        },
-        addressTo: {
-          name: order.customerName,
-          street1: order.shippingLine1,
-          street2: order.shippingLine2 ?? undefined,
-          city: order.shippingCity,
-          state: order.shippingState ?? undefined,
-          zip: order.shippingPostalCode,
-          country: order.shippingCountry,
-        },
-        parcels: [
-          {
-            massUnit: 'oz',
-            weight: String(totalWeightOz || DEFAULT_ITEM_WEIGHT_OZ),
-            distanceUnit: 'in',
-            ...DEFAULT_PARCEL_DIMENSIONS_IN,
-          },
-        ],
-        async: false,
+    const rows = await this.db
+      .select({
+        orderId: orderItemsTable.orderId,
+        fulfilled: sql<number>`coalesce(sum(${fulfillmentItemsTable.quantity}), 0)::int`,
       })
-      .catch((err) => {
-        this.logger.error(`Shippo shipment creation failed for order ${id}`, err);
-        return null;
-      });
+      .from(fulfillmentItemsTable)
+      .innerJoin(orderItemsTable, eq(orderItemsTable.id, fulfillmentItemsTable.orderItemId))
+      .where(inArray(orderItemsTable.orderId, orderIds))
+      .groupBy(orderItemsTable.orderId);
 
-    if (!shipment || shipment.rates.length === 0) {
-      throw new BadRequestException("Couldn't get shipping rates for this order");
-    }
-
-    return [...shipment.rates]
-      .sort((a, b) => parseFloat(a.amount) - parseFloat(b.amount))
-      .map((rate) => ({
-        objectId: rate.objectId,
-        provider: rate.provider,
-        servicelevel: rate.servicelevel.name ?? '',
-        amountCents: Math.round(parseFloat(rate.amount) * 100),
-        estimatedDays: rate.estimatedDays ?? null,
-      }));
+    return new Map(rows.map((r) => [r.orderId, r.fulfilled]));
   }
 
-  async buyShippingLabel(
-    id: number,
-    accountId: number,
-    dto: BuyShippingLabelDto,
-  ): Promise<OrderDetail> {
-    const [order] = await this.db
-      .select({ id: ordersTable.id })
-      .from(ordersTable)
-      .where(and(eq(ordersTable.id, id), eq(ordersTable.accountId, accountId)));
-    if (!order) throw new NotFoundException();
+  // public, and takes an optional executor, so FulfillmentsService can reuse
+  // this instead of keeping its own copy — both for a plain fail-fast check
+  // (default this.db) and, inside a locked transaction, for the
+  // authoritative check that actually closes the over-fulfillment race (see
+  // FulfillmentsService.create)
+  async getFulfilledQuantityByItem(
+    itemIds: number[],
+    executor: Pick<typeof Db, 'select'> = this.db,
+  ): Promise<Map<number, number>> {
+    if (itemIds.length === 0) return new Map();
 
-    const transaction = await shippo.transactions
-      .create({ rate: dto.rateObjectId, labelFileType: 'PDF', async: false })
-      .catch((err) => {
-        this.logger.error(`Shippo transaction creation failed for order ${id}`, err);
-        return null;
-      });
-
-    if (!transaction || transaction.status !== 'SUCCESS') {
-      const reason = transaction?.messages?.map((m) => m.text).filter(Boolean).join('; ');
-      this.logger.error(
-        `Shippo transaction for order ${id} did not succeed: status=${transaction?.status ?? 'none'} ${reason ?? ''}`,
-      );
-      throw new BadRequestException(
-        reason ? `Couldn't purchase a label for that rate: ${reason}` : "Couldn't purchase a label for that rate",
-      );
-    }
-
-    await this.db
-      .update(ordersTable)
-      .set({
-        shippoTransactionId: transaction.objectId ?? null,
-        trackingNumber: transaction.trackingNumber ?? null,
-        trackingUrl: transaction.trackingUrlProvider ?? null,
-        labelUrl: transaction.labelUrl ?? null,
-        shippingCarrier: dto.provider,
-        shippingServiceLevel: dto.servicelevel,
-        updatedAt: new Date(),
+    const rows = await executor
+      .select({
+        orderItemId: fulfillmentItemsTable.orderItemId,
+        fulfilled: sql<number>`coalesce(sum(${fulfillmentItemsTable.quantity}), 0)::int`,
       })
-      .where(eq(ordersTable.id, id));
+      .from(fulfillmentItemsTable)
+      .where(inArray(fulfillmentItemsTable.orderItemId, itemIds))
+      .groupBy(fulfillmentItemsTable.orderItemId);
 
-    return (await this.findOne(id, accountId))!;
+    return new Map(rows.map((r) => [r.orderItemId, r.fulfilled]));
+  }
+
+  // how much of an order item's stock came from which location, derived
+  // from the checkout worker's inventory movements rather than a separate
+  // allocation table kept in sync with them
+  private async getAllocations(
+    itemIds: number[],
+  ): Promise<{ orderItemId: number; locationId: number; locationName: string; quantity: number }[]> {
+    if (itemIds.length === 0) return [];
+
+    const rows = await this.db
+      .select({
+        orderItemId: inventoryMovementsTable.orderItemId,
+        locationId: inventoryMovementsTable.locationId,
+        locationName: locationsTable.name,
+        quantity: sql<number>`sum(-${inventoryMovementsTable.delta})::int`,
+      })
+      .from(inventoryMovementsTable)
+      .innerJoin(locationsTable, eq(locationsTable.id, inventoryMovementsTable.locationId))
+      .where(
+        and(
+          inArray(inventoryMovementsTable.orderItemId, itemIds),
+          eq(inventoryMovementsTable.reason, 'sold'),
+        ),
+      )
+      .groupBy(
+        inventoryMovementsTable.orderItemId,
+        inventoryMovementsTable.locationId,
+        locationsTable.name,
+      );
+
+    return rows.map((r) => ({ ...r, orderItemId: r.orderItemId! }));
+  }
+
+  private async getFulfillments(orderId: number): Promise<Fulfillment[]> {
+    const fulfillmentRows = await this.db
+      .select({
+        id: fulfillmentsTable.id,
+        locationId: fulfillmentsTable.locationId,
+        locationName: locationsTable.name,
+        shippingCarrier: fulfillmentsTable.shippingCarrier,
+        shippingServiceLevel: fulfillmentsTable.shippingServiceLevel,
+        trackingNumber: fulfillmentsTable.trackingNumber,
+        trackingUrl: fulfillmentsTable.trackingUrl,
+        labelUrl: fulfillmentsTable.labelUrl,
+        amountCents: fulfillmentsTable.amountCents,
+        createdAt: fulfillmentsTable.createdAt,
+      })
+      .from(fulfillmentsTable)
+      .innerJoin(locationsTable, eq(locationsTable.id, fulfillmentsTable.locationId))
+      .where(eq(fulfillmentsTable.orderId, orderId))
+      .orderBy(fulfillmentsTable.createdAt);
+    if (fulfillmentRows.length === 0) return [];
+
+    const fulfillmentIds = fulfillmentRows.map((f) => f.id);
+    const itemRows = await this.db
+      .select({
+        fulfillmentId: fulfillmentItemsTable.fulfillmentId,
+        orderItemId: fulfillmentItemsTable.orderItemId,
+        quantity: fulfillmentItemsTable.quantity,
+      })
+      .from(fulfillmentItemsTable)
+      .where(inArray(fulfillmentItemsTable.fulfillmentId, fulfillmentIds));
+
+    return fulfillmentRows.map((f) => ({
+      ...f,
+      items: itemRows
+        .filter((i) => i.fulfillmentId === f.id)
+        .map(({ orderItemId, quantity }) => ({ orderItemId, quantity })),
+    }));
   }
 }

@@ -10,6 +10,7 @@ import { createApiKeysResource } from "./resources/api-keys.js";
 import { createCartsResource } from "./resources/carts.js";
 import { createStripeConnectResource } from "./resources/stripe-connect.js";
 import { createOrdersResource } from "./resources/orders.js";
+import { createFulfillmentsResource } from "./resources/fulfillments.js";
 import { createAccountResource } from "./resources/account.js";
 import { createUsersResource } from "./resources/users.js";
 import { createCustomersResource } from "./resources/customers.js";
@@ -34,6 +35,10 @@ export type InventoryMovementRecord = components["schemas"]["InventoryMovementRe
 export type StripeConnectStatus = components["schemas"]["StripeConnectStatus"];
 export type OrderListItem = components["schemas"]["OrderListItem"];
 export type OrderDetail = components["schemas"]["OrderDetail"];
+export type OrderDetailItem = components["schemas"]["OrderDetailItem"];
+export type OrderItemAllocation = components["schemas"]["OrderItemAllocation"];
+export type Fulfillment = components["schemas"]["Fulfillment"];
+export type FulfillmentItem = components["schemas"]["FulfillmentItem"];
 export type ShippingRate = components["schemas"]["ShippingRate"];
 export type PaginatedOrders = components["schemas"]["PaginatedOrders"];
 export type Account = components["schemas"]["Account"];
@@ -56,6 +61,7 @@ export class AdminClient {
   carts: ReturnType<typeof createCartsResource>;
   stripeConnect: ReturnType<typeof createStripeConnectResource>;
   orders: ReturnType<typeof createOrdersResource>;
+  fulfillments: ReturnType<typeof createFulfillmentsResource>;
   account: ReturnType<typeof createAccountResource>;
   users: ReturnType<typeof createUsersResource>;
   customers: ReturnType<typeof createCustomersResource>;
@@ -87,6 +93,7 @@ export class AdminClient {
     this.carts = createCartsResource(this.client, doRequest);
     this.stripeConnect = createStripeConnectResource(this.client, doRequest);
     this.orders = createOrdersResource(this.client, doRequest);
+    this.fulfillments = createFulfillmentsResource(this.client, doRequest);
     this.account = createAccountResource(this.client, doRequest);
     this.users = createUsersResource(this.client, doRequest);
     this.customers = createCustomersResource(this.client, doRequest);
