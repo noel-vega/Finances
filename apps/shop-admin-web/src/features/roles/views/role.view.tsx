@@ -22,7 +22,7 @@ import { ArrowLeftIcon, LoaderCircleIcon, Trash2Icon } from "lucide-react";
 import {
   useDeleteRoleMutation,
   usePermissionsCatalogQuery,
-  useRoleQuery,
+  useRoleSuspenseQuery,
   useUpdateRoleMutation,
 } from "../roles.hooks";
 import { PermissionChecklist } from "../components/permission-checklist";
@@ -37,7 +37,7 @@ type EditRoleForm = z.infer<typeof EditRoleFormSchema>;
 
 export function RoleView({ id }: { id: number }) {
   const navigate = useNavigate();
-  const { data } = useRoleQuery(id);
+  const { data } = useRoleSuspenseQuery(id);
   const updateRole = useUpdateRoleMutation();
   const deleteRole = useDeleteRoleMutation();
   const permissions = usePermissionsCatalogQuery();
@@ -47,7 +47,12 @@ export function RoleView({ id }: { id: number }) {
 
   const form = useForm<EditRoleForm>({
     resolver: zodResolver(EditRoleFormSchema),
-    defaultValues: { name: "", description: "", permissionKeys: [] },
+    defaultValues:
+       {
+          name: data.name,
+          description: data.description ?? "",
+          permissionKeys: data.permissions.map((x) => x.key),
+        }
   });
 
   useEffect(() => {
@@ -77,7 +82,9 @@ export function RoleView({ id }: { id: number }) {
       permissionKeys: values.permissionKeys,
     });
     if (!result) {
-      setSaveError("Couldn't save — check the permissions you're assigning and try again.");
+      setSaveError(
+        "Couldn't save — check the permissions you're assigning and try again.",
+      );
     }
   });
 
@@ -86,7 +93,9 @@ export function RoleView({ id }: { id: number }) {
     deleteRole.mutate(id, {
       onSuccess: (result) => {
         if (!result) {
-          setDeleteError("Couldn't delete — it may still be assigned to staff.");
+          setDeleteError(
+            "Couldn't delete — it may still be assigned to staff.",
+          );
           return;
         }
         navigate({ to: "/app/roles" });
@@ -99,7 +108,12 @@ export function RoleView({ id }: { id: number }) {
       <header className="mb-8">
         <div className="flex items-start gap-3">
           <Link to="/app/roles">
-            <Button type="button" variant="ghost" size="icon-sm" aria-label="Back to roles">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Back to roles"
+            >
               <ArrowLeftIcon />
             </Button>
           </Link>
@@ -132,7 +146,9 @@ export function RoleView({ id }: { id: number }) {
               <FieldLabel>Name</FieldLabel>
               <Input {...field} disabled={readOnly} />
               {fieldState.error && (
-                <p className="text-sm text-destructive">{fieldState.error.message}</p>
+                <p className="text-sm text-destructive">
+                  {fieldState.error.message}
+                </p>
               )}
             </Field>
           )}
@@ -185,11 +201,13 @@ export function RoleView({ id }: { id: number }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete "{data.name}"?</AlertDialogTitle>
             <AlertDialogDescription>
-              Staff assigned this role must be reassigned first. This action cannot be
-              undone.
+              Staff assigned this role must be reassigned first. This action
+              cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          {deleteError && <p className="text-sm text-destructive">{deleteError}</p>}
+          {deleteError && (
+            <p className="text-sm text-destructive">{deleteError}</p>
+          )}
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction

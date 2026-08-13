@@ -1,4 +1,4 @@
-import { queryOptions, useMutation, useQuery } from "@tanstack/react-query"
+import { queryOptions, useMutation, useQuery, useSuspenseQuery } from "@tanstack/react-query"
 import { adminApi } from "../../lib/admin-api-client"
 import { queryClient } from "../../lib/react-query-client"
 import { getListUsersQueryOptions } from "../users/users.hooks"
@@ -19,12 +19,18 @@ export function useListRolesQuery() {
 export function getRoleQueryOptions(id: number) {
   return queryOptions({
     queryKey: ["roles", id],
-    queryFn: () => adminApi.roles.getById(id),
+    queryFn: async () => {
+      const role = await adminApi.roles.getById(id)
+      if(!role) {
+        throw new Error("Role not found")
+      }
+      return role
+    }
   })
 }
 
-export function useRoleQuery(id: number) {
-  return useQuery(getRoleQueryOptions(id))
+export function useRoleSuspenseQuery(id: number) {
+  return useSuspenseQuery(getRoleQueryOptions(id))
 }
 
 // the permission catalog is fixed and code-defined — never changes at runtime
