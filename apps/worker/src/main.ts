@@ -5,9 +5,12 @@ import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 
-// this app has no HTTP surface — it only keeps @Processor classes alive to
-// consume jobs, so an application context is all it needs, no listener/port
+// still no user-facing HTTP API — this only keeps @Processor classes alive
+// to consume jobs — but it does now listen, solely for GET /health (see
+// modules/health), so an orchestrator/liveness probe can tell this process
+// apart from one that's silently wedged (e.g. after a Redis outage)
 async function bootstrap() {
-  await NestFactory.createApplicationContext(AppModule);
+  const app = await NestFactory.create(AppModule);
+  await app.listen(process.env.PORT ?? 3003);
 }
 bootstrap();

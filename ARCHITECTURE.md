@@ -26,7 +26,7 @@ flowchart TB
         storeapi["storefront-api<br/>NestJS/Express · :3001<br/><i>cart, checkout, customers</i>"]
     end
 
-    worker["worker<br/>NestJS, no HTTP<br/><i>BullMQ consumer:<br/>orders + email queues</i>"]
+    worker["worker<br/>NestJS · :3003<br/><i>BullMQ consumer:<br/>orders + email queues</i>"]
 
     subgraph PKG["Shared workspace packages"]
         db["db<br/><i>Drizzle schema</i>"]
@@ -80,6 +80,12 @@ flowchart TB
 
 - No backend-to-backend HTTP traffic — `shop-admin-api` and `storefront-api` never call each
   other. The only inter-service calls are frontend → its own API, via a generated SDK.
+- All three backend services (`shop-admin-api`, `storefront-api`, `worker`) expose an unauthenticated
+  `GET /health` (database + Redis checks, via `@nestjs/terminus`). It's why `worker` listens on
+  `:3003` at all now — it has no user-facing API, just this liveness signal for whatever orchestrator
+  ends up running it. `worker`'s check also verifies each queue's consumption loop is actually
+  draining a backlog, not just that Redis is reachable — a plain Redis ping can't tell the two apart
+  (see the worker-reconnect-stall note in memory).
 - `shop-admin-web`'s `vite.config.ts` says port 3001, but its `dev` script passes `--port 5000`,
   which wins — 5000 is what's actually served (matches the README).
 - `website` is fully standalone: no workspace deps, no outbound calls, static marketing content.

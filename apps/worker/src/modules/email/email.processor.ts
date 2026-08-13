@@ -17,6 +17,7 @@ import { MailerService } from './mailer.service';
 @Processor(QUEUE_NAMES.EMAIL)
 export class EmailProcessor extends WorkerHost {
   private readonly logger = new Logger(EmailProcessor.name);
+  private lastActiveAt: Date | null = null;
 
   constructor(private readonly mailerService: MailerService) {
     super();
@@ -86,6 +87,20 @@ export class EmailProcessor extends WorkerHost {
         throw new Error(`Unrecognized email job type: ${(_exhaustive as EmailJobData).type}`);
       }
     }
+  }
+
+  // used by HealthService to tell "quiet queue" apart from "stuck queue" —
+  // see modules/health/health.service.ts
+  @OnWorkerEvent('active')
+  onActive() {
+    this.lastActiveAt = new Date();
+  }
+
+  // read by HealthService.checkEmailQueue; must be the same processor
+  // instance already consuming jobs, never a second one constructed just
+  // to query this (that would spin up a duplicate real consumer)
+  getLiveness() {
+    return { isRunning: this.worker.isRunning(), isPaused: this.worker.isPaused(), lastActiveAt: this.lastActiveAt };
   }
 
   @OnWorkerEvent('failed')

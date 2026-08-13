@@ -7,5 +7,8 @@ import { MailerService } from './mailer.service';
 @Module({
   imports: [BullModule.registerQueue({ name: QUEUE_NAMES.EMAIL })],
   providers: [EmailProcessor, MailerService],
+  // exported so HealthModule can query the same singleton instance's
+  // isRunning()/lastActiveAt — see EmailProcessor.getLiveness()
+  exports: [EmailProcessor],
 })
 export class EmailModule {}

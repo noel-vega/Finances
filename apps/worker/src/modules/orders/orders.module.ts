@@ -16,5 +16,8 @@ import { OrdersProcessor } from './orders.processor';
     BullModule.registerQueue({ name: QUEUE_NAMES.EMAIL, defaultJobOptions: EMAIL_JOB_OPTIONS }),
   ],
   providers: [OrdersProcessor],
+  // exported so HealthModule can query the same singleton instance's
+  // isRunning()/lastActiveAt — see OrdersProcessor.getLiveness()
+  exports: [OrdersProcessor],
 })
 export class OrdersModule {}

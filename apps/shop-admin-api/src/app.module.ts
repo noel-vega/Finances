@@ -19,6 +19,7 @@ import { FulfillmentsModule } from './modules/fulfillments/fulfillments.module';
 import { AccountModule } from './modules/account/account.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { HealthModule } from './modules/health/health.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     AccountModule,
     CustomersModule,
     DashboardModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

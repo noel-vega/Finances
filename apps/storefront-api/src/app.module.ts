@@ -10,6 +10,7 @@ import { CartModule } from './modules/cart/cart.module';
 import { CheckoutModule } from './modules/checkout/checkout.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CustomerModule } from './modules/customer/customer.module';
+import { HealthModule } from './modules/health/health.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { CustomerModule } from './modules/customer/customer.module';
     CheckoutModule,
     AuthModule,
     CustomerModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
