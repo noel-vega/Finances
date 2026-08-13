@@ -1,5 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 
+export class UserRoleSummary {
+  @ApiProperty({ type: Number })
+  id!: number;
+
+  @ApiProperty()
+  name!: string;
+}
+
 // deliberately not `implements SelectUser` like Account/Location — the
 // usersTable columns are firstname/lastname (see auth.service.ts signup,
 // which maps firstName -> firstname by hand), but every other response in
@@ -23,6 +31,9 @@ export class User {
 
   @ApiProperty()
   email!: string;
+
+  @ApiProperty({ type: () => [UserRoleSummary] })
+  roles!: UserRoleSummary[];
 
   @ApiProperty()
   createdAt!: Date;

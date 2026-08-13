@@ -9,6 +9,7 @@ import {
   MapPinIcon,
   SettingsIcon,
   ShelvingUnitIcon,
+  ShieldIcon,
   ShoppingBasketIcon,
   ShoppingCartIcon,
   UsersIcon,
@@ -88,6 +89,13 @@ export const NAV_ITEMS = [
     label: "Users",
     icon: UsersIcon,
     to: "/app/users",
+    children: undefined,
+  },
+  {
+    key: "roles",
+    label: "Roles",
+    icon: ShieldIcon,
+    to: "/app/roles",
     children: undefined,
   },
   {

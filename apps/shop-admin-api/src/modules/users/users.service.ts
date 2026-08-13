@@ -1,31 +1,36 @@
-import { ConflictException, Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
-import { User } from './entities/user.entity';
+import { User, UserRoleSummary } from './entities/user.entity';
 import { EmailService } from '../email/email.service';
+import { PermissionsService } from '../permissions/permissions.service';
 import { generateToken } from '../../common/generate-token.util';
+import { resolveOwned } from '../../common/resolve-owned.util';
+import { groupBy } from '../../common/group-by.util';
+import { isForeignKeyViolation, isUniqueViolation } from '../../common/postgres-error.util';
+import { assertCanGrant } from '../../common/assert-can-grant.util';
+import { getPermissionKeysForRoles } from '../../common/get-permission-keys-for-roles.util';
 import { DRIZZLE } from 'src/database/database.constants';
-import { usersTable, userInvitesTable, eq, type db as Db } from 'db';
+import {
+  and,
+  eq,
+  inArray,
+  ne,
+  rolesTable,
+  userInvitesTable,
+  userRolesTable,
+  usersTable,
+  type db as Db,
+} from 'db';
 
-const POSTGRES_UNIQUE_VIOLATION = '23505';
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days, matches the refresh token TTL
 
-// node-postgres errors carry `.code`, but drizzle-orm wraps them in a
-// DrizzleQueryError, so the pg error ends up at `.cause` instead — same
-// unwrap auth.service.ts uses for the same unique-email constraint.
-function isUniqueViolation(err: unknown): boolean {
-  const pgError =
-    typeof err === 'object' && err !== null && 'cause' in err
-      ? err.cause
-      : err;
-  return (
-    typeof pgError === 'object' &&
-    pgError !== null &&
-    'code' in pgError &&
-    pgError.code === POSTGRES_UNIQUE_VIOLATION
-  );
-}
-
-function toUser(row: typeof usersTable.$inferSelect): User {
+function toUser(row: typeof usersTable.$inferSelect, roles: UserRoleSummary[]): User {
   return {
     id: row.id,
     accountId: row.accountId,
@@ -33,6 +38,7 @@ function toUser(row: typeof usersTable.$inferSelect): User {
     lastName: row.lastname,
     phone: row.phone,
     email: row.email,
+    roles,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -43,6 +49,7 @@ export class UsersService {
   constructor(
     @Inject(DRIZZLE) private readonly db: typeof Db,
     private readonly emailService: EmailService,
+    private readonly permissionsService: PermissionsService,
   ) {}
 
   async getByEmail(email: string) {
@@ -79,14 +86,39 @@ export class UsersService {
 
     await this.db.delete(userInvitesTable).where(eq(userInvitesTable.userId, id));
 
-    return toUser(user);
+    const roles = await this.getRolesByUserId([user.id]);
+    return toUser(user, roles.get(user.id) ?? []);
   }
 
   // no password is set here — the account owner invites a staff member and
   // they join later via the emailed invite link, at which point they set
   // their own. The user + invite rows are inserted together so a failure
-  // partway through never leaves a user with no way to ever join.
-  async create(dto: CreateUserDto, accountId: number): Promise<User> {
+  // partway through never leaves a user with no way to ever join. roleIds
+  // is optional — a user invited with none can still log in, they just
+  // can't use anything gated by @RequirePermissions until assigned a role.
+  async create(
+    dto: CreateUserDto,
+    accountId: number,
+    callerUserId: number,
+    callerGrantedPermissions?: Set<string>,
+  ): Promise<User> {
+    // granting roles at invite time is a form of role management — someone
+    // who can only invite staff (users:write) shouldn't be able to hand a
+    // new hire the Owner role just because roleIds rides along on this
+    // call. callerGrantedPermissions comes from PermissionsGuard's own
+    // lookup for users:write on this same request (see @GrantedPermissions
+    // in users.controller.ts) — falling back to a fresh query only if it's
+    // ever missing, which shouldn't happen since this route is always guarded.
+    let granted: Set<string> | undefined;
+    if (dto.roleIds && dto.roleIds.length > 0) {
+      granted =
+        callerGrantedPermissions ??
+        (await this.permissionsService.getEffectivePermissionKeys(callerUserId));
+      if (!granted.has('users:manage_roles')) {
+        throw new ForbiddenException('Missing required permission: users:manage_roles');
+      }
+    }
+
     try {
       const { user, token } = await this.db.transaction(async (tx) => {
         const [user] = await tx
@@ -99,6 +131,38 @@ export class UsersService {
             accountId,
           })
           .returning();
+
+        if (dto.roleIds && dto.roleIds.length > 0) {
+          const roles = await resolveOwned(
+            dto.roleIds,
+            (ids) =>
+              tx
+                .select({ id: rolesTable.id, isSystem: rolesTable.isSystem })
+                .from(rolesTable)
+                .where(and(inArray(rolesTable.id, ids), eq(rolesTable.accountId, accountId))),
+            'One or more roles are invalid',
+          );
+
+          // the Owner role is seeded once at signup and reassigned only via
+          // the explicit PATCH /users/:id/roles flow — never handed out as
+          // a side effect of a routine invite
+          if (roles.some((role) => role.isSystem)) {
+            throw new ForbiddenException('The Owner role cannot be assigned when inviting a user');
+          }
+
+          // holding users:manage_roles only means "can assign roles" — it
+          // doesn't mean the caller holds the actual permissions those
+          // roles carry, so assigning one is capped the same as defining one
+          const grantedKeys = await getPermissionKeysForRoles(
+            tx,
+            roles.map((role) => role.id),
+          );
+          assertCanGrant(grantedKeys, granted!);
+
+          await tx
+            .insert(userRolesTable)
+            .values(roles.map((role) => ({ userId: user.id, roleId: role.id })));
+        }
 
         const token = generateToken(32);
         await tx.insert(userInvitesTable).values({
@@ -116,10 +180,14 @@ export class UsersService {
         inviteUrl,
       });
 
-      return toUser(user);
+      const roles = await this.getRolesByUserId([user.id]);
+      return toUser(user, roles.get(user.id) ?? []);
     } catch (err) {
       if (isUniqueViolation(err)) {
         throw new ConflictException('Email already in use');
+      }
+      if (isForeignKeyViolation(err)) {
+        throw new BadRequestException('One or more roles no longer exist');
       }
       throw err;
     }
@@ -131,6 +199,158 @@ export class UsersService {
       .from(usersTable)
       .where(eq(usersTable.accountId, accountId));
 
-    return rows.map(toUser);
+    const rolesByUser = await this.getRolesByUserId(rows.map((row) => row.id));
+    return rows.map((row) => toUser(row, rolesByUser.get(row.id) ?? []));
+  }
+
+  // replaces a user's roles wholesale — an empty array strips them to none.
+  // Returns undefined if the user isn't in this account, or any roleId
+  // doesn't belong to it, so the controller can 404/400 appropriately.
+  // Validation, the Owner-membership checks, and the mutation all run
+  // inside one transaction — otherwise a role deleted between validating
+  // and inserting (or between checking and losing the last Owner) leaves
+  // an uncaught FK violation or an account with nobody left who can manage
+  // roles at all.
+  async updateRoles(
+    userId: number,
+    roleIds: number[],
+    accountId: number,
+    callerUserId: number,
+    callerGrantedPermissions?: Set<string>,
+  ): Promise<User | undefined> {
+    const [user] = await this.db
+      .select()
+      .from(usersTable)
+      .where(and(eq(usersTable.id, userId), eq(usersTable.accountId, accountId)));
+
+    if (!user) return undefined;
+
+    let finalRoles: UserRoleSummary[] = [];
+
+    try {
+      await this.db.transaction(async (tx) => {
+        const resolvedRoles =
+          roleIds.length > 0
+            ? await resolveOwned(
+                roleIds,
+                (ids) =>
+                  tx
+                    .select({ id: rolesTable.id, name: rolesTable.name, isSystem: rolesTable.isSystem })
+                    .from(rolesTable)
+                    .where(and(inArray(rolesTable.id, ids), eq(rolesTable.accountId, accountId))),
+                'One or more roles are invalid',
+              )
+            : [];
+
+        // holding users:manage_roles only means "can reassign roles" — it
+        // doesn't mean the caller holds the permissions those roles carry.
+        // Only check roles this call actually adds for this user: already-
+        // held roles aren't a new grant, and Owner has its own stricter
+        // check below.
+        const currentRoleIds = new Set(
+          (
+            await tx
+              .select({ roleId: userRolesTable.roleId })
+              .from(userRolesTable)
+              .where(eq(userRolesTable.userId, userId))
+          ).map((row) => row.roleId),
+        );
+        const newlyGrantedRoleIds = resolvedRoles
+          .filter((role) => !role.isSystem && !currentRoleIds.has(role.id))
+          .map((role) => role.id);
+
+        if (newlyGrantedRoleIds.length > 0) {
+          const grantedKeys = await getPermissionKeysForRoles(tx, newlyGrantedRoleIds);
+          const granted =
+            callerGrantedPermissions ??
+            (await this.permissionsService.getEffectivePermissionKeys(callerUserId));
+          assertCanGrant(grantedKeys, granted);
+        }
+
+        // locks the account's Owner role row so concurrent updateRoles()
+        // calls touching Owner-role membership serialize through this one
+        // point, instead of racing on separate user_roles rows (which
+        // deadlocks: caller A locking B's row while B locks A's row, then
+        // both blocking on deleting their own)
+        const [ownerRole] = await tx
+          .select({ id: rolesTable.id })
+          .from(rolesTable)
+          .where(and(eq(rolesTable.accountId, accountId), eq(rolesTable.isSystem, true)))
+          .for('update');
+
+        if (!ownerRole) {
+          // every account should always have one — if it doesn't, something
+          // upstream is broken. Fail loudly rather than silently skipping
+          // every Owner-role safeguard below (in practice unreachable: only
+          // an Owner-role holder could ever have been granted
+          // users:manage_roles in the first place)
+          throw new ConflictException('This account has no Owner role configured');
+        }
+
+        const willHoldOwner = resolvedRoles.some((role) => role.isSystem);
+        // currentRoleIds was already fetched above for the grant check —
+        // no need for a second round trip while this row is locked FOR UPDATE
+        const currentlyHoldsOwner = currentRoleIds.has(ownerRole.id);
+
+        // granting OR revoking Owner-role membership both require the
+        // caller to already be an Owner — symmetric on purpose
+        if (currentlyHoldsOwner !== willHoldOwner) {
+          const [callerIsOwner] = await tx
+            .select({ userId: userRolesTable.userId })
+            .from(userRolesTable)
+            .where(and(eq(userRolesTable.userId, callerUserId), eq(userRolesTable.roleId, ownerRole.id)))
+            .limit(1);
+
+          if (!callerIsOwner) {
+            throw new ForbiddenException('Only an existing Owner can change Owner-role membership');
+          }
+        }
+
+        if (currentlyHoldsOwner && !willHoldOwner) {
+          const [otherHolder] = await tx
+            .select({ userId: userRolesTable.userId })
+            .from(userRolesTable)
+            .where(and(eq(userRolesTable.roleId, ownerRole.id), ne(userRolesTable.userId, userId)))
+            .limit(1);
+
+          if (!otherHolder) {
+            throw new ConflictException('Cannot remove the last user holding the Owner role');
+          }
+        }
+
+        await tx.delete(userRolesTable).where(eq(userRolesTable.userId, userId));
+        if (resolvedRoles.length > 0) {
+          await tx
+            .insert(userRolesTable)
+            .values(resolvedRoles.map((role) => ({ userId, roleId: role.id })));
+        }
+
+        finalRoles = resolvedRoles.map((role) => ({ id: role.id, name: role.name }));
+      });
+    } catch (err) {
+      if (isForeignKeyViolation(err)) {
+        throw new BadRequestException('One or more roles no longer exist');
+      }
+      throw err;
+    }
+
+    return toUser(user, finalRoles);
+  }
+
+  // batched: one query for every user's roles instead of one per user
+  private async getRolesByUserId(userIds: number[]) {
+    if (userIds.length === 0) return new Map<number, UserRoleSummary[]>();
+
+    const rows = await this.db
+      .select({ userId: userRolesTable.userId, id: rolesTable.id, name: rolesTable.name })
+      .from(userRolesTable)
+      .innerJoin(rolesTable, eq(rolesTable.id, userRolesTable.roleId))
+      .where(inArray(userRolesTable.userId, userIds));
+
+    return groupBy(
+      rows,
+      (row) => row.userId,
+      (row) => ({ id: row.id, name: row.name }),
+    );
   }
 }

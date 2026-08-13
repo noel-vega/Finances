@@ -1,10 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { ListRolesView } from '../../../features/roles/views/list-roles.view'
+import { getListRolesQueryOptions } from '../../../features/roles/roles.hooks'
+import { queryClient } from '../../../lib/react-query-client'
 
 export const Route = createFileRoute('/app/roles/')({
-  staticData: { breadcrumb: 'Roles' },
-  component: RouteComponent,
+  beforeLoad: async () => {
+    await queryClient.ensureQueryData(getListRolesQueryOptions())
+  },
+  component: ListRolesView,
 })
-
-function RouteComponent() {
-  return <div>Hello "/app/roles/"!</div>
-}

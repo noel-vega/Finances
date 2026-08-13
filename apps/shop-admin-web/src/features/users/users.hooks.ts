@@ -21,3 +21,13 @@ export function useCreateUserMutation() {
     },
   })
 }
+
+export function useUpdateUserRolesMutation() {
+  return useMutation({
+    mutationFn: ({ id, roleIds }: { id: number; roleIds: number[] }) =>
+      adminApi.users.updateRoles(id, roleIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries(getListUsersQueryOptions())
+    },
+  })
+}

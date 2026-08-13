@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getListUsersQueryOptions } from "../users.hooks";
 import { DataTable } from "../../../components/data-table";
 import { Button } from "ui/button";
+import { Badge } from "ui/badge";
 import { Link } from "@tanstack/react-router";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "ui/input-group";
 import { PlusIcon, SearchIcon } from "lucide-react";
@@ -9,6 +11,7 @@ import { type ColumnDef } from "@tanstack/react-table";
 import type { User } from "admin-sdk";
 import { Field, FieldLabel } from "ui/field";
 import { format } from "date-fns";
+import { EditUserRolesSheet } from "./edit-user-roles-sheet";
 
 const columns: ColumnDef<User>[] = [
   {
@@ -26,6 +29,22 @@ const columns: ColumnDef<User>[] = [
     header: "Email",
   },
   {
+    id: "roles",
+    header: "Roles",
+    cell: ({ row }) =>
+      row.original.roles.length > 0 ? (
+        <span className="flex flex-wrap gap-1">
+          {row.original.roles.map((role) => (
+            <Badge key={role.id} variant="outline">
+              {role.name}
+            </Badge>
+          ))}
+        </span>
+      ) : (
+        <span className="text-muted-foreground">No roles</span>
+      ),
+  },
+  {
     accessorKey: "createdAt",
     header: "Added",
     cell: ({ row }) =>
@@ -35,6 +54,7 @@ const columns: ColumnDef<User>[] = [
 
 export function ListUsersView() {
   const users = useQuery(getListUsersQueryOptions());
+  const [editingUser, setEditingUser] = useState<User | null>(null);
 
   return (
     <div className="space-y-4">
@@ -54,7 +74,17 @@ export function ListUsersView() {
           </Button>
         </Link>
       </div>
-      <DataTable data={users.data ?? []} columns={columns} />
+      <DataTable
+        data={users.data ?? []}
+        columns={columns}
+        onRowClick={(row) => setEditingUser(row.original)}
+      />
+
+      <EditUserRolesSheet
+        user={editingUser}
+        open={editingUser !== null}
+        onOpenChange={(open) => !open && setEditingUser(null)}
+      />
     </div>
   );
 }

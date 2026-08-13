@@ -15,6 +15,8 @@ import { createAccountResource } from "./resources/account.js";
 import { createUsersResource } from "./resources/users.js";
 import { createCustomersResource } from "./resources/customers.js";
 import { createDashboardResource } from "./resources/dashboard.js";
+import { createRolesResource } from "./resources/roles.js";
+import { createPermissionsResource } from "./resources/permissions.js";
 
 export type ApiKey = components["schemas"]["ApiKeyDto"];
 export type CartListItem = components["schemas"]["CartListItem"];
@@ -47,6 +49,11 @@ export type CreateUserDto = components["schemas"]["CreateUserDto"];
 export type Customer = components["schemas"]["Customer"];
 export type AcceptInviteDto = components["schemas"]["AcceptInviteDto"];
 export type DashboardSummary = components["schemas"]["DashboardSummary"];
+export type Permission = components["schemas"]["Permission"];
+export type Role = components["schemas"]["Role"];
+export type RoleDetail = components["schemas"]["RoleDetail"];
+export type CreateRoleDto = components["schemas"]["CreateRoleDto"];
+export type UpdateRoleDto = components["schemas"]["UpdateRoleDto"];
 
 export class AdminClient {
   accessToken: string | undefined;
@@ -66,6 +73,8 @@ export class AdminClient {
   users: ReturnType<typeof createUsersResource>;
   customers: ReturnType<typeof createCustomersResource>;
   dashboard: ReturnType<typeof createDashboardResource>;
+  roles: ReturnType<typeof createRolesResource>;
+  permissions: ReturnType<typeof createPermissionsResource>;
 
   // every request needs the bearer token and the cross-origin cookie
   // (for the refresh_token) — centralized here instead of at each call site.
@@ -98,6 +107,8 @@ export class AdminClient {
     this.users = createUsersResource(this.client, doRequest);
     this.customers = createCustomersResource(this.client, doRequest);
     this.dashboard = createDashboardResource(this.client, doRequest);
+    this.roles = createRolesResource(this.client, doRequest);
+    this.permissions = createPermissionsResource(this.client, doRequest);
   }
 
   async signIn(credentials: components["schemas"]["SignInDto"]) {

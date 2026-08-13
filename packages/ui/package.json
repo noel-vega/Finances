@@ -38,7 +38,8 @@
     "./badge": "./src/components/ui/badge.tsx",
     "./breadcrumb": "./src/components/ui/breadcrumb.tsx",
     "./dialog": "./src/components/ui/dialog.tsx",
-    "./command": "./src/components/ui/command.tsx"
+    "./command": "./src/components/ui/command.tsx",
+    "./checkbox": "./src/components/ui/checkbox.tsx"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

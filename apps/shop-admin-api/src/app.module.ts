@@ -20,6 +20,8 @@ import { AccountModule } from './modules/account/account.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { HealthModule } from './modules/health/health.module';
+import { PermissionsModule } from './modules/permissions/permissions.module';
+import { RolesModule } from './modules/roles/roles.module';
 
 @Module({
   imports: [
@@ -44,6 +46,8 @@ import { HealthModule } from './modules/health/health.module';
     CustomersModule,
     DashboardModule,
     HealthModule,
+    PermissionsModule,
+    RolesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

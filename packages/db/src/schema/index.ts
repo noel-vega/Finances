@@ -9,3 +9,4 @@ export * from './inventory.js';
 export * from './cart.js';
 export * from './orders.js';
 export * from './stripe-accounts.js';
+export * from './rbac.js';

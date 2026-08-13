@@ -8,6 +8,7 @@ import { SignInDto } from './dto/signin.dto';
 import { SignUpDto } from './dto/signup.dto';
 import { AcceptInviteDto } from './dto/accept-invite.dto';
 import { UsersService } from '../users/users.service';
+import { RolesService } from '../roles/roles.service';
 import { JwtService } from '@nestjs/jwt';
 import { DRIZZLE } from 'src/database/database.constants';
 import {
@@ -19,8 +20,7 @@ import {
 } from 'db';
 import * as bcrypt from 'bcryptjs';
 import { generateApiKey } from '../api-keys/api-keys.util';
-
-const POSTGRES_UNIQUE_VIOLATION = '23505';
+import { isUniqueViolation } from '../../common/postgres-error.util';
 
 @Injectable()
 export class AuthService {
@@ -28,6 +28,7 @@ export class AuthService {
     @Inject(DRIZZLE) private readonly db: typeof Db,
     private jwtService: JwtService,
     private usersService: UsersService,
+    private rolesService: RolesService,
   ) {}
 
   async signin(signinDto: SignInDto) {
@@ -98,6 +99,10 @@ export class AuthService {
           })
           .returning();
 
+        // every account starts with a non-deletable "Owner" role holding
+        // every permission, assigned to the account's first user
+        await this.rolesService.createSystemRole(tx, account.id, user.id);
+
         return user;
       });
 
@@ -118,19 +123,7 @@ export class AuthService {
         access_token,
       };
     } catch (err) {
-      // node-postgres errors carry `.code`, but drizzle-orm wraps them in a
-      // DrizzleQueryError, so the pg error ends up at `.cause` instead.
-      const pgError =
-        typeof err === 'object' && err !== null && 'cause' in err
-          ? err.cause
-          : err;
-
-      if (
-        typeof pgError === 'object' &&
-        pgError !== null &&
-        'code' in pgError &&
-        pgError.code === POSTGRES_UNIQUE_VIOLATION
-      ) {
+      if (isUniqueViolation(err)) {
         throw new ConflictException('Email already in use');
       }
       throw err;

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsString, MinLength } from 'class-validator';
+import { IsArray, IsEmail, IsInt, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class CreateUserDto {
   @ApiProperty()
@@ -21,10 +21,19 @@ export class CreateUserDto {
   @IsEmail()
   email: string;
 
-  constructor(firstName: string, lastName: string, phone: string, email: string) {
+  // optional — an invited user with no roles can still log in and use
+  // anything not gated by @RequirePermissions (e.g. their own profile)
+  @ApiProperty({ type: [Number], required: false })
+  @IsOptional()
+  @IsArray()
+  @IsInt({ each: true })
+  roleIds?: number[];
+
+  constructor(firstName: string, lastName: string, phone: string, email: string, roleIds?: number[]) {
     this.firstName = firstName;
     this.lastName = lastName;
     this.phone = phone;
     this.email = email;
+    this.roleIds = roleIds;
   }
 }

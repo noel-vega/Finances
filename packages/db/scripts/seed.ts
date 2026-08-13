@@ -9,6 +9,7 @@ import {
   db,
   eq,
   and,
+  sql,
   accountsTable,
   usersTable,
   locationsTable,
@@ -22,6 +23,11 @@ import {
   productVariantsTable,
   variantOptionValuesTable,
   inventoryTable,
+  permissionsTable,
+  rolesTable,
+  rolePermissionsTable,
+  userRolesTable,
+  PERMISSIONS_CATALOG,
 } from '../src/index.js';
 
 const OWNER_EMAIL = 'owner@longboxcomics.test';
@@ -226,6 +232,70 @@ async function ensureAccount() {
   });
 }
 
+// mirrors PermissionsService.onModuleInit() in shop-admin-api — seed.ts
+// runs standalone, so it can't rely on the API ever having booted
+async function ensurePermissionsCatalog() {
+  await db
+    .insert(permissionsTable)
+    .values(PERMISSIONS_CATALOG)
+    .onConflictDoUpdate({
+      target: permissionsTable.key,
+      set: {
+        resource: sql`excluded.resource`,
+        action: sql`excluded.action`,
+        description: sql`excluded.description`,
+      },
+    });
+}
+
+// mirrors RolesService.createSystemRole() in shop-admin-api
+async function ensureOwnerRole(accountId: number, userId: number) {
+  const findExisting = () =>
+    db
+      .select()
+      .from(rolesTable)
+      .where(and(eq(rolesTable.accountId, accountId), eq(rolesTable.isSystem, true)))
+      .then(([row]) => row);
+
+  const existing = await findExisting();
+  if (existing) return existing;
+
+  try {
+    return await db.transaction(async (tx) => {
+      const [role] = await tx
+        .insert(rolesTable)
+        .values({
+          accountId,
+          name: 'Owner',
+          description: 'Full access to everything',
+          isSystem: true,
+        })
+        .returning();
+
+      const allPermissions = await tx.select({ id: permissionsTable.id }).from(permissionsTable);
+      if (allPermissions.length > 0) {
+        await tx
+          .insert(rolePermissionsTable)
+          .values(allPermissions.map((p) => ({ roleId: role.id, permissionId: p.id })));
+      }
+
+      await tx.insert(userRolesTable).values({ userId, roleId: role.id });
+      return role;
+    });
+  } catch (err) {
+    // two concurrent seed runs can both pass the check above before either
+    // inserts — the (accountId, name) unique constraint lets one win
+    const pgError = typeof err === 'object' && err !== null && 'cause' in err ? err.cause : err;
+    const isUniqueViolation =
+      typeof pgError === 'object' && pgError !== null && 'code' in pgError && pgError.code === '23505';
+    if (isUniqueViolation) {
+      const existing = await findExisting();
+      if (existing) return existing;
+    }
+    throw err;
+  }
+}
+
 async function ensureDefaultLocation(accountId: number) {
   const [existing] = await db
     .select()
@@ -371,7 +441,15 @@ async function ensureProduct(
 async function main() {
   console.log('Seeding Longbox Comics demo data...');
 
+  await ensurePermissionsCatalog();
+
   const account = await ensureAccount();
+  const [owner] = await db
+    .select({ id: usersTable.id })
+    .from(usersTable)
+    .where(eq(usersTable.email, OWNER_EMAIL));
+  await ensureOwnerRole(account.id, owner.id);
+
   const location = await ensureDefaultLocation(account.id);
   await ensureApiKey(account.id);
 

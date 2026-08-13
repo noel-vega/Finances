@@ -15,5 +15,15 @@ export function createUsersResource(client: Client<paths>, doRequest: DoFn) {
       );
       return data;
     },
+
+    updateRoles: async (id: number, roleIds: number[]) => {
+      const path: paths["/users/{id}/roles"]["patch"]["parameters"]["path"] = {
+        id: String(id),
+      };
+      const { data } = await doRequest(() =>
+        client.PATCH("/users/{id}/roles", { params: { path }, body: { roleIds } }),
+      );
+      return data;
+    },
   };
 }
