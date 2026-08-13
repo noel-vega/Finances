@@ -1,7 +1,6 @@
 import z from "zod";
 import { createFileRoute } from "@tanstack/react-router";
 import {
-  getPermissionsCatalogQueryOptions,
   getRoleQueryOptions,
 } from "../../../features/roles/roles.hooks";
 import { queryClient } from "../../../lib/react-query-client";
@@ -22,7 +21,6 @@ export const Route = createFileRoute("/app/roles/$id")({
   beforeLoad: async ({ params }) => {
     await Promise.all([
       queryClient.ensureQueryData(getRoleQueryOptions(params.id)),
-      queryClient.ensureQueryData(getPermissionsCatalogQueryOptions()),
     ]);
   },
   component: () => {

@@ -7,7 +7,7 @@ import { Field, FieldLabel } from "ui/field";
 import { Input } from "ui/input";
 import { Textarea } from "ui/textarea";
 import { Button } from "ui/button";
-import { useCreateRoleMutation, usePermissionsCatalogQuery } from "../roles.hooks";
+import { useCreateRoleMutation, usePermissionsCatalogSuspenseQuery } from "../roles.hooks";
 import { PermissionChecklist } from "../components/permission-checklist";
 
 const CreateRoleFormSchema = z.object({
@@ -21,7 +21,7 @@ type CreateRoleForm = z.infer<typeof CreateRoleFormSchema>;
 export function CreateRoleView() {
   const navigate = useNavigate();
   const createRole = useCreateRoleMutation();
-  const permissions = usePermissionsCatalogQuery();
+  const permissions = usePermissionsCatalogSuspenseQuery();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const form = useForm<CreateRoleForm>({
     resolver: zodResolver(CreateRoleFormSchema),

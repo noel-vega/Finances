@@ -42,8 +42,8 @@ export function getPermissionsCatalogQueryOptions() {
   })
 }
 
-export function usePermissionsCatalogQuery() {
-  return useQuery(getPermissionsCatalogQueryOptions())
+export function usePermissionsCatalogSuspenseQuery() {
+  return useSuspenseQuery(getPermissionsCatalogQueryOptions())
 }
 
 export function useCreateRoleMutation() {

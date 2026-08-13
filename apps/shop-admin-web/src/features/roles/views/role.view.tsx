@@ -21,7 +21,7 @@ import { Button } from "ui/button";
 import { ArrowLeftIcon, LoaderCircleIcon, Trash2Icon } from "lucide-react";
 import {
   useDeleteRoleMutation,
-  usePermissionsCatalogQuery,
+  usePermissionsCatalogSuspenseQuery,
   useRoleSuspenseQuery,
   useUpdateRoleMutation,
 } from "../roles.hooks";
@@ -40,7 +40,7 @@ export function RoleView({ id }: { id: number }) {
   const { data } = useRoleSuspenseQuery(id);
   const updateRole = useUpdateRoleMutation();
   const deleteRole = useDeleteRoleMutation();
-  const permissions = usePermissionsCatalogQuery();
+  const permissions = usePermissionsCatalogSuspenseQuery();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
