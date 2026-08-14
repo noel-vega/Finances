@@ -20,14 +20,14 @@ on:
 # distribution — no ECR/ECS permissions) are the only pieces of
 # infra/terraform/envs/production intended to be applied right now.
 
-permissions:
-  id-token: write
-  contents: read
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: production
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
