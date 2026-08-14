@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  pull_request:
+
+jobs:
+  build-lint-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # shared packages first — apps' `tsc`/`nest build` resolve workspace
+      # imports (e.g. `import ... from 'db'`) via each package's compiled
+      # dist/, so it has to exist before the apps that depend on it build.
+      # packages/ui has no build script (Vite consumes its raw .tsx
+      # directly) — deliberately excluded here.
+      - name: Build shared packages
+        run: |
+          npm run build --workspace=db \
+            --workspace=logging \
+            --workspace=queue \
+            --workspace=storage \
+            --workspace=email \
+            --workspace=email-templates \
+            --workspace=admin-sdk \
+            --workspace=storefront-sdk
+
+      - name: Build apps
+        run: |
+          npm run build --workspace=shop-admin-api \
+            --workspace=storefront-api \
+            --workspace=worker \
+            --workspace=shop-admin-web \
+            --workspace=storefront-web \
+            --workspace=website
+
+      - name: Lint
+        run: npm run lint --workspaces --if-present
+
+      - name: Test
+        run: |
+          npm run test --workspace=shop-admin-api \
+            --workspace=storefront-api \
+            --workspace=worker
+
+  docker-smoke-build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [shop-admin-api, storefront-api, worker, migrate]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build ${{ matrix.target }} image (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/${{ matrix.target }}.Dockerfile
+          push: false

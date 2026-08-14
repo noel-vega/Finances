@@ -7,3 +7,9 @@ node_modules
 .env
 
 dist
+
+.terraform
+.terraform.tfstate.lock.info
+*.tfstate
+*.tfstate.backup
+crash.log

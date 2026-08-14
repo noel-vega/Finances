@@ -1,0 +1,270 @@
+# Single root module for the whole production environment. Deliberately one
+# state file — lets modules reference each other's outputs directly (e.g.
+# ECS task defs reading CloudFront domains for CORS env vars) and resolve in
+# one `terraform apply`, no manual multi-step ordering required.
+
+module "network" {
+  source      = "../../modules/network"
+  name_prefix = var.name_prefix
+}
+
+module "ecr" {
+  source      = "../../modules/ecr"
+  name_prefix = var.name_prefix
+}
+
+# Named references to the per-app module instances below, collected so the
+# deploy-role and other cross-cutting wiring can iterate over them without
+# repeating each app's name three times.
+locals {
+  ecs_services = {
+    shop-admin-api = module.ecs_service_shop_admin_api
+    storefront-api = module.ecs_service_storefront_api
+    worker         = module.ecs_service_worker
+  }
+  frontends = {
+    shop-admin-web = module.frontend_shop_admin_web
+    storefront-web = module.frontend_storefront_web
+    website        = module.frontend_website
+  }
+}
+
+# GitHub OIDC provider — an AWS singleton, created once and shared by every
+# deploy-role instance below.
+module "oidc_provider" {
+  source = "../../modules/oidc-provider"
+}
+
+# Rollout milestone 1: website only. Scoped to just its own S3 bucket +
+# CloudFront distribution — no ECR/ECS permissions, so this role (and
+# everything it depends on) can be applied with `-target` without pulling
+# in RDS/ECS/ALB.
+module "deploy_role_website" {
+  source            = "../../modules/deploy-role"
+  name_prefix       = var.name_prefix
+  region            = var.region
+  role_name         = "${var.name_prefix}-github-actions-deploy-website"
+  oidc_provider_arn = module.oidc_provider.arn
+  github_repo       = var.github_repo
+
+  s3_bucket_arns               = [module.frontend_website.bucket_arn]
+  cloudfront_distribution_arns = [module.frontend_website.distribution_arn]
+}
+
+# Platform-wide role, covering ECR/ECS/all frontends — left dormant
+# (not targeted) until the rest of the stack (RDS/ECS/ALB) is actually
+# built out in a later milestone. Its dependencies (local.ecs_services /
+# local.frontends) are declared further down this file — Terraform
+# resolves the dependency graph regardless of declaration order within one
+# root module, so these forward references are fine.
+module "deploy_role_platform" {
+  source             = "../../modules/deploy-role"
+  name_prefix        = var.name_prefix
+  region             = var.region
+  role_name          = "${var.name_prefix}-github-actions-deploy-platform"
+  oidc_provider_arn  = module.oidc_provider.arn
+  github_repo        = var.github_repo
+  include_ecr_push   = true
+  include_ecs_deploy = true
+
+  pass_role_arns = concat(
+    [for k, s in local.ecs_services : s.execution_role_arn],
+    [for k, s in local.ecs_services : s.task_role_arn],
+  )
+  s3_bucket_arns               = [for k, s in local.frontends : s.bucket_arn]
+  cloudfront_distribution_arns = [for k, s in local.frontends : s.distribution_arn]
+}
+
+module "rds" {
+  source                      = "../../modules/rds"
+  name_prefix                 = var.name_prefix
+  vpc_id                      = module.network.vpc_id
+  private_subnet_ids          = module.network.private_subnet_ids
+  ecs_tasks_security_group_id = module.ecs_cluster.ecs_tasks_security_group_id
+  instance_class              = var.db_instance_class
+}
+
+module "elasticache" {
+  source                      = "../../modules/elasticache"
+  name_prefix                 = var.name_prefix
+  vpc_id                      = module.network.vpc_id
+  private_subnet_ids          = module.network.private_subnet_ids
+  ecs_tasks_security_group_id = module.ecs_cluster.ecs_tasks_security_group_id
+  node_type                   = var.redis_node_type
+}
+
+module "secrets" {
+  source                     = "../../modules/secrets"
+  name_prefix                = var.name_prefix
+  rds_master_user_secret_arn = module.rds.master_user_secret_arn
+  rds_address                = module.rds.address
+  rds_port                   = module.rds.port
+  rds_db_name                = module.rds.db_name
+}
+
+module "ecs_cluster" {
+  source      = "../../modules/ecs-cluster"
+  name_prefix = var.name_prefix
+  vpc_id      = module.network.vpc_id
+}
+
+module "alb_shop_admin_api" {
+  source                      = "../../modules/alb"
+  name_prefix                 = var.name_prefix
+  name                        = "shop-admin-api"
+  vpc_id                      = module.network.vpc_id
+  public_subnet_ids           = module.network.public_subnet_ids
+  container_port              = 3000
+  ecs_tasks_security_group_id = module.ecs_cluster.ecs_tasks_security_group_id
+}
+
+module "alb_storefront_api" {
+  source                      = "../../modules/alb"
+  name_prefix                 = var.name_prefix
+  name                        = "storefront-api"
+  vpc_id                      = module.network.vpc_id
+  public_subnet_ids           = module.network.public_subnet_ids
+  container_port              = 3001
+  ecs_tasks_security_group_id = module.ecs_cluster.ecs_tasks_security_group_id
+}
+
+# shop-admin-api's task role: direct S3 access to the product-images
+# bucket. This is what the packages/storage credential fix (Phase 2) makes
+# possible — no static IAM user key needed in Secrets Manager.
+data "aws_iam_policy_document" "shop_admin_api_task" {
+  statement {
+    effect    = "Allow"
+    actions   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
+    resources = ["${module.secrets.product_images_bucket_arn}/*"]
+  }
+  statement {
+    effect    = "Allow"
+    actions   = ["s3:ListBucket", "s3:PutBucketPolicy", "s3:CreateBucket"]
+    resources = [module.secrets.product_images_bucket_arn]
+  }
+}
+
+module "ecs_service_shop_admin_api" {
+  source                      = "../../modules/ecs-service"
+  name_prefix                 = var.name_prefix
+  name                        = "shop-admin-api"
+  cluster_id                  = module.ecs_cluster.cluster_id
+  private_subnet_ids          = module.network.private_subnet_ids
+  ecs_tasks_security_group_id = module.ecs_cluster.ecs_tasks_security_group_id
+  container_port              = 3000
+  image                       = "${module.ecr.repository_urls["shop-admin-api"]}:latest"
+  target_group_arn            = module.alb_shop_admin_api.target_group_arn
+  task_role_policy_json       = data.aws_iam_policy_document.shop_admin_api_task.json
+
+  environment = [
+    { name = "NODE_ENV", value = "production" },
+    { name = "PORT", value = "3000" },
+    { name = "REDIS_HOST", value = module.elasticache.primary_endpoint_address },
+    { name = "REDIS_PORT", value = tostring(module.elasticache.port) },
+    { name = "SHOP_ADMIN_WEB_URL", value = "https://${local.frontends["shop-admin-web"].distribution_domain_name}" },
+    { name = "MINIO_ENDPOINT", value = "https://s3.${var.region}.amazonaws.com" },
+    { name = "MINIO_BUCKET", value = module.secrets.product_images_bucket_name },
+    { name = "MINIO_PUBLIC_BASE_URL", value = "https://${module.secrets.product_images_bucket_name}.s3.${var.region}.amazonaws.com" },
+    { name = "MINIO_FORCE_PATH_STYLE", value = "false" },
+  ]
+
+  secrets = [
+    { name = "DATABASE_URL", valueFrom = module.secrets.database_url_secret_arn },
+    { name = "STAFF_JWT_SECRET", valueFrom = "${module.secrets.app_secret_arns["shop-admin-api"]}:STAFF_JWT_SECRET::" },
+    { name = "STRIPE_SECRET_KEY", valueFrom = "${module.secrets.app_secret_arns["shop-admin-api"]}:STRIPE_SECRET_KEY::" },
+    { name = "STRIPE_ACCOUNT_WEBHOOK_SECRET", valueFrom = "${module.secrets.app_secret_arns["shop-admin-api"]}:STRIPE_ACCOUNT_WEBHOOK_SECRET::" },
+    { name = "SHIPPO_API_KEY", valueFrom = "${module.secrets.app_secret_arns["shop-admin-api"]}:SHIPPO_API_KEY::" },
+  ]
+
+  secrets_manager_secret_arns = [
+    module.secrets.database_url_secret_arn,
+    module.secrets.app_secret_arns["shop-admin-api"],
+  ]
+}
+
+module "ecs_service_storefront_api" {
+  source                      = "../../modules/ecs-service"
+  name_prefix                 = var.name_prefix
+  name                        = "storefront-api"
+  cluster_id                  = module.ecs_cluster.cluster_id
+  private_subnet_ids          = module.network.private_subnet_ids
+  ecs_tasks_security_group_id = module.ecs_cluster.ecs_tasks_security_group_id
+  container_port              = 3001
+  image                       = "${module.ecr.repository_urls["storefront-api"]}:latest"
+  target_group_arn            = module.alb_storefront_api.target_group_arn
+
+  environment = [
+    { name = "NODE_ENV", value = "production" },
+    { name = "PORT", value = "3001" },
+    { name = "REDIS_HOST", value = module.elasticache.primary_endpoint_address },
+    { name = "REDIS_PORT", value = tostring(module.elasticache.port) },
+    { name = "STOREFRONT_WEB_URL", value = "https://${local.frontends["storefront-web"].distribution_domain_name}" },
+  ]
+
+  secrets = [
+    { name = "DATABASE_URL", valueFrom = module.secrets.database_url_secret_arn },
+    { name = "CUSTOMER_JWT_SECRET", valueFrom = "${module.secrets.app_secret_arns["storefront-api"]}:CUSTOMER_JWT_SECRET::" },
+    { name = "STRIPE_SECRET_KEY", valueFrom = "${module.secrets.app_secret_arns["storefront-api"]}:STRIPE_SECRET_KEY::" },
+    { name = "STRIPE_CHECKOUT_WEBHOOK_SECRET", valueFrom = "${module.secrets.app_secret_arns["storefront-api"]}:STRIPE_CHECKOUT_WEBHOOK_SECRET::" },
+    { name = "SHIPPO_API_KEY", valueFrom = "${module.secrets.app_secret_arns["storefront-api"]}:SHIPPO_API_KEY::" },
+  ]
+
+  secrets_manager_secret_arns = [
+    module.secrets.database_url_secret_arn,
+    module.secrets.app_secret_arns["storefront-api"],
+  ]
+}
+
+module "ecs_service_worker" {
+  source                      = "../../modules/ecs-service"
+  name_prefix                 = var.name_prefix
+  name                        = "worker"
+  cluster_id                  = module.ecs_cluster.cluster_id
+  private_subnet_ids          = module.network.private_subnet_ids
+  ecs_tasks_security_group_id = module.ecs_cluster.ecs_tasks_security_group_id
+  container_port              = 3003
+  image                       = "${module.ecr.repository_urls["worker"]}:latest"
+  target_group_arn            = null # no ALB — pure BullMQ consumer
+
+  environment = [
+    { name = "NODE_ENV", value = "production" },
+    { name = "PORT", value = "3003" },
+    { name = "REDIS_HOST", value = module.elasticache.primary_endpoint_address },
+    { name = "REDIS_PORT", value = tostring(module.elasticache.port) },
+    # interim SES SMTP config (Phase 9) — sandbox mode until AWS approves
+    # production access; SMTP_FROM must exactly match the verified identity
+    { name = "SMTP_HOST", value = "email-smtp.${var.region}.amazonaws.com" },
+    { name = "SMTP_PORT", value = "587" },
+    { name = "SMTP_SECURE", value = "false" },
+    { name = "SMTP_FROM", value = var.ses_verified_email },
+  ]
+
+  secrets = [
+    { name = "DATABASE_URL", valueFrom = module.secrets.database_url_secret_arn },
+    { name = "SMTP_USER", valueFrom = "${module.secrets.app_secret_arns["worker"]}:SMTP_USER::" },
+    { name = "SMTP_PASS", valueFrom = "${module.secrets.app_secret_arns["worker"]}:SMTP_PASS::" },
+  ]
+
+  secrets_manager_secret_arns = [
+    module.secrets.database_url_secret_arn,
+    module.secrets.app_secret_arns["worker"],
+  ]
+}
+
+module "frontend_shop_admin_web" {
+  source      = "../../modules/s3-static-site"
+  name_prefix = var.name_prefix
+  name        = "shop-admin-web"
+}
+
+module "frontend_storefront_web" {
+  source      = "../../modules/s3-static-site"
+  name_prefix = var.name_prefix
+  name        = "storefront-web"
+}
+
+module "frontend_website" {
+  source      = "../../modules/s3-static-site"
+  name_prefix = var.name_prefix
+  name        = "website"
+}

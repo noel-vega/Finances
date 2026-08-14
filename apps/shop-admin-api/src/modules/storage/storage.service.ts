@@ -6,13 +6,19 @@ import { createStorageClient } from 'storage';
 export class StorageService implements OnModuleInit {
   private readonly logger = new Logger(StorageService.name);
 
+  // accessKeyId/secretAccessKey are only passed when explicitly set (e.g. local
+  // MinIO); omitted in prod so the AWS SDK falls back to the default credential
+  // chain and picks up the ECS task role instead of a static key pair
   private readonly client = createStorageClient({
     endpoint: process.env.MINIO_ENDPOINT ?? 'http://localhost:9000',
-    accessKeyId: process.env.MINIO_ACCESS_KEY ?? 'minioadmin',
-    secretAccessKey: process.env.MINIO_SECRET_KEY ?? 'minioadmin',
+    accessKeyId: process.env.MINIO_ACCESS_KEY,
+    secretAccessKey: process.env.MINIO_SECRET_KEY,
     bucket: process.env.MINIO_BUCKET ?? 'shop-product-images',
     publicBaseUrl:
       process.env.MINIO_PUBLIC_BASE_URL ?? 'http://localhost:9000/shop-product-images',
+    forcePathStyle: process.env.MINIO_FORCE_PATH_STYLE
+      ? process.env.MINIO_FORCE_PATH_STYLE === 'true'
+      : undefined,
   });
 
   // local dev needs zero manual MinIO console setup — same zero-friction

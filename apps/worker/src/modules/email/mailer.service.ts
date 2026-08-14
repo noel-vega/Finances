@@ -7,9 +7,15 @@ const FROM = process.env.SMTP_FROM ?? 'Harbor <no-reply@harbor.local>';
 // APIs enqueue jobs instead of talking to SMTP directly
 @Injectable()
 export class MailerService {
+  // auth is only set when SMTP_USER is present — local Mailpit takes no
+  // auth, SES SMTP requires it
   private readonly mailer = createMailer({
     host: process.env.SMTP_HOST ?? 'localhost',
     port: Number(process.env.SMTP_PORT ?? 1025),
+    secure: process.env.SMTP_SECURE === 'true',
+    auth: process.env.SMTP_USER
+      ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS! }
+      : undefined,
   });
 
   sendMail(params: { to: string; from?: string | { name: string; address: string }; subject: string; html: string }) {

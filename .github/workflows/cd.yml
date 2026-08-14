@@ -1,0 +1,203 @@
+name: CD
+
+on:
+  push:
+    branches: [main]
+
+# Required repo configuration before this workflow can run (see
+# infra/terraform/envs/production outputs and README further down this
+# repo's rollout plan):
+#   vars.AWS_DEPLOY_ROLE_ARN  = terraform output deploy_role_arn
+#   vars.AWS_REGION           = "us-east-1"
+#   A GitHub Environment named "harbor-production" with a required
+#   reviewer, so migrate/deploy-services/deploy-frontends need manual
+#   approval before touching live resources — there's no staging
+#   environment to catch mistakes first.
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - app: shop-admin-api
+            dockerfile: docker/shop-admin-api.Dockerfile
+            ssm_key: shop-admin-api-uri
+          - app: storefront-api
+            dockerfile: docker/storefront-api.Dockerfile
+            ssm_key: storefront-api-uri
+          - app: worker
+            dockerfile: docker/worker.Dockerfile
+            ssm_key: worker-uri
+          - app: migrator
+            dockerfile: docker/migrate.Dockerfile
+            ssm_key: migrator-uri
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - uses: aws-actions/amazon-ecr-login@v2
+        id: ecr-login
+
+      - name: Resolve ECR repo URI
+        id: ecr-uri
+        run: |
+          URI=$(aws ssm get-parameter --name "/harbor/production/ecr/${{ matrix.ssm_key }}" --query 'Parameter.Value' --output text)
+          echo "uri=$URI" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: |
+            ${{ steps.ecr-uri.outputs.uri }}:${{ github.sha }}
+            ${{ steps.ecr-uri.outputs.uri }}:latest
+
+  migrate:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    environment: harbor-production
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Run migration task
+        run: |
+          set -euo pipefail
+
+          CLUSTER=$(aws ssm get-parameter --name /harbor/production/ecs/cluster-name --query 'Parameter.Value' --output text)
+          FAMILY=$(aws ssm get-parameter --name /harbor/production/ecs/migrator-task-family --query 'Parameter.Value' --output text)
+          SUBNETS=$(aws ssm get-parameter --name /harbor/production/network/private-subnet-ids --query 'Parameter.Value' --output text)
+          SG=$(aws ssm get-parameter --name /harbor/production/network/ecs-tasks-security-group --query 'Parameter.Value' --output text)
+          MIGRATOR_URI=$(aws ssm get-parameter --name /harbor/production/ecr/migrator-uri --query 'Parameter.Value' --output text)
+
+          TASK_ARN=$(aws ecs run-task --cluster "$CLUSTER" --task-definition "$FAMILY" \
+            --launch-type FARGATE \
+            --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$SG],assignPublicIp=DISABLED}" \
+            --overrides "{\"containerOverrides\":[{\"name\":\"migrator\",\"image\":\"$MIGRATOR_URI:${{ github.sha }}\"}]}" \
+            --query 'tasks[0].taskArn' --output text)
+
+          aws ecs wait tasks-stopped --cluster "$CLUSTER" --tasks "$TASK_ARN"
+
+          EXIT_CODE=$(aws ecs describe-tasks --cluster "$CLUSTER" --tasks "$TASK_ARN" \
+            --query 'tasks[0].containers[0].exitCode' --output text)
+
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "migration task exited with code $EXIT_CODE"
+            exit 1
+          fi
+
+  deploy-services:
+    needs: migrate
+    runs-on: ubuntu-latest
+    environment: harbor-production
+    strategy:
+      matrix:
+        app: [shop-admin-api, storefront-api, worker]
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Register new task definition revision and update service
+        run: |
+          set -euo pipefail
+
+          CLUSTER=$(aws ssm get-parameter --name /harbor/production/ecs/cluster-name --query 'Parameter.Value' --output text)
+          SERVICE=$(aws ssm get-parameter --name /harbor/production/ecs/${{ matrix.app }}-service --query 'Parameter.Value' --output text)
+          IMAGE_URI=$(aws ssm get-parameter --name /harbor/production/ecr/${{ matrix.app }}-uri --query 'Parameter.Value' --output text)
+          FAMILY="harbor-${{ matrix.app }}"
+
+          CURRENT=$(aws ecs describe-task-definition --task-definition "$FAMILY" --query 'taskDefinition')
+          NEW=$(echo "$CURRENT" | jq --arg IMAGE "$IMAGE_URI:${{ github.sha }}" '
+            .containerDefinitions[0].image = $IMAGE
+            | {family, taskRoleArn, executionRoleArn, networkMode, containerDefinitions, requiresCompatibilities, cpu, memory}
+          ')
+
+          NEW_REVISION_ARN=$(aws ecs register-task-definition --cli-input-json "$NEW" --query 'taskDefinition.taskDefinitionArn' --output text)
+
+          aws ecs update-service --cluster "$CLUSTER" --service "$SERVICE" --task-definition "$NEW_REVISION_ARN" >/dev/null
+          aws ecs wait services-stable --cluster "$CLUSTER" --services "$SERVICE"
+
+  deploy-frontends:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    environment: harbor-production
+    strategy:
+      matrix:
+        include:
+          - app: shop-admin-web
+            ssm_prefix: shop-admin-web
+          - app: storefront-web
+            ssm_prefix: storefront-web
+          - app: website
+            ssm_prefix: website
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - run: npm ci
+
+      - name: Build shared packages this frontend needs
+        run: npm run build --workspace=admin-sdk --workspace=storefront-sdk --if-present
+
+      - name: Resolve API base URLs
+        id: api-urls
+        run: |
+          ADMIN_API_DNS=$(aws ssm get-parameter --name /harbor/production/alb/shop-admin-api-dns --query 'Parameter.Value' --output text)
+          STOREFRONT_API_DNS=$(aws ssm get-parameter --name /harbor/production/alb/storefront-api-dns --query 'Parameter.Value' --output text)
+          echo "admin_api=http://$ADMIN_API_DNS" >> "$GITHUB_OUTPUT"
+          echo "storefront_api=http://$STOREFRONT_API_DNS" >> "$GITHUB_OUTPUT"
+
+      - name: Build ${{ matrix.app }}
+        env:
+          VITE_SHOP_ADMIN_API_BASE_URL: ${{ steps.api-urls.outputs.admin_api }}
+          VITE_STOREFRONT_API_BASE_URL: ${{ steps.api-urls.outputs.storefront_api }}
+          # VITE_STRIPE_PUBLISHABLE_KEY / VITE_STOREFRONT_APP_KEY are
+          # non-secret publishable identifiers — set as repo variables
+          # once known, not secrets
+          VITE_STRIPE_PUBLISHABLE_KEY: ${{ vars.VITE_STRIPE_PUBLISHABLE_KEY }}
+          VITE_STOREFRONT_APP_KEY: ${{ vars.VITE_STOREFRONT_APP_KEY }}
+        run: npm run build --workspace=${{ matrix.app }}
+
+      - name: Sync to S3 and invalidate CloudFront
+        run: |
+          set -euo pipefail
+
+          BUCKET=$(aws ssm get-parameter --name /harbor/production/frontend/${{ matrix.ssm_prefix }}-bucket --query 'Parameter.Value' --output text)
+          DIST_ID=$(aws ssm get-parameter --name /harbor/production/frontend/${{ matrix.ssm_prefix }}-distribution --query 'Parameter.Value' --output text)
+          DIST_DIR="apps/${{ matrix.app }}/dist"
+
+          # hashed build assets get a 1-year immutable cache; index.html is
+          # synced separately with no-cache since it's the one file whose
+          # content actually changes per deploy under the same URL
+          aws s3 sync "$DIST_DIR" "s3://$BUCKET" --delete \
+            --cache-control "public,max-age=31536000,immutable" \
+            --exclude index.html
+          aws s3 cp "$DIST_DIR/index.html" "s3://$BUCKET/index.html" \
+            --cache-control "public,max-age=0,must-revalidate"
+
+          aws cloudfront create-invalidation --distribution-id "$DIST_ID" --paths "/index.html" "/"

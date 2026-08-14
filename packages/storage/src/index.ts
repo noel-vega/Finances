@@ -13,8 +13,10 @@ const UPLOAD_URL_EXPIRY_SECONDS = 5 * 60;
 export interface StorageConfig {
   endpoint: string;
   region?: string;
-  accessKeyId: string;
-  secretAccessKey: string;
+  // omit both to let the AWS SDK's default credential provider chain apply
+  // (e.g. an ECS task role) instead of a static key pair
+  accessKeyId?: string;
+  secretAccessKey?: string;
   bucket: string;
   // MinIO (and most non-AWS S3-compatible servers) need path-style URLs
   // (http://host/bucket/key) rather than AWS's virtual-hosted-style
@@ -30,10 +32,10 @@ export function createStorageClient(config: StorageConfig) {
   const client = new S3Client({
     endpoint: config.endpoint,
     region: config.region ?? "us-east-1",
-    credentials: {
-      accessKeyId: config.accessKeyId,
-      secretAccessKey: config.secretAccessKey,
-    },
+    credentials:
+      config.accessKeyId && config.secretAccessKey
+        ? { accessKeyId: config.accessKeyId, secretAccessKey: config.secretAccessKey }
+        : undefined,
     forcePathStyle: config.forcePathStyle ?? true,
   });
 
