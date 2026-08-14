@@ -9,7 +9,7 @@ on:
 # repo's rollout plan):
 #   vars.AWS_DEPLOY_ROLE_ARN  = terraform output deploy_role_arn
 #   vars.AWS_REGION           = "us-east-1"
-#   A GitHub Environment named "harbor-production" with a required
+#   A GitHub Environment named "production" with a required
 #   reviewer, so migrate/deploy-services/deploy-frontends need manual
 #   approval before touching live resources — there's no staging
 #   environment to catch mistakes first.
@@ -67,7 +67,7 @@ jobs:
   migrate:
     needs: build-and-push
     runs-on: ubuntu-latest
-    environment: harbor-production
+    environment: production
     steps:
       - uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -103,7 +103,7 @@ jobs:
   deploy-services:
     needs: migrate
     runs-on: ubuntu-latest
-    environment: harbor-production
+    environment: production
     strategy:
       matrix:
         app: [shop-admin-api, storefront-api, worker]
@@ -136,7 +136,7 @@ jobs:
   deploy-frontends:
     needs: build-and-push
     runs-on: ubuntu-latest
-    environment: harbor-production
+    environment: production
     strategy:
       matrix:
         include:

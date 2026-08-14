@@ -47,6 +47,12 @@ module "deploy_role_website" {
   oidc_provider_arn = module.oidc_provider.arn
   github_repo       = var.github_repo
 
+  # deploy-website.yml's single job always runs behind the "production"
+  # environment gate — no ungated (ref-based) job ever needs this role, so
+  # github_ref is off and only the environment-scoped sub claim is trusted.
+  github_ref          = null
+  github_environments = ["production"]
+
   s3_bucket_arns               = [module.frontend_website.bucket_arn]
   cloudfront_distribution_arns = [module.frontend_website.distribution_arn]
 }
@@ -66,6 +72,12 @@ module "deploy_role_platform" {
   github_repo        = var.github_repo
   include_ecr_push   = true
   include_ecs_deploy = true
+
+  # cd.yml's build-and-push job is ungated (matches github_ref's default,
+  # "refs/heads/main"); migrate/deploy-services/deploy-frontends run behind
+  # the "production" environment gate, which needs the environment-scoped
+  # sub claim instead — this role is used by both job shapes.
+  github_environments = ["production"]
 
   pass_role_arns = concat(
     [for k, s in local.ecs_services : s.execution_role_arn],

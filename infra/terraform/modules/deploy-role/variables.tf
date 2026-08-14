@@ -22,6 +22,18 @@ variable "github_repo" {
   type        = string
 }
 
+variable "github_ref" {
+  description = "Branch ref (e.g. \"refs/heads/main\") to trust for jobs that do NOT specify a GitHub Environment. Set to null if every workflow job using this role runs behind an environment gate (see github_environments)."
+  type        = string
+  default     = "refs/heads/main"
+}
+
+variable "github_environments" {
+  description = "GitHub Environment names (e.g. [\"harbor-production\"]) to trust — required because a job with `environment:` set gets an OIDC sub claim shaped \"repo:OWNER/REPO:environment:NAME\" instead of the branch-ref form, which github_ref alone won't match."
+  type        = list(string)
+  default     = []
+}
+
 variable "include_ecr_push" {
   description = "Grant ECR auth + push permissions, scoped to repos under name_prefix. Off by default — only the platform-wide role needs this."
   type        = bool

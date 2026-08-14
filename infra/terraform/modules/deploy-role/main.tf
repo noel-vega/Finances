@@ -26,10 +26,19 @@ data "aws_iam_policy_document" "trust" {
       values   = ["sts.amazonaws.com"]
     }
 
+    # GitHub's OIDC token `sub` claim format depends on whether the job
+    # that requests it specifies `environment:` — with one, it's
+    # "repo:OWNER/REPO:environment:NAME" instead of the branch-ref form
+    # "repo:OWNER/REPO:ref:refs/heads/BRANCH". A role used by both
+    # environment-gated and ungated jobs needs both patterns listed; one
+    # used only behind an environment gate only needs that pattern.
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repo}:ref:refs/heads/main"]
+      values = concat(
+        var.github_ref != null ? ["repo:${var.github_repo}:ref:${var.github_ref}"] : [],
+        [for env in var.github_environments : "repo:${var.github_repo}:environment:${env}"],
+      )
     }
   }
 }
