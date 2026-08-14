@@ -12,7 +12,6 @@ import { PermissionsService } from '../permissions/permissions.service';
 import { generateToken } from '../../common/generate-token.util';
 import { resolveOwned } from '../../common/resolve-owned.util';
 import { groupBy } from '../../common/group-by.util';
-import { isForeignKeyViolation, isUniqueViolation } from '../../common/postgres-error.util';
 import { assertCanGrant } from '../../common/assert-can-grant.util';
 import { getPermissionKeysForRoles } from '../../common/get-permission-keys-for-roles.util';
 import { DRIZZLE } from 'src/database/database.constants';
@@ -20,6 +19,8 @@ import {
   and,
   eq,
   inArray,
+  isForeignKeyViolation,
+  isUniqueViolation,
   ne,
   rolesTable,
   userInvitesTable,
@@ -269,9 +270,12 @@ export class UsersService {
 
         // locks the account's Owner role row so concurrent updateRoles()
         // calls touching Owner-role membership serialize through this one
-        // point, instead of racing on separate user_roles rows (which
-        // deadlocks: caller A locking B's row while B locks A's row, then
-        // both blocking on deleting their own)
+        // point. currentlyHoldsOwner below is deliberately re-read fresh
+        // here (not reused from currentRoleIds above) — a prior attempt at
+        // skipping this lock in the common case, by reusing that earlier
+        // unlocked read to decide whether locking was needed, reopened a
+        // TOCTOU gap where a concurrent Owner-role change could go
+        // unauthorized. Always lock, always re-read fresh under the lock.
         const [ownerRole] = await tx
           .select({ id: rolesTable.id })
           .from(rolesTable)
@@ -288,9 +292,12 @@ export class UsersService {
         }
 
         const willHoldOwner = resolvedRoles.some((role) => role.isSystem);
-        // currentRoleIds was already fetched above for the grant check —
-        // no need for a second round trip while this row is locked FOR UPDATE
-        const currentlyHoldsOwner = currentRoleIds.has(ownerRole.id);
+        const [currentlyHoldsOwnerRow] = await tx
+          .select({ userId: userRolesTable.userId })
+          .from(userRolesTable)
+          .where(and(eq(userRolesTable.userId, userId), eq(userRolesTable.roleId, ownerRole.id)))
+          .limit(1);
+        const currentlyHoldsOwner = Boolean(currentlyHoldsOwnerRow);
 
         // granting OR revoking Owner-role membership both require the
         // caller to already be an Owner — symmetric on purpose

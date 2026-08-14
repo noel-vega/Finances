@@ -14,13 +14,13 @@ import { DRIZZLE } from 'src/database/database.constants';
 import {
   accountApiKeysTable,
   accountsTable,
+  isUniqueViolation,
   locationsTable,
   usersTable,
   type db as Db,
 } from 'db';
 import * as bcrypt from 'bcryptjs';
 import { generateApiKey } from '../api-keys/api-keys.util';
-import { isUniqueViolation } from '../../common/postgres-error.util';
 
 @Injectable()
 export class AuthService {

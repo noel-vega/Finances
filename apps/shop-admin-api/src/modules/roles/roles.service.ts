@@ -4,6 +4,7 @@ import {
   and,
   eq,
   inArray,
+  isUniqueViolation,
   permissionsTable,
   rolePermissionsTable,
   rolesTable,
@@ -16,8 +17,8 @@ import { Role } from './entities/role.entity';
 import { RoleDetail } from './entities/role-detail.entity';
 import { resolveOwned } from '../../common/resolve-owned.util';
 import { groupBy } from '../../common/group-by.util';
-import { isUniqueViolation } from '../../common/postgres-error.util';
 import { assertCanGrant } from '../../common/assert-can-grant.util';
+import { getPermissionKeysForRoles } from '../../common/get-permission-keys-for-roles.util';
 import { PermissionsService } from '../permissions/permissions.service';
 
 // callback param type of db.transaction() — lets createSystemRole join a
@@ -56,7 +57,7 @@ export class RolesService {
           .returning();
 
         const permissions = await this.resolvePermissions(tx, dto.permissionKeys);
-        await this.assertGrantable(tx, permissions, callerUserId, callerGrantedPermissions);
+        await this.assertGrantable(tx, permissions, { callerUserId, callerGrantedPermissions });
         if (permissions.length > 0) {
           await tx
             .insert(rolePermissionsTable)
@@ -133,9 +134,23 @@ export class RolesService {
 
         let permissions: Awaited<ReturnType<typeof this.resolvePermissions>>;
         if (dto.permissionKeys !== undefined) {
+          // only permissions genuinely new to this role need the caller to
+          // hold them — a caller shouldn't be blocked from renaming a role
+          // just because they don't personally hold everything it already
+          // has. Both reads are independent of each other and of the
+          // delete below, so run them together.
+          const [existingRows, resolvedPermissions] = await Promise.all([
+            getPermissionKeysForRoles(tx, [id]),
+            this.resolvePermissions(tx, dto.permissionKeys),
+          ]);
+          const existingKeys = new Set(existingRows);
           await tx.delete(rolePermissionsTable).where(eq(rolePermissionsTable.roleId, id));
-          permissions = await this.resolvePermissions(tx, dto.permissionKeys);
-          await this.assertGrantable(tx, permissions, callerUserId, callerGrantedPermissions);
+          permissions = resolvedPermissions;
+          await this.assertGrantable(tx, permissions, {
+            callerUserId,
+            callerGrantedPermissions,
+            existingKeys,
+          });
           if (permissions.length > 0) {
             await tx
               .insert(rolePermissionsTable)
@@ -238,14 +253,19 @@ export class RolesService {
   private async assertGrantable(
     tx: DbTransaction,
     permissions: { key: string }[],
-    callerUserId: number,
-    callerGrantedPermissions: Set<string> | undefined,
+    options: {
+      callerUserId: number;
+      callerGrantedPermissions: Set<string> | undefined;
+      existingKeys?: Set<string>;
+    },
   ) {
     const granted =
-      callerGrantedPermissions ??
-      (await this.permissionsService.getEffectivePermissionKeys(callerUserId));
+      options.callerGrantedPermissions ??
+      (await this.permissionsService.getEffectivePermissionKeys(options.callerUserId));
+    const existingKeys = options.existingKeys ?? new Set<string>();
+    const newlyGranted = permissions.filter((p) => !existingKeys.has(p.key));
     assertCanGrant(
-      permissions.map((p) => p.key),
+      newlyGranted.map((p) => p.key),
       granted,
     );
 

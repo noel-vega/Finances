@@ -8,4 +8,5 @@ export type { SQL } from 'drizzle-orm';
 
 export * from './schema/index.js';
 export * from './permissions-catalog.js';
+export * from './postgres-errors.js';
 

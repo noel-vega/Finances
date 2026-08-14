@@ -3,6 +3,7 @@
     "types": ["jest"],
     "module": "nodenext",
     "moduleResolution": "nodenext",
+    "baseUrl": "./",
     "resolvePackageJsonExports": true,
     "esModuleInterop": true,
     "isolatedModules": true,

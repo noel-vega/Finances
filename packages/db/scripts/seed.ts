@@ -28,6 +28,7 @@ import {
   rolePermissionsTable,
   userRolesTable,
   PERMISSIONS_CATALOG,
+  isUniqueViolation,
 } from '../src/index.js';
 
 const OWNER_EMAIL = 'owner@longboxcomics.test';
@@ -285,10 +286,7 @@ async function ensureOwnerRole(accountId: number, userId: number) {
   } catch (err) {
     // two concurrent seed runs can both pass the check above before either
     // inserts — the (accountId, name) unique constraint lets one win
-    const pgError = typeof err === 'object' && err !== null && 'cause' in err ? err.cause : err;
-    const isUniqueViolation =
-      typeof pgError === 'object' && pgError !== null && 'code' in pgError && pgError.code === '23505';
-    if (isUniqueViolation) {
+    if (isUniqueViolation(err)) {
       const existing = await findExisting();
       if (existing) return existing;
     }
