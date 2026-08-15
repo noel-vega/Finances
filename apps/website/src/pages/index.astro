@@ -1,10 +1,10 @@
 ---
 const features = [
 	{ n: '01', title: 'Products & inventory', desc: 'Catalog, categories, brands, and stock tracked per location.' },
-	{ n: '02', title: 'Orders & carts', desc: 'Every order and open cart, in one view.' },
-	{ n: '03', title: 'Multi-location', desc: 'One store or a chain — inventory stays correct.' },
+	{ n: '02', title: 'Orders & carts', desc: 'Every order and open cart — smooth sailing from click to delivery.' },
+	{ n: '03', title: 'Ports', desc: 'One store or a chain — inventory stays correct at every port.' },
 	{ n: '04', title: 'Customers', desc: 'Self-serve signup and sign-in for shoppers — their cart follows them in.' },
-	{ n: '05', title: 'Staff', desc: 'Invite your team by email to help run the shop.' },
+	{ n: '05', title: 'Crew', desc: 'Invite your crew by email to help run the shop.' },
 	{ n: '06', title: 'Payments', desc: 'Stripe Connect. Payouts and refunds, handled.' },
 	{ n: '07', title: 'Developer API', desc: 'Documented REST API. Build your own storefront.' },
 ];
@@ -12,7 +12,7 @@ const features = [
 const steps = [
 	{ title: 'Create an account', desc: 'Free. No card required.' },
 	{ title: 'Add products, connect Stripe', desc: 'Your catalog, your payouts.' },
-	{ title: 'Share your storefront', desc: 'Start taking orders.' },
+	{ title: 'Share your storefront', desc: 'Set sail — start taking orders.' },
 ];
 
 const year = new Date().getFullYear();
@@ -27,14 +27,22 @@ const year = new Date().getFullYear();
 		<meta name="generator" content={Astro.generator} />
 		<meta
 			name="description"
-			content="Harbor — the back office for retailers. Products, orders, inventory, and payouts."
+			content="OrderSail — charting commerce for small business. Products, orders, inventory, and payouts."
 		/>
-		<title>Harbor</title>
+		<title>OrderSail</title>
 	</head>
 	<body>
 		<div class="wrap">
 			<header class="top">
-				<span class="mark">Shop</span>
+				<span class="mark">
+					<svg class="mark-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true">
+						<path d="M12 3v11" stroke-linecap="round" />
+						<circle cx="12" cy="4.6" r="1.6" />
+						<path d="M4 14c1.6 3.6 5 5.6 8 5.6s6.4-2 8-5.6" stroke-linecap="round" />
+						<path d="M4 14l2.2 4.4M20 14l-2.2 4.4" stroke-linecap="round" />
+					</svg>
+					OrderSail
+				</span>
 				<nav class="nav">
 					<a href="#index">Index</a>
 					<a href="#route">Process</a>
@@ -43,15 +51,47 @@ const year = new Date().getFullYear();
 			</header>
 
 			<section class="hero">
-				<p class="eyebrow">The back office for retail — Est. 2026</p>
-				<h1>Run the whole store. From one place.</h1>
+				<p class="eyebrow">Charting commerce for small business — Est. 2026</p>
+				<h1>Set sail with your store.</h1>
 				<p class="lede">
-					Products, orders, inventory, and payouts. No separate tools, no
-					duct-taped integrations — just the systems a retailer actually needs.
+					Products, orders, inventory, and payouts — smooth sailing from cart
+					to doorstep. No separate tools, no duct-taped integrations.
 				</p>
 				<div class="actions">
 					<a class="btn-primary" href="#get-started">Sign up — free</a>
 					<a class="btn-line" href="#index">View the index</a>
+				</div>
+			</section>
+
+			<section class="problem" id="problem">
+				<p class="eyebrow">Rough waters</p>
+				<h2 class="problem-title">Running a store shouldn't feel like this.</h2>
+				<div class="problem-grid">
+					<div class="problem-item">
+						<h3>Too many disconnected tools</h3>
+						<p>Inventory in one app, orders in another, payments somewhere else — nothing talks to each other.</p>
+					</div>
+					<div class="problem-item">
+						<h3>Inventory that doesn't reflect reality</h3>
+						<p>A single stock number that drifts out of sync the moment you sell somewhere else.</p>
+					</div>
+					<div class="problem-item">
+						<h3>Payouts you can't trace</h3>
+						<p>Money moves, but connecting an order to what actually landed in your account takes a spreadsheet.</p>
+					</div>
+					<div class="problem-item">
+						<h3>Shipping bolted on as an afterthought</h3>
+						<p>Buying a label means leaving your order screen — and hoping the tracking number makes it back.</p>
+					</div>
+				</div>
+				<div class="solution">
+					<h2 class="solution-title">One deck. Everything in view.</h2>
+					<p>
+						OrderSail brings your catalog, inventory, orders, payments, and shipping into a
+						single system. Real per-location stock with a full history, Stripe Connect payouts
+						that go straight to you, and shipping labels purchased right from the order — so
+						nothing drifts out of sync, and nothing gets lost overboard.
+					</p>
 				</div>
 			</section>
 
@@ -69,6 +109,48 @@ const year = new Date().getFullYear();
 							</div>
 						))
 					}
+				</div>
+			</section>
+
+			<section class="journey" id="journey">
+				<p class="eyebrow">The customer's voyage</p>
+				<h2>A smooth trip, every time.</h2>
+				<div class="journey-list">
+					<div class="jstep">
+						<span class="jstep-dot"></span>
+						<div class="jstep-body">
+							<h4>Browse</h4>
+							<p>Your storefront, fast and mobile-friendly — always in sync with real stock.</p>
+						</div>
+					</div>
+					<div class="jstep">
+						<span class="jstep-dot"></span>
+						<div class="jstep-body">
+							<h4>Add to cart</h4>
+							<p>Guest or signed in — their cart follows them either way.</p>
+						</div>
+					</div>
+					<div class="jstep">
+						<span class="jstep-dot"></span>
+						<div class="jstep-body">
+							<h4>Checkout</h4>
+							<p>Stripe-hosted checkout with live shipping rates, done in seconds.</p>
+						</div>
+					</div>
+					<div class="jstep">
+						<span class="jstep-dot"></span>
+						<div class="jstep-body">
+							<h4>Shipped</h4>
+							<p>A label's purchased, and tracking goes out automatically.</p>
+						</div>
+					</div>
+					<div class="jstep jstep-last">
+						<span class="jstep-dot"></span>
+						<div class="jstep-body">
+							<h4>Delivered</h4>
+							<p>Tracking updates land right on the order — no guessing where it is.</p>
+						</div>
+					</div>
 				</div>
 			</section>
 
@@ -92,13 +174,13 @@ const year = new Date().getFullYear();
 			</section>
 
 			<section class="final" id="get-started">
-				<h2>Start today.</h2>
+				<h2>Set sail today.</h2>
 				<p>Free while in beta. No credit card.</p>
 				<a class="btn-primary" href="/signup">Create your account →</a>
 			</section>
 
 			<footer class="foot">
-				<span>Harbor</span>
+				<span>OrderSail</span>
 				<span>&copy; {year}</span>
 			</footer>
 		</div>
@@ -107,24 +189,10 @@ const year = new Date().getFullYear();
 
 <style>
 	:root {
-		--bg: #ffffff;
-		--ink: #0a0a0a;
-		--ink-dim: #6b6b6b;
-		--line: #0a0a0a;
-	}
-	@media (prefers-color-scheme: dark) {
-		:root:not([data-theme='light']) {
-			--bg: #0a0a0a;
-			--ink: #f5f5f5;
-			--ink-dim: #9a9a9a;
-			--line: #f5f5f5;
-		}
-	}
-	:root[data-theme='dark'] {
-		--bg: #0a0a0a;
-		--ink: #f5f5f5;
-		--ink-dim: #9a9a9a;
-		--line: #f5f5f5;
+		--bg: #f6f3ec;
+		--ink: #14213d;
+		--ink-dim: #5c6b7a;
+		--line: #14213d;
 	}
 
 	:global(html) {
@@ -158,16 +226,24 @@ const year = new Date().getFullYear();
 		font-family: ui-monospace, monospace;
 	}
 	.mark {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
 		font-weight: 700;
 		font-size: 1rem;
 		letter-spacing: -0.01em;
+	}
+	.mark-icon {
+		width: 15px;
+		height: 15px;
+		flex-shrink: 0;
 	}
 	.nav {
 		display: flex;
 		gap: 28px;
 		font-size: 0.82rem;
 		text-transform: uppercase;
-		letter-spacing: 0.06em;
+		letter-spacing: 0.1em;
 	}
 	.nav a {
 		text-decoration: none;
@@ -179,7 +255,7 @@ const year = new Date().getFullYear();
 		text-decoration: none;
 		font-size: 0.82rem;
 		text-transform: uppercase;
-		letter-spacing: 0.06em;
+		letter-spacing: 0.1em;
 		border-bottom: 1px solid var(--line);
 		padding-bottom: 2px;
 	}
@@ -191,7 +267,7 @@ const year = new Date().getFullYear();
 		font-family: ui-monospace, monospace;
 		font-size: 0.78rem;
 		text-transform: uppercase;
-		letter-spacing: 0.1em;
+		letter-spacing: 0.14em;
 		color: var(--ink-dim);
 		margin: 0 0 26px;
 	}
@@ -222,7 +298,7 @@ const year = new Date().getFullYear();
 		font-family: ui-monospace, monospace;
 		font-size: 0.86rem;
 		text-transform: uppercase;
-		letter-spacing: 0.06em;
+		letter-spacing: 0.1em;
 		padding: 15px 26px;
 		background: var(--ink);
 		color: var(--bg);
@@ -232,14 +308,74 @@ const year = new Date().getFullYear();
 		font-family: ui-monospace, monospace;
 		font-size: 0.86rem;
 		text-transform: uppercase;
-		letter-spacing: 0.06em;
+		letter-spacing: 0.1em;
 		border-bottom: 1px solid var(--line);
 		padding-bottom: 3px;
 	}
 
 	.rule {
+		height: 1px;
 		border: none;
+		background-image: repeating-linear-gradient(
+			to right,
+			var(--line) 0,
+			var(--line) 1px,
+			transparent 1px,
+			transparent 12px
+		);
+	}
+
+	.problem {
+		padding: 24px 0 70px;
+	}
+	.problem-title {
+		font-family: Georgia, serif;
+		font-weight: 400;
+		font-size: clamp(1.6rem, 3.4vw, 2.2rem);
+		letter-spacing: -0.01em;
+		max-width: 24ch;
+		margin: 0 0 44px;
+	}
+	.problem-grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 36px 48px;
+		margin: 0 0 56px;
+	}
+	.problem-item {
+		padding-top: 20px;
+		border-top: 1px solid color-mix(in srgb, var(--line) 20%, transparent);
+	}
+	.problem-item h3 {
+		font-family: Georgia, serif;
+		font-size: 1.1rem;
+		font-weight: 400;
+		margin: 0 0 8px;
+	}
+	.problem-item p {
+		font-family: system-ui, sans-serif;
+		font-size: 0.95rem;
+		color: var(--ink-dim);
+		line-height: 1.5;
+		margin: 0;
+	}
+	.solution {
+		padding-top: 32px;
 		border-top: 1px solid var(--line);
+	}
+	.solution-title {
+		font-family: Georgia, serif;
+		font-weight: 400;
+		font-size: clamp(1.8rem, 4vw, 2.4rem);
+		letter-spacing: -0.01em;
+		margin: 0 0 18px;
+	}
+	.solution p {
+		font-family: system-ui, sans-serif;
+		font-size: 1.05rem;
+		line-height: 1.65;
+		color: var(--ink-dim);
+		max-width: 58ch;
 		margin: 0;
 	}
 
@@ -252,7 +388,7 @@ const year = new Date().getFullYear();
 		font-family: ui-monospace, monospace;
 		font-size: 0.82rem;
 		text-transform: uppercase;
-		letter-spacing: 0.1em;
+		letter-spacing: 0.14em;
 		font-weight: 400;
 		color: var(--ink-dim);
 		margin: 0 0 40px;
@@ -326,6 +462,61 @@ const year = new Date().getFullYear();
 		margin: 0;
 	}
 
+	.journey {
+		padding: 60px 0;
+	}
+	.journey h2 {
+		font-family: Georgia, serif;
+		font-weight: 400;
+		font-size: clamp(1.6rem, 3.4vw, 2.2rem);
+		letter-spacing: -0.01em;
+		margin: 0 0 44px;
+	}
+	.journey-list {
+		display: flex;
+		flex-direction: column;
+	}
+	.jstep {
+		display: flex;
+		gap: 22px;
+		position: relative;
+	}
+	.jstep-dot {
+		width: 9px;
+		height: 9px;
+		border-radius: 50%;
+		background: var(--ink);
+		flex-shrink: 0;
+		margin-top: 7px;
+	}
+	.jstep:not(.jstep-last)::before {
+		content: '';
+		position: absolute;
+		top: 22px;
+		bottom: 0;
+		left: 4px;
+		width: 1px;
+		background: color-mix(in srgb, var(--line) 35%, transparent);
+	}
+	.jstep-body {
+		padding-bottom: 30px;
+	}
+	.jstep-last .jstep-body {
+		padding-bottom: 0;
+	}
+	.jstep h4 {
+		font-size: 1.1rem;
+		font-weight: 400;
+		margin: 0 0 6px;
+	}
+	.jstep p {
+		font-family: system-ui, sans-serif;
+		font-size: 0.95rem;
+		color: var(--ink-dim);
+		line-height: 1.5;
+		margin: 0;
+	}
+
 	.final {
 		padding: 90px 0;
 		text-align: center;
@@ -353,6 +544,9 @@ const year = new Date().getFullYear();
 		.row {
 			grid-template-columns: 1fr;
 			gap: 8px;
+		}
+		.problem-grid {
+			grid-template-columns: 1fr;
 		}
 	}
 </style>
