@@ -27,3 +27,8 @@ variable "ses_verified_email" {
   description = "Single email address to verify as both From and (while SES is in sandbox mode) the allowed recipient for order-confirmation email."
   type        = string
 }
+
+variable "domain_name" {
+  description = "Root domain registered in Route 53 (e.g. \"ordersail.com\"). Route 53 must already have a public hosted zone for it — created automatically at registration."
+  type        = string
+}

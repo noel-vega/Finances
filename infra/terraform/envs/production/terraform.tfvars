@@ -5,6 +5,8 @@ name_prefix = "harbor"
 
 github_repo = "noel-vega/shop"
 
+domain_name = "ordersail.com"
+
 # real address you control — SES sends a confirmation email here that must
 # be clicked manually before sending will work (see Phase 9)
 ses_verified_email = "<you>@example.com"

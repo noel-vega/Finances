@@ -276,7 +276,9 @@ module "frontend_storefront_web" {
 }
 
 module "frontend_website" {
-  source      = "../../modules/s3-static-site"
-  name_prefix = var.name_prefix
-  name        = "website"
+  source              = "../../modules/s3-static-site"
+  name_prefix         = var.name_prefix
+  name                = "website"
+  aliases             = [var.domain_name]
+  acm_certificate_arn = aws_acm_certificate_validation.frontends.certificate_arn
 }

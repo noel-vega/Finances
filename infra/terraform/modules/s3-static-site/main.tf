@@ -1,6 +1,7 @@
 # Private S3 bucket + CloudFront (Origin Access Control), instantiated once
-# per frontend (shop-admin-web, storefront-web, website). No aliases/ACM
-# cert yet — no domain exists; Route53 + ACM slot in here later.
+# per frontend (shop-admin-web, storefront-web, website). Custom domain is
+# opt-in per instance via `aliases`/`acm_certificate_arn` — see dns.tf in
+# envs/production for the Route53 zone + ACM cert those are sourced from.
 
 data "aws_caller_identity" "current" {}
 
@@ -27,6 +28,7 @@ resource "aws_cloudfront_distribution" "this" {
   enabled             = true
   default_root_object = "index.html"
   price_class         = "PriceClass_100"
+  aliases             = var.aliases
 
   origin {
     domain_name              = aws_s3_bucket.this.bucket_regional_domain_name
@@ -71,7 +73,10 @@ resource "aws_cloudfront_distribution" "this" {
   }
 
   viewer_certificate {
-    cloudfront_default_certificate = true
+    cloudfront_default_certificate = var.acm_certificate_arn == null
+    acm_certificate_arn            = var.acm_certificate_arn
+    ssl_support_method             = var.acm_certificate_arn == null ? null : "sni-only"
+    minimum_protocol_version       = var.acm_certificate_arn == null ? null : "TLSv1.2_2021"
   }
 }
 
