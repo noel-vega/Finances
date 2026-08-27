@@ -1,0 +1,25 @@
+{
+  "name": "seed",
+  "version": "1.0.0",
+  "description": "Seeds local dev with a demo sneaker-store catalog and its product photos.",
+  "scripts": {
+    "seed": "npm run build -w db -w storage --if-present && tsx scripts/seed.ts",
+    "seed:images": "tsx scripts/download-seed-images.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "@types/bcryptjs": "^3.0.0",
+    "@types/node": "^26.1.1",
+    "sharp": "^0.35.4",
+    "tsx": "^4.23.0",
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "db": "*",
+    "storage": "*"
+  }
+}

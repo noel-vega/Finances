@@ -1,6 +1,6 @@
 variable "name_prefix" {
   type    = string
-  default = "harbor"
+  default = "ordersail"
 }
 
 variable "vpc_id" {

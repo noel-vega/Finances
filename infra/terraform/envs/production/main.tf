@@ -128,6 +128,7 @@ module "alb_shop_admin_api" {
   public_subnet_ids           = module.network.public_subnet_ids
   container_port              = 3000
   ecs_tasks_security_group_id = module.ecs_cluster.ecs_tasks_security_group_id
+  acm_certificate_arn         = aws_acm_certificate_validation.frontends.certificate_arn
 }
 
 module "alb_storefront_api" {
@@ -138,6 +139,7 @@ module "alb_storefront_api" {
   public_subnet_ids           = module.network.public_subnet_ids
   container_port              = 3001
   ecs_tasks_security_group_id = module.ecs_cluster.ecs_tasks_security_group_id
+  acm_certificate_arn         = aws_acm_certificate_validation.frontends.certificate_arn
 }
 
 # shop-admin-api's task role: direct S3 access to the product-images
@@ -173,7 +175,10 @@ module "ecs_service_shop_admin_api" {
     { name = "PORT", value = "3000" },
     { name = "REDIS_HOST", value = module.elasticache.primary_endpoint_address },
     { name = "REDIS_PORT", value = tostring(module.elasticache.port) },
-    { name = "SHOP_ADMIN_WEB_URL", value = "https://${local.frontends["shop-admin-web"].distribution_domain_name}" },
+    # references the module directly, not local.frontends["shop-admin-web"] — that local
+    # aggregates all 3 frontend modules as one map expression, so going through it would make a
+    # -target apply of just this service also pull in storefront-web's (unrelated) frontend.
+    { name = "SHOP_ADMIN_WEB_URL", value = "https://${module.frontend_shop_admin_web.distribution_domain_name}" },
     { name = "MINIO_ENDPOINT", value = "https://s3.${var.region}.amazonaws.com" },
     { name = "MINIO_BUCKET", value = module.secrets.product_images_bucket_name },
     { name = "MINIO_PUBLIC_BASE_URL", value = "https://${module.secrets.product_images_bucket_name}.s3.${var.region}.amazonaws.com" },
@@ -210,7 +215,9 @@ module "ecs_service_storefront_api" {
     { name = "PORT", value = "3001" },
     { name = "REDIS_HOST", value = module.elasticache.primary_endpoint_address },
     { name = "REDIS_PORT", value = tostring(module.elasticache.port) },
-    { name = "STOREFRONT_WEB_URL", value = "https://${local.frontends["storefront-web"].distribution_domain_name}" },
+    # see the shop-admin-api service's SHOP_ADMIN_WEB_URL comment above — same reason to
+    # reference the module directly instead of going through local.frontends.
+    { name = "STOREFRONT_WEB_URL", value = "https://${module.frontend_storefront_web.distribution_domain_name}" },
   ]
 
   secrets = [
@@ -264,9 +271,13 @@ module "ecs_service_worker" {
 }
 
 module "frontend_shop_admin_web" {
-  source      = "../../modules/s3-static-site"
-  name_prefix = var.name_prefix
-  name        = "shop-admin-web"
+  source                 = "../../modules/s3-static-site"
+  name_prefix            = var.name_prefix
+  name                   = "shop-admin-web"
+  aliases                = ["admin.${var.domain_name}"]
+  acm_certificate_arn    = aws_acm_certificate_validation.frontends.certificate_arn
+  enable_api_routing     = true
+  api_origin_domain_name = module.alb_shop_admin_api.dns_name
 }
 
 module "frontend_storefront_web" {

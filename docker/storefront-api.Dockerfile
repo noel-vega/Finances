@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 #
 # Build from the repo root:
-#   docker build -f docker/storefront-api.Dockerfile -t harbor-storefront-api:local .
+#   docker build -f docker/storefront-api.Dockerfile -t ordersail-storefront-api:local .
 
 FROM node:22-alpine AS base
 WORKDIR /app

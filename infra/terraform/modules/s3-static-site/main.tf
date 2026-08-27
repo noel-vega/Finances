@@ -24,6 +24,23 @@ resource "aws_cloudfront_origin_access_control" "this" {
   signing_protocol                  = "sigv4"
 }
 
+# Strips the leading /api off requests CloudFront routes to the API origin below, so the
+# backend's own routes (e.g. /auth/login, unprefixed) don't need a NestJS-side global prefix —
+# keeps app code, its OpenAPI spec, and its generated SDK untouched.
+resource "aws_cloudfront_function" "strip_api_prefix" {
+  count   = var.enable_api_routing ? 1 : 0
+  name    = "${var.name_prefix}-${var.name}-strip-api-prefix"
+  runtime = "cloudfront-js-2.0"
+  publish = true
+  code    = <<-EOT
+    function handler(event) {
+      var request = event.request;
+      request.uri = request.uri.replace(/^\/api/, '') || '/';
+      return request;
+    }
+  EOT
+}
+
 resource "aws_cloudfront_distribution" "this" {
   enabled             = true
   default_root_object = "index.html"
@@ -34,6 +51,43 @@ resource "aws_cloudfront_distribution" "this" {
     domain_name              = aws_s3_bucket.this.bucket_regional_domain_name
     origin_id                = "s3-${var.name}"
     origin_access_control_id = aws_cloudfront_origin_access_control.this.id
+  }
+
+  dynamic "origin" {
+    for_each = var.enable_api_routing ? [1] : []
+    content {
+      domain_name = var.api_origin_domain_name
+      origin_id   = "api-${var.name}"
+
+      custom_origin_config {
+        http_port              = 80
+        https_port             = 443
+        origin_protocol_policy = "https-only"
+        origin_ssl_protocols   = ["TLSv1.2"]
+      }
+    }
+  }
+
+  dynamic "ordered_cache_behavior" {
+    for_each = var.enable_api_routing ? [1] : []
+    content {
+      path_pattern           = var.api_path_pattern
+      target_origin_id       = "api-${var.name}"
+      viewer_protocol_policy = "redirect-to-https"
+      allowed_methods        = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+      cached_methods         = ["GET", "HEAD"]
+
+      # CachingDisabled + AllViewer: dynamic API responses, never cached, every
+      # header/cookie/query-string forwarded through untouched (AWS-managed policy IDs, stable
+      # across accounts/regions).
+      cache_policy_id          = "4135ea2d-6df8-44a3-9df3-4b5a84be39ad"
+      origin_request_policy_id = "216adef6-5c7f-47e4-b989-5492eafa07d3"
+
+      function_association {
+        event_type   = "viewer-request"
+        function_arn = aws_cloudfront_function.strip_api_prefix[0].arn
+      }
+    }
   }
 
   default_cache_behavior {

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { createMailer } from 'email';
 
-const FROM = process.env.SMTP_FROM ?? 'Harbor <no-reply@harbor.local>';
+const FROM = process.env.SMTP_FROM ?? 'Ordersail <no-reply@ordersail.local>';
 
 // this app is now the only consumer of `email`'s createMailer — the two
 // APIs enqueue jobs instead of talking to SMTP directly

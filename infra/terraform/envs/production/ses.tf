@@ -6,7 +6,7 @@
 # console's "Create SMTP credentials" flow (handles the IAM user + HMAC
 # conversion in one step, no clean Terraform resource for it), then store
 # into the worker secret manually:
-#   aws secretsmanager put-secret-value --secret-id harbor/production/worker \
+#   aws secretsmanager put-secret-value --secret-id ordersail/production/worker \
 #     --secret-string '{"SMTP_USER":"...","SMTP_PASS":"..."}'
 #
 # Also submit AWS's SES "request production access" support case once this

@@ -50,7 +50,7 @@ jobs:
       - name: Resolve ECR repo URI
         id: ecr-uri
         run: |
-          URI=$(aws ssm get-parameter --name "/harbor/production/ecr/${{ matrix.ssm_key }}" --query 'Parameter.Value' --output text)
+          URI=$(aws ssm get-parameter --name "/ordersail/production/ecr/${{ matrix.ssm_key }}" --query 'Parameter.Value' --output text)
           echo "uri=$URI" >> "$GITHUB_OUTPUT"
 
       - uses: docker/setup-buildx-action@v3
@@ -78,11 +78,11 @@ jobs:
         run: |
           set -euo pipefail
 
-          CLUSTER=$(aws ssm get-parameter --name /harbor/production/ecs/cluster-name --query 'Parameter.Value' --output text)
-          FAMILY=$(aws ssm get-parameter --name /harbor/production/ecs/migrator-task-family --query 'Parameter.Value' --output text)
-          SUBNETS=$(aws ssm get-parameter --name /harbor/production/network/private-subnet-ids --query 'Parameter.Value' --output text)
-          SG=$(aws ssm get-parameter --name /harbor/production/network/ecs-tasks-security-group --query 'Parameter.Value' --output text)
-          MIGRATOR_URI=$(aws ssm get-parameter --name /harbor/production/ecr/migrator-uri --query 'Parameter.Value' --output text)
+          CLUSTER=$(aws ssm get-parameter --name /ordersail/production/ecs/cluster-name --query 'Parameter.Value' --output text)
+          FAMILY=$(aws ssm get-parameter --name /ordersail/production/ecs/migrator-task-family --query 'Parameter.Value' --output text)
+          SUBNETS=$(aws ssm get-parameter --name /ordersail/production/network/private-subnet-ids --query 'Parameter.Value' --output text)
+          SG=$(aws ssm get-parameter --name /ordersail/production/network/ecs-tasks-security-group --query 'Parameter.Value' --output text)
+          MIGRATOR_URI=$(aws ssm get-parameter --name /ordersail/production/ecr/migrator-uri --query 'Parameter.Value' --output text)
 
           TASK_ARN=$(aws ecs run-task --cluster "$CLUSTER" --task-definition "$FAMILY" \
             --launch-type FARGATE \
@@ -117,10 +117,10 @@ jobs:
         run: |
           set -euo pipefail
 
-          CLUSTER=$(aws ssm get-parameter --name /harbor/production/ecs/cluster-name --query 'Parameter.Value' --output text)
-          SERVICE=$(aws ssm get-parameter --name /harbor/production/ecs/${{ matrix.app }}-service --query 'Parameter.Value' --output text)
-          IMAGE_URI=$(aws ssm get-parameter --name /harbor/production/ecr/${{ matrix.app }}-uri --query 'Parameter.Value' --output text)
-          FAMILY="harbor-${{ matrix.app }}"
+          CLUSTER=$(aws ssm get-parameter --name /ordersail/production/ecs/cluster-name --query 'Parameter.Value' --output text)
+          SERVICE=$(aws ssm get-parameter --name /ordersail/production/ecs/${{ matrix.app }}-service --query 'Parameter.Value' --output text)
+          IMAGE_URI=$(aws ssm get-parameter --name /ordersail/production/ecr/${{ matrix.app }}-uri --query 'Parameter.Value' --output text)
+          FAMILY="ordersail-${{ matrix.app }}"
 
           CURRENT=$(aws ecs describe-task-definition --task-definition "$FAMILY" --query 'taskDefinition')
           NEW=$(echo "$CURRENT" | jq --arg IMAGE "$IMAGE_URI:${{ github.sha }}" '
@@ -167,8 +167,8 @@ jobs:
       - name: Resolve API base URLs
         id: api-urls
         run: |
-          ADMIN_API_DNS=$(aws ssm get-parameter --name /harbor/production/alb/shop-admin-api-dns --query 'Parameter.Value' --output text)
-          STOREFRONT_API_DNS=$(aws ssm get-parameter --name /harbor/production/alb/storefront-api-dns --query 'Parameter.Value' --output text)
+          ADMIN_API_DNS=$(aws ssm get-parameter --name /ordersail/production/alb/shop-admin-api-dns --query 'Parameter.Value' --output text)
+          STOREFRONT_API_DNS=$(aws ssm get-parameter --name /ordersail/production/alb/storefront-api-dns --query 'Parameter.Value' --output text)
           echo "admin_api=http://$ADMIN_API_DNS" >> "$GITHUB_OUTPUT"
           echo "storefront_api=http://$STOREFRONT_API_DNS" >> "$GITHUB_OUTPUT"
 
@@ -187,8 +187,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          BUCKET=$(aws ssm get-parameter --name /harbor/production/frontend/${{ matrix.ssm_prefix }}-bucket --query 'Parameter.Value' --output text)
-          DIST_ID=$(aws ssm get-parameter --name /harbor/production/frontend/${{ matrix.ssm_prefix }}-distribution --query 'Parameter.Value' --output text)
+          BUCKET=$(aws ssm get-parameter --name /ordersail/production/frontend/${{ matrix.ssm_prefix }}-bucket --query 'Parameter.Value' --output text)
+          DIST_ID=$(aws ssm get-parameter --name /ordersail/production/frontend/${{ matrix.ssm_prefix }}-distribution --query 'Parameter.Value' --output text)
           DIST_DIR="apps/${{ matrix.app }}/dist"
 
           # hashed build assets get a 1-year immutable cache; index.html is

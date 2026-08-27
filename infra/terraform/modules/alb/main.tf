@@ -1,8 +1,8 @@
-# Internet-facing ALB, HTTP-only (no domain/ACM cert yet — see the plan's
-# open-items note: auth cookies cross this in plaintext until a domain
-# exists and this gets an HTTPS listener). Instantiated once per public
-# API — deliberately two ALBs rather than one shared ALB with path routing,
-# to avoid adding a path prefix to every route in either NestJS app.
+# Internet-facing ALB with an HTTPS listener (var.acm_certificate_arn — ALB certs must be
+# regional, and this ALB shares the wildcard cert already validated in this region for the
+# frontends). The HTTP listener exists only to 301-redirect to HTTPS, never to forward traffic
+# in the clear. Instantiated once per public API — deliberately two ALBs rather than one shared
+# ALB with path routing, to avoid adding a path prefix to every route in either NestJS app.
 
 resource "aws_security_group" "alb" {
   name        = "${var.name_prefix}-${var.name}-alb"
@@ -12,6 +12,13 @@ resource "aws_security_group" "alb" {
   ingress {
     from_port   = 80
     to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -49,14 +56,31 @@ resource "aws_lb_target_group" "this" {
   }
 }
 
-resource "aws_lb_listener" "http" {
+resource "aws_lb_listener" "https" {
+  load_balancer_arn = aws_lb.this.arn
+  port              = 443
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
+  certificate_arn   = var.acm_certificate_arn
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.this.arn
+  }
+}
+
+resource "aws_lb_listener" "http_redirect" {
   load_balancer_arn = aws_lb.this.arn
   port              = 80
   protocol          = "HTTP"
 
   default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.this.arn
+    type = "redirect"
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
   }
 }
 

@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 #
 # Build from the repo root:
-#   docker build -f docker/worker.Dockerfile -t harbor-worker:local .
+#   docker build -f docker/worker.Dockerfile -t ordersail-worker:local .
 
 FROM node:22-alpine AS base
 WORKDIR /app

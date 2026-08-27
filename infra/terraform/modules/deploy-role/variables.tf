@@ -1,6 +1,6 @@
 variable "name_prefix" {
   type    = string
-  default = "harbor"
+  default = "ordersail"
 }
 
 variable "region" {
@@ -8,7 +8,7 @@ variable "region" {
 }
 
 variable "role_name" {
-  description = "IAM role name for this instance, e.g. \"harbor-github-actions-deploy-website\". Each deploy-role instantiation needs a unique name."
+  description = "IAM role name for this instance, e.g. \"ordersail-github-actions-deploy-website\". Each deploy-role instantiation needs a unique name."
   type        = string
 }
 
@@ -29,7 +29,7 @@ variable "github_ref" {
 }
 
 variable "github_environments" {
-  description = "GitHub Environment names (e.g. [\"harbor-production\"]) to trust — required because a job with `environment:` set gets an OIDC sub claim shaped \"repo:OWNER/REPO:environment:NAME\" instead of the branch-ref form, which github_ref alone won't match."
+  description = "GitHub Environment names (e.g. [\"ordersail-production\"]) to trust — required because a job with `environment:` set gets an OIDC sub claim shaped \"repo:OWNER/REPO:environment:NAME\" instead of the branch-ref form, which github_ref alone won't match."
   type        = list(string)
   default     = []
 }

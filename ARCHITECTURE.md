@@ -1,6 +1,6 @@
 # Architecture
 
-This is a system-level map of Harbor: the apps, the shared packages, and the infra/third-party
+This is a system-level map of Ordersail: the apps, the shared packages, and the infra/third-party
 services they depend on. It's generated from the current state of the code (including
 in-flight, uncommitted work), not just what's in the [README](./README.md)'s architecture
 table — notably `worker`, `queue`, `email`, `email-templates`, and `storage` aren't in that

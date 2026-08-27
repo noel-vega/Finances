@@ -9,7 +9,6 @@ import { type ColumnDef, type Row } from "@tanstack/react-table";
 import type { Product } from "admin-sdk";
 import { Field, FieldLabel } from "ui/field";
 import { format } from "date-fns";
-import { Separator } from "ui/separator";
 
 const columns: ColumnDef<Product>[] = [
   {

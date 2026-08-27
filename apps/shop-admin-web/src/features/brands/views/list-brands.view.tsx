@@ -3,11 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import { getListBrandsQueryOptions } from "../brands.hooks";
 import { DataTable } from "../../../components/data-table";
 import { Button } from "ui/button";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "ui/input-group";
 import { PlusIcon, SearchIcon } from "lucide-react";
 import { type ColumnDef, type Row } from "@tanstack/react-table";
-import type { Brand, Product } from "admin-sdk";
+import type { Brand } from "admin-sdk";
 import { Field, FieldLabel } from "ui/field";
 import { format } from "date-fns";
 

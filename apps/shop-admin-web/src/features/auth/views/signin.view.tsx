@@ -37,7 +37,7 @@ export function SignInView() {
             setErrorMessage("Invalid email or password.");
           }
         },
-        onSuccess: (data) => {
+        onSuccess: () => {
           navigate({ to: appConfig.homeRoute });
         },
       });

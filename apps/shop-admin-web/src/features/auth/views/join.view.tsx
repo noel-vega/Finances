@@ -60,7 +60,7 @@ export function JoinView(props: { token: string }) {
         <div className="space-y-1">
           <h1 className="text-xl font-semibold">Set your password</h1>
           <p className="text-sm text-muted-foreground">
-            Choose a password to finish joining your team on Harbor.
+            Choose a password to finish joining your team on Ordersail.
           </p>
         </div>
         <ErrorMessage />

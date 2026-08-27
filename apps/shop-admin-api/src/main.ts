@@ -42,6 +42,9 @@ async function bootstrap() {
     methods: ["GET", "POST", "PATCH", "DELETE"]
   });
   await app.register(fastifyCookie);
-  await app.listen(process.env.PORT ?? 3000);
+  // Fastify defaults to binding 'localhost' (loopback only) when no host is given — fine for
+  // local dev (same machine), but unreachable from the ALB in ECS, which connects to the
+  // task's real VPC IP, not loopback.
+  await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
 }
 bootstrap();

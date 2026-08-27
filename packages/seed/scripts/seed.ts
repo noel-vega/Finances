@@ -1,10 +1,15 @@
-// Seeds a demo comic book shop ("Longbox Comics") with brands, categories,
-// and products so local dev/testing never starts from an empty catalog.
+// Seeds a demo sneaker store ("Sneaker Depot") with brands, categories, and
+// products so local dev/testing never starts from an empty catalog. Each
+// product's image is a real, specific photo of that shoe, read from
+// seed-images/ (see download-seed-images.ts for where those come from).
 // Re-runnable: every entity is looked up by its natural key before insert,
 // so running this again only adds whatever's missing (e.g. new products
 // appended to the list below) — it never duplicates existing rows.
 import { randomBytes } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 import bcrypt from 'bcryptjs';
+import { createStorageClient } from 'storage';
 import {
   db,
   eq,
@@ -22,6 +27,7 @@ import {
   productOptionValuesTable,
   productVariantsTable,
   variantOptionValuesTable,
+  productImagesTable,
   inventoryTable,
   permissionsTable,
   rolesTable,
@@ -29,29 +35,16 @@ import {
   userRolesTable,
   PERMISSIONS_CATALOG,
   isUniqueViolation,
-} from '../src/index.js';
+} from 'db';
 
-const OWNER_EMAIL = 'owner@longboxcomics.test';
+const OWNER_EMAIL = 'owner@sneakerdepot.test';
 const OWNER_PASSWORD = 'password123';
 
-const BRANDS = [
-  'Marvel Comics',
-  'DC Comics',
-  'Image Comics',
-  'Dark Horse Comics',
-  'IDW Publishing',
-  'Longbox Essentials',
-] as const;
+const BRANDS = ['Nike', 'Jordan', 'Adidas', 'Puma'] as const;
 
-const CATEGORIES = [
-  'Comics',
-  'Graphic Novels',
-  'Trading Cards',
-  'Action Figures',
-  'Apparel',
-  'Board Games',
-  'Supplies',
-] as const;
+const CATEGORIES = ['Running', 'Basketball', 'Lifestyle', 'Retro'] as const;
+
+const SHOE_SIZES = ['8', '9', '10', '11'] as const;
 
 interface SeedVariant {
   optionValue?: string;
@@ -64,135 +57,134 @@ interface SeedProduct {
   description: string;
   brand: (typeof BRANDS)[number];
   categories: (typeof CATEGORIES)[number][];
+  imageFile: string;
   optionName?: string;
   variants: SeedVariant[];
 }
 
+// every shoe gets the same 4 sizes at the same price — only the price and
+// per-size stock differ per product
+function shoeVariants(priceCents: number, stocks: [number, number, number, number]): SeedVariant[] {
+  return SHOE_SIZES.map((optionValue, i) => ({ optionValue, priceCents, stock: stocks[i] }));
+}
+
 const PRODUCTS: SeedProduct[] = [
   {
-    name: 'Amazing Spider-Man #1',
-    description:
-      'The wall-crawler swings back into a bold new era. Available with two collectible covers.',
-    brand: 'Marvel Comics',
-    categories: ['Comics'],
-    optionName: 'Cover',
-    variants: [
-      { optionValue: 'A Cover', priceCents: 499, stock: 25 },
-      { optionValue: 'B Cover', priceCents: 599, stock: 10 },
-    ],
-  },
-  {
-    name: 'Batman: Year One',
-    description:
-      "Frank Miller and David Mazzucchelli's definitive origin story for the Dark Knight.",
-    brand: 'DC Comics',
-    categories: ['Graphic Novels'],
-    variants: [{ priceCents: 1999, stock: 12 }],
-  },
-  {
-    name: 'Saga, Vol. 1',
-    description: "Brian K. Vaughan and Fiona Staples' epic space opera begins.",
-    brand: 'Image Comics',
-    categories: ['Graphic Novels'],
-    variants: [{ priceCents: 999, stock: 18 }],
-  },
-  {
-    name: 'Hellboy: Seed of Destruction',
-    description: "Mike Mignola's paranormal investigator makes his collected debut.",
-    brand: 'Dark Horse Comics',
-    categories: ['Graphic Novels'],
-    variants: [{ priceCents: 1799, stock: 10 }],
-  },
-  {
-    name: 'Teenage Mutant Ninja Turtles #1',
-    description: 'The heroes in a half shell return in this fan-favorite relaunch.',
-    brand: 'IDW Publishing',
-    categories: ['Comics'],
-    optionName: 'Cover',
-    variants: [
-      { optionValue: 'Regular', priceCents: 399, stock: 30 },
-      { optionValue: 'Retailer Incentive', priceCents: 1499, stock: 5 },
-    ],
-  },
-  {
-    name: 'Watchmen',
-    description: 'Alan Moore and Dave Gibbons redefine what a superhero comic can be.',
-    brand: 'DC Comics',
-    categories: ['Graphic Novels'],
-    variants: [{ priceCents: 1999, stock: 15 }],
-  },
-  {
-    name: 'The Walking Dead Compendium One',
-    description: 'The first 48 issues of the zombie survival saga, collected in one volume.',
-    brand: 'Image Comics',
-    categories: ['Graphic Novels'],
-    variants: [{ priceCents: 2499, stock: 8 }],
-  },
-  {
-    name: 'Marvel Trading Card Booster Pack',
-    description: 'Chase your favorite heroes and villains in every foil pack.',
-    brand: 'Marvel Comics',
-    categories: ['Trading Cards'],
-    optionName: 'Pack Size',
-    variants: [
-      { optionValue: 'Single Pack', priceCents: 499, stock: 40 },
-      { optionValue: 'Booster Box', priceCents: 8999, stock: 6 },
-    ],
-  },
-  {
-    name: 'Spider-Man 6-Inch Action Figure',
-    description: 'Highly detailed, fully articulated figure straight off the page.',
-    brand: 'Marvel Comics',
-    categories: ['Action Figures'],
-    variants: [{ priceCents: 2499, stock: 14 }],
-  },
-  {
-    name: 'Batman Logo T-Shirt',
-    description: 'Classic bat-symbol tee, pre-shrunk cotton.',
-    brand: 'DC Comics',
-    categories: ['Apparel'],
+    name: "Nike Air Force 1 '07",
+    description: "The '82 basketball original, unchanged where it counts — crisp white leather on a padded collar.",
+    brand: 'Nike',
+    categories: ['Lifestyle'],
+    imageFile: 'nike-air-force-1.jpg',
     optionName: 'Size',
-    variants: [
-      { optionValue: 'Small', priceCents: 2299, stock: 10 },
-      { optionValue: 'Medium', priceCents: 2299, stock: 10 },
-      { optionValue: 'Large', priceCents: 2299, stock: 10 },
-      { optionValue: 'X-Large', priceCents: 2299, stock: 8 },
-    ],
+    variants: shoeVariants(11500, [12, 18, 20, 9]),
   },
   {
-    name: 'X-Men Trading Card Set',
-    description: 'A complete base set featuring the classic roster.',
-    brand: 'Marvel Comics',
-    categories: ['Trading Cards'],
-    variants: [{ priceCents: 5999, stock: 5 }],
+    name: 'Nike Air Max 90',
+    description: 'The visible Air unit that started it all, still riding on its original waffle-inspired outsole.',
+    brand: 'Nike',
+    categories: ['Lifestyle', 'Retro'],
+    imageFile: 'nike-air-max-90.jpg',
+    optionName: 'Size',
+    variants: shoeVariants(13000, [10, 14, 16, 8]),
   },
   {
-    name: 'Hellboy Board Game',
-    description: 'Cooperative board game based on the Dark Horse universe.',
-    brand: 'Dark Horse Comics',
-    categories: ['Board Games'],
-    variants: [{ priceCents: 4999, stock: 6 }],
+    name: 'Nike Dunk Low Retro "Varsity Green"',
+    description: "Court-born color-blocking from the '80s, reissued in the green/white pairing collectors chase.",
+    brand: 'Nike',
+    categories: ['Lifestyle', 'Retro'],
+    imageFile: 'nike-dunk-low-retro.jpg',
+    optionName: 'Size',
+    variants: shoeVariants(11000, [8, 12, 10, 6]),
   },
   {
-    name: 'Comic Book Long Box',
-    description: 'Holds up to 300 standard comics. Sturdy corrugated cardboard.',
-    brand: 'Longbox Essentials',
-    categories: ['Supplies'],
-    variants: [{ priceCents: 699, stock: 50 }],
+    name: 'Nike React Infinity Run Flyknit 2',
+    description: 'A wider base and a rocker shape built to keep easy miles easy, mile after mile.',
+    brand: 'Nike',
+    categories: ['Running'],
+    imageFile: 'nike-react-infinity-run.jpg',
+    optionName: 'Size',
+    variants: shoeVariants(16000, [15, 20, 18, 10]),
   },
   {
-    name: 'Acid-Free Comic Bags & Boards (100ct)',
-    description: 'Archival-quality bags and boards to keep your books pristine.',
-    brand: 'Longbox Essentials',
-    categories: ['Supplies'],
-    variants: [{ priceCents: 1299, stock: 40 }],
+    name: 'Air Jordan 1 Retro High OG',
+    description: 'The silhouette that started the sneaker resale market, still riding high on and off the court.',
+    brand: 'Jordan',
+    categories: ['Basketball', 'Retro'],
+    imageFile: 'air-jordan-1.jpg',
+    optionName: 'Size',
+    variants: shoeVariants(18000, [6, 10, 8, 4]),
   },
   {
-    name: 'Wolverine 12-Inch Action Figure',
-    description: 'Premium scale figure with swappable claws and portrait.',
-    brand: 'Marvel Comics',
-    categories: ['Action Figures'],
-    variants: [{ priceCents: 3999, stock: 7 }],
+    name: 'Air Jordan 4 Retro "White Cement"',
+    description: 'Visible mesh panels and the iconic wing eyelets, in the colorway that defined the model.',
+    brand: 'Jordan',
+    categories: ['Basketball', 'Retro'],
+    imageFile: 'air-jordan-4.jpg',
+    optionName: 'Size',
+    variants: shoeVariants(21000, [5, 9, 7, 3]),
+  },
+  {
+    name: 'Air Jordan 11 Retro',
+    description: "Patent leather mudguard and ballistic mesh upper — the pair Jordan wore to the '96 Finals.",
+    brand: 'Jordan',
+    categories: ['Basketball', 'Retro'],
+    imageFile: 'air-jordan-11.jpg',
+    optionName: 'Size',
+    variants: shoeVariants(22500, [4, 7, 6, 2]),
+  },
+  {
+    name: 'Adidas Ultraboost',
+    description: 'A full-length Boost midsole under a Primeknit upper, tuned for all-day energy return.',
+    brand: 'Adidas',
+    categories: ['Running'],
+    imageFile: 'adidas-ultraboost.jpg',
+    optionName: 'Size',
+    variants: shoeVariants(19000, [12, 16, 14, 8]),
+  },
+  {
+    name: 'Adidas Stan Smith',
+    description: "The tennis court original — clean white leather with a perforated three-stripe silhouette.",
+    brand: 'Adidas',
+    categories: ['Lifestyle'],
+    imageFile: 'adidas-stan-smith.jpg',
+    optionName: 'Size',
+    variants: shoeVariants(10000, [14, 20, 18, 10]),
+  },
+  {
+    name: 'Adidas Samba OG',
+    description: "Originally built for indoor soccer training in the '50s, now a streetwear staple.",
+    brand: 'Adidas',
+    categories: ['Lifestyle', 'Retro'],
+    imageFile: 'adidas-samba-og.jpg',
+    optionName: 'Size',
+    variants: shoeVariants(10000, [13, 17, 15, 9]),
+  },
+  {
+    name: 'Adidas Gazelle',
+    description: "A '68 terrace-culture classic in soft suede, sized down from its original training roots.",
+    brand: 'Adidas',
+    categories: ['Lifestyle', 'Retro'],
+    imageFile: 'adidas-gazelle.jpg',
+    optionName: 'Size',
+    variants: shoeVariants(10000, [11, 15, 13, 7]),
+  },
+  {
+    name: 'Puma Suede Classic',
+    description: 'The 1968 basketball original that crossed over into hip-hop and skate culture alike.',
+    brand: 'Puma',
+    categories: ['Lifestyle', 'Retro'],
+    imageFile: 'puma-suede-classic.jpg',
+    optionName: 'Size',
+    variants: shoeVariants(7500, [16, 22, 20, 12]),
+  },
+  {
+    name: 'Puma Clyde',
+    description: "Walt \"Clyde\" Frazier's 1973 signature shoe — soft suede on a low-profile court sole.",
+    brand: 'Puma',
+    categories: ['Basketball', 'Retro'],
+    imageFile: 'puma-clyde.jpg',
+    optionName: 'Size',
+    variants: shoeVariants(10000, [9, 13, 11, 5]),
   },
 ];
 
@@ -218,12 +210,12 @@ async function ensureAccount() {
   return await db.transaction(async (tx) => {
     const [account] = await tx
       .insert(accountsTable)
-      .values({ name: 'Longbox Comics', phone: '5555550100', email: OWNER_EMAIL })
+      .values({ name: 'Sneaker Depot', phone: '5555550100', email: OWNER_EMAIL })
       .returning();
 
     await tx.insert(usersTable).values({
       accountId: account.id,
-      firstname: 'Longbox',
+      firstname: 'Sneaker',
       lastname: 'Owner',
       email: OWNER_EMAIL,
       password: hashedPassword,
@@ -357,22 +349,22 @@ async function ensureCategories(accountId: number) {
   return map;
 }
 
-// returns false (and does nothing) if a product with this name already
-// exists for the account — the idempotency check
+// returns the product's id either way — the caller uses this to backfill
+// images for products that already existed from a previous seed run
 async function ensureProduct(
   product: SeedProduct,
   accountId: number,
   locationId: number,
   brandsByName: Map<string, number>,
   categoriesByName: Map<string, number>,
-): Promise<boolean> {
+): Promise<{ id: number; created: boolean }> {
   const [existing] = await db
     .select({ id: productsTable.id })
     .from(productsTable)
     .where(and(eq(productsTable.accountId, accountId), eq(productsTable.name, product.name)));
-  if (existing) return false;
+  if (existing) return { id: existing.id, created: false };
 
-  await db.transaction(async (tx) => {
+  const productId = await db.transaction(async (tx) => {
     const [row] = await tx
       .insert(productsTable)
       .values({
@@ -431,13 +423,60 @@ async function ensureProduct(
         .insert(inventoryTable)
         .values({ variantId: variantRow.id, locationId, stock: variant.stock });
     }
+
+    return row.id;
+  });
+
+  return { id: productId, created: true };
+}
+
+const SEED_IMAGES_DIR = path.join(import.meta.dirname, 'seed-images');
+
+async function ensureProductImage(
+  storage: ReturnType<typeof createStorageClient>,
+  productId: number,
+  imageFile: string,
+): Promise<boolean> {
+  const [existing] = await db
+    .select({ id: productImagesTable.id })
+    .from(productImagesTable)
+    .where(eq(productImagesTable.productId, productId));
+  if (existing) return false;
+
+  const bytes = await readFile(path.join(SEED_IMAGES_DIR, imageFile));
+  const contentType = 'image/jpeg'; // every file in seed-images/ is a re-encoded JPEG
+
+  const key = `products/${productId}/${randomBytes(8).toString('hex')}.jpg`;
+  const uploadUrl = await storage.getUploadUrl(key, contentType);
+  await fetch(uploadUrl, {
+    method: 'PUT',
+    body: bytes,
+    headers: { 'Content-Type': contentType },
+  });
+
+  await db.insert(productImagesTable).values({
+    productId,
+    variantId: null,
+    key,
+    url: storage.getPublicUrl(key),
+    position: 0,
   });
 
   return true;
 }
 
 async function main() {
-  console.log('Seeding Longbox Comics demo data...');
+  console.log('Seeding Sneaker Depot demo data...');
+
+  const storage = createStorageClient({
+    endpoint: process.env.MINIO_ENDPOINT ?? 'http://localhost:9000',
+    accessKeyId: process.env.MINIO_ACCESS_KEY,
+    secretAccessKey: process.env.MINIO_SECRET_KEY,
+    bucket: process.env.MINIO_BUCKET ?? 'shop-product-images',
+    forcePathStyle: process.env.MINIO_FORCE_PATH_STYLE !== 'false',
+    publicBaseUrl: process.env.MINIO_PUBLIC_BASE_URL ?? 'http://localhost:9000/shop-product-images',
+  });
+  await storage.ensureBucket();
 
   await ensurePermissionsCatalog();
 
@@ -456,8 +495,9 @@ async function main() {
 
   let created = 0;
   let skipped = 0;
+  let imagesAdded = 0;
   for (const product of PRODUCTS) {
-    const didCreate = await ensureProduct(
+    const { id, created: didCreate } = await ensureProduct(
       product,
       account.id,
       location.id,
@@ -466,9 +506,12 @@ async function main() {
     );
     if (didCreate) created++;
     else skipped++;
+
+    if (await ensureProductImage(storage, id, product.imageFile)) imagesAdded++;
   }
 
   console.log(`Done. ${created} product(s) created, ${skipped} already existed.`);
+  console.log(`${imagesAdded} product image(s) added.`);
   console.log(`Sign in at shop-admin-web with ${OWNER_EMAIL} / ${OWNER_PASSWORD}`);
   process.exit(0);
 }

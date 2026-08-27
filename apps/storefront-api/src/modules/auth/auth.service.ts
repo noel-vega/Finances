@@ -32,7 +32,7 @@ export class AuthService {
       .from(accountsTable)
       .where(eq(accountsTable.id, accountId));
 
-    // sent on behalf of the shop, not "Harbor" — see EmailService
+    // sent on behalf of the shop, not "Ordersail" — see EmailService
     await this.emailService.sendThankYouEmail(customer.email, {
       firstName: customer.firstname,
       accountName: account.name,

@@ -57,3 +57,15 @@ resource "aws_route53_record" "website_apex" {
     evaluate_target_health = false
   }
 }
+
+resource "aws_route53_record" "admin_web_alias" {
+  zone_id = data.aws_route53_zone.this.zone_id
+  name    = "admin.${var.domain_name}"
+  type    = "A"
+
+  alias {
+    name                   = module.frontend_shop_admin_web.distribution_domain_name
+    zone_id                = module.frontend_shop_admin_web.distribution_hosted_zone_id
+    evaluate_target_health = false
+  }
+}

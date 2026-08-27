@@ -133,9 +133,7 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton className="data-[slot=sidebar-menu-button]:p-1.5!">
-              <a href="#">
-                <span className="text-base font-semibold">Shop</span>
-              </a>
+              <span className="text-base font-semibold">Shop</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -155,51 +153,51 @@ export function AppSidebar() {
                       className="group/collapsible"
                     >
                       <SidebarMenuItem>
-                        <Link to={item.to} onClick={() => setOpenKey(item.key)}>
-                          <SidebarMenuButton
-                            tooltip={item.label}
-                            isActive={isActive}
-                          >
-                            <item.icon />
-                            <span>{item.label}</span>
-                          </SidebarMenuButton>
-                        </Link>
-                        <CollapsibleContent>
-                          <SidebarMenuSub>
-                            {item.children.map((child) => (
-                              <Link key={child.to} to={child.to}>
-                                <SidebarMenuSubItem>
-                                  <SidebarMenuSubButton
-                                    isActive={pathname === child.to}
-                                  >
-                                    <span>{child.label}</span>
-                                  </SidebarMenuSubButton>
-                                </SidebarMenuSubItem>
-                              </Link>
-                            ))}
-                          </SidebarMenuSub>
-                        </CollapsibleContent>
+                        <SidebarMenuButton
+                          render={
+                            <Link
+                              to={item.to}
+                              onClick={() => setOpenKey(item.key)}
+                            />
+                          }
+                          tooltip={item.label}
+                          isActive={isActive}
+                        >
+                          <item.icon />
+                          <span>{item.label}</span>
+                        </SidebarMenuButton>
                       </SidebarMenuItem>
+                      <CollapsibleContent>
+                        <SidebarMenuSub>
+                          {item.children.map((child) => (
+                            <SidebarMenuSubItem key={child.to}>
+                              <SidebarMenuSubButton
+                                render={<Link to={child.to} />}
+                                isActive={pathname === child.to}
+                              >
+                                <span>{child.label}</span>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          ))}
+                        </SidebarMenuSub>
+                      </CollapsibleContent>
                     </Collapsible>
                   );
                 }
 
                 return (
-                  <Link
-                    key={item.key}
-                    to={item.to}
-                    onClick={() => setOpenKey(null)}
-                  >
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        tooltip={item.label}
-                        isActive={pathname === item.to}
-                      >
-                        <item.icon />
-                        <span>{item.label}</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  </Link>
+                  <SidebarMenuItem key={item.key}>
+                    <SidebarMenuButton
+                      render={
+                        <Link to={item.to} onClick={() => setOpenKey(null)} />
+                      }
+                      tooltip={item.label}
+                      isActive={pathname === item.to}
+                    >
+                      <item.icon />
+                      <span>{item.label}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
                 );
               })}
             </SidebarMenu>

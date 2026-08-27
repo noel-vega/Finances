@@ -6,7 +6,7 @@
 # survive a `tsc` build or a --omit=dev install.
 #
 # Build from the repo root:
-#   docker build -f docker/migrate.Dockerfile -t harbor-migrator:local .
+#   docker build -f docker/migrate.Dockerfile -t ordersail-migrator:local .
 
 FROM node:22-alpine AS base
 WORKDIR /app

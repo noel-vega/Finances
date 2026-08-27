@@ -1,10 +1,10 @@
-# Harbor
+# Ordersail
 
 **A multi-tenant e-commerce platform: back-office admin, storefront, and payments, in one place.**
 
-> "A safe harbor for your store — products, orders, inventory, and payouts, docked in one place."
+> "Everything your store needs — products, orders, inventory, and payouts, in one place."
 
-Harbor is a self-serve platform that lets any retailer spin up an account, catalog their products, connect a Stripe account, and start selling — with a public storefront API/app for customers and an admin dashboard for the merchant. Every account is an isolated tenant with its own catalog, inventory, orders, and Stripe Connect account; the platform itself never touches merchant funds.
+Ordersail is a self-serve platform that lets any retailer spin up an account, catalog their products, connect a Stripe account, and start selling — with a public storefront API/app for customers and an admin dashboard for the merchant. Every account is an isolated tenant with its own catalog, inventory, orders, and Stripe Connect account; the platform itself never touches merchant funds.
 
 Started 2026-07-07. In active early development.
 
@@ -13,9 +13,9 @@ Started 2026-07-07. In active early development.
 ## Goals
 
 - **Multi-tenant from day one** — every resource (products, orders, inventory, users) is scoped to an `account`, so the same codebase serves every merchant.
-- **Merchants own their money** — payments run through [Stripe Connect](https://stripe.com/connect) (Express accounts); Harbor never holds merchant funds, only facilitates checkout and takes its cut at the payment layer.
+- **Merchants own their money** — payments run through [Stripe Connect](https://stripe.com/connect) (Express accounts); Ordersail never holds merchant funds, only facilitates checkout and takes its cut at the payment layer.
 - **Real inventory, not a single stock number** — products support options/variants (size, color, etc.), and stock is tracked per location with an auditable movement log rather than being clobbered in place.
-- **A real developer API** — the storefront isn't just Harbor's own React app; it's backed by a versioned, OpenAPI-documented API with account-scoped API keys, so a merchant (or Harbor itself) can build any storefront against it.
+- **A real developer API** — the storefront isn't just Ordersail's own React app; it's backed by a versioned, OpenAPI-documented API with account-scoped API keys, so a merchant (or Ordersail itself) can build any storefront against it.
 - **Shipping that's actually usable** — orders carry real shipping addresses, and labels are purchased through Shippo directly from the order, with tracking numbers and URLs stored back on the order.
 - **Small, sharp surface area** — guest checkout only (no customer accounts yet), one payment status per order (Stripe webhook confirms payment, so if the row exists, it was paid) — deliberately deferring complexity until it's needed.
 
@@ -59,7 +59,7 @@ Started 2026-07-07. In active early development.
 **Apps**
 - `shop-admin-web` — merchant-facing dashboard (products, inventory, orders, carts, locations, customers, payments, roles, settings, developer API keys)
 - `storefront-web` — customer-facing storefront (browse products, cart, Stripe-hosted checkout, order return page)
-- `website` — public marketing site introducing Harbor to prospective merchants
+- `website` — public marketing site introducing Ordersail to prospective merchants
 
 **Developer experience**
 - OpenAPI specs generated from both APIs, with typed SDKs (`admin-sdk`, `storefront-sdk`) generated from them and consumed directly by the React apps

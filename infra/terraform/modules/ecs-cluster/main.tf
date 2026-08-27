@@ -12,7 +12,7 @@ resource "aws_ecs_cluster" "this" {
 # worker gets no ingress rule since it has no ALB.
 resource "aws_security_group" "ecs_tasks" {
   name        = "${var.name_prefix}-ecs-tasks"
-  description = "Shared security group for all Harbor ECS tasks"
+  description = "Shared security group for all Ordersail ECS tasks"
   vpc_id      = var.vpc_id
 
   egress {

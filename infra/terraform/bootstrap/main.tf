@@ -28,8 +28,8 @@ provider "aws" {
 data "aws_caller_identity" "current" {}
 
 locals {
-  state_bucket_name = "harbor-terraform-state-${data.aws_caller_identity.current.account_id}"
-  lock_table_name   = "harbor-terraform-locks"
+  state_bucket_name = "ordersail-terraform-state-${data.aws_caller_identity.current.account_id}"
+  lock_table_name   = "ordersail-terraform-locks"
 }
 
 resource "aws_s3_bucket" "terraform_state" {

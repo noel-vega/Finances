@@ -1,6 +1,6 @@
 variable "name_prefix" {
   type    = string
-  default = "harbor"
+  default = "ordersail"
 }
 
 variable "name" {
@@ -22,5 +22,10 @@ variable "container_port" {
 
 variable "ecs_tasks_security_group_id" {
   description = "The shared ECS-tasks SG — this ALB is granted ingress into it on container_port."
+  type        = string
+}
+
+variable "acm_certificate_arn" {
+  description = "ACM cert (same region as the ALB) for the HTTPS listener. The HTTP listener redirects to it rather than forwarding."
   type        = string
 }

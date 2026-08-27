@@ -50,8 +50,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          BUCKET=$(aws ssm get-parameter --name /harbor/production/frontend/website-bucket --query 'Parameter.Value' --output text)
-          DIST_ID=$(aws ssm get-parameter --name /harbor/production/frontend/website-distribution --query 'Parameter.Value' --output text)
+          BUCKET=$(aws ssm get-parameter --name /ordersail/production/frontend/website-bucket --query 'Parameter.Value' --output text)
+          DIST_ID=$(aws ssm get-parameter --name /ordersail/production/frontend/website-distribution --query 'Parameter.Value' --output text)
           DIST_DIR="apps/website/dist"
 
           # hashed build assets get a 1-year immutable cache; index.html is

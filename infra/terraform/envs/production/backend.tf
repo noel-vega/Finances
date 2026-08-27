@@ -5,10 +5,10 @@
 
 terraform {
   backend "s3" {
-    bucket         = "harbor-terraform-state-084375572674"
+    bucket         = "ordersail-terraform-state-084375572674"
     key            = "production/terraform.tfstate"
     region         = "us-east-1"
-    dynamodb_table = "harbor-terraform-locks"
+    dynamodb_table = "ordersail-terraform-locks"
     encrypt        = true
   }
 }

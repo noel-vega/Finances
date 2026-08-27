@@ -9,11 +9,11 @@ output "deploy_role_platform_arn" {
 }
 
 output "shop_admin_api_url" {
-  value = "http://${module.alb_shop_admin_api.dns_name}"
+  value = "https://${module.alb_shop_admin_api.dns_name}"
 }
 
 output "storefront_api_url" {
-  value = "http://${module.alb_storefront_api.dns_name}"
+  value = "https://${module.alb_storefront_api.dns_name}"
 }
 
 output "shop_admin_web_url" {

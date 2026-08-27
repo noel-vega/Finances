@@ -41,17 +41,17 @@ export class EmailProcessor extends WorkerHost {
       case 'staff-invite':
         await this.mailerService.sendMail({
           to: data.to,
-          subject: "You've been invited to join Harbor",
+          subject: "You've been invited to join Ordersail",
           html: await renderStaffInviteEmail({ firstName: data.firstName, inviteUrl: data.inviteUrl }),
         });
         return;
 
       // the customer's relationship is with the shop they signed up at, not
-      // with the platform — sent as that shop, not as "Harbor"
+      // with the platform — sent as that shop, not as "Ordersail"
       case 'customer-thank-you':
         await this.mailerService.sendMail({
           to: data.to,
-          from: { name: data.accountName, address: 'no-reply@harbor.local' },
+          from: { name: data.accountName, address: 'no-reply@ordersail.local' },
           subject: `Thanks for signing up, ${data.firstName}!`,
           html: await renderCustomerThankYouEmail({
             firstName: data.firstName,
@@ -62,11 +62,11 @@ export class EmailProcessor extends WorkerHost {
         return;
 
       // same reasoning as customer-thank-you: sent as the shop the
-      // customer bought from, not as "Harbor"
+      // customer bought from, not as "Ordersail"
       case 'order-confirmation':
         await this.mailerService.sendMail({
           to: data.to,
-          from: { name: data.accountName, address: 'no-reply@harbor.local' },
+          from: { name: data.accountName, address: 'no-reply@ordersail.local' },
           subject: `Your order from ${data.accountName} is confirmed (#${data.orderId})`,
           html: await renderOrderConfirmationEmail({
             customerName: data.customerName,
