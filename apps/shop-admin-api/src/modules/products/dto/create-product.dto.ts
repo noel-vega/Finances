@@ -45,7 +45,9 @@ export class CreateProductDto {
   @IsArray()
   categoryIds!: number[];
 
-  @ApiProperty()
+  @ApiProperty({ type: [String], required: false, default: [] })
+  @IsOptional()
   @IsArray()
-  barcodes!: string[];
+  @IsString({ each: true })
+  barcodes: string[] = [];
 }
