@@ -12,6 +12,7 @@ import {
   ShieldIcon,
   ShoppingBasketIcon,
   ShoppingCartIcon,
+  TabletSmartphoneIcon,
   UsersIcon,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent } from "ui/collapsible";
@@ -75,6 +76,13 @@ export const NAV_ITEMS = [
     label: "Locations",
     icon: MapPinIcon,
     to: "/app/locations",
+    children: undefined,
+  },
+  {
+    key: "pos-devices",
+    label: "POS Devices",
+    icon: TabletSmartphoneIcon,
+    to: "/app/pos-devices",
     children: undefined,
   },
   {

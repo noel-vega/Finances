@@ -17,6 +17,7 @@ import { createCustomersResource } from "./resources/customers.js";
 import { createDashboardResource } from "./resources/dashboard.js";
 import { createRolesResource } from "./resources/roles.js";
 import { createPermissionsResource } from "./resources/permissions.js";
+import { createPosDevicesResource } from "./resources/pos-devices.js";
 
 export type ApiKey = components["schemas"]["ApiKeyDto"];
 export type CartListItem = components["schemas"]["CartListItem"];
@@ -54,6 +55,10 @@ export type Role = components["schemas"]["Role"];
 export type RoleDetail = components["schemas"]["RoleDetail"];
 export type CreateRoleDto = components["schemas"]["CreateRoleDto"];
 export type UpdateRoleDto = components["schemas"]["UpdateRoleDto"];
+export type PosDevice = components["schemas"]["PosDevice"];
+export type PosDevicePairing = components["schemas"]["PosDevicePairing"];
+export type CreatePosDeviceDto = components["schemas"]["CreatePosDeviceDto"];
+export type UpdatePosDeviceDto = components["schemas"]["UpdatePosDeviceDto"];
 
 export class AdminClient {
   accessToken: string | undefined;
@@ -75,6 +80,7 @@ export class AdminClient {
   dashboard: ReturnType<typeof createDashboardResource>;
   roles: ReturnType<typeof createRolesResource>;
   permissions: ReturnType<typeof createPermissionsResource>;
+  posDevices: ReturnType<typeof createPosDevicesResource>;
 
   // every request needs the bearer token and the cross-origin cookie
   // (for the refresh_token) — centralized here instead of at each call site.
@@ -109,6 +115,7 @@ export class AdminClient {
     this.dashboard = createDashboardResource(this.client, doRequest);
     this.roles = createRolesResource(this.client, doRequest);
     this.permissions = createPermissionsResource(this.client, doRequest);
+    this.posDevices = createPosDevicesResource(this.client, doRequest);
   }
 
   async signIn(credentials: components["schemas"]["SignInDto"]) {

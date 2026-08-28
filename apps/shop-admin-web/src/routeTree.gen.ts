@@ -29,6 +29,7 @@ import { Route as AppLocationsCreateRouteImport } from './routes/app/locations/c
 import { Route as AppOrdersIndexRouteImport } from './routes/app/orders/index'
 import { Route as AppOrdersIdRouteImport } from './routes/app/orders/$id'
 import { Route as AppPaymentsIndexRouteImport } from './routes/app/payments/index'
+import { Route as AppPosDevicesIndexRouteImport } from './routes/app/pos-devices/index'
 import { Route as AppProductsIndexRouteImport } from './routes/app/products/index'
 import { Route as AppProductsIdRouteImport } from './routes/app/products/$id'
 import { Route as AppProductsCreateRouteImport } from './routes/app/products/create'
@@ -143,6 +144,11 @@ const AppPaymentsIndexRoute = AppPaymentsIndexRouteImport.update({
   path: '/payments/',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppPosDevicesIndexRoute = AppPosDevicesIndexRouteImport.update({
+  id: '/pos-devices/',
+  path: '/pos-devices/',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppProductsIndexRoute = AppProductsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -237,6 +243,7 @@ export interface FileRoutesByFullPath {
   '/app/locations/': typeof AppLocationsIndexRoute
   '/app/orders/': typeof AppOrdersIndexRoute
   '/app/payments/': typeof AppPaymentsIndexRoute
+  '/app/pos-devices/': typeof AppPosDevicesIndexRoute
   '/app/products/': typeof AppProductsIndexRoute
   '/app/roles/': typeof AppRolesIndexRoute
   '/app/settings/': typeof AppSettingsIndexRoute
@@ -269,6 +276,7 @@ export interface FileRoutesByTo {
   '/app/locations': typeof AppLocationsIndexRoute
   '/app/orders': typeof AppOrdersIndexRoute
   '/app/payments': typeof AppPaymentsIndexRoute
+  '/app/pos-devices': typeof AppPosDevicesIndexRoute
   '/app/products': typeof AppProductsIndexRoute
   '/app/roles': typeof AppRolesIndexRoute
   '/app/settings': typeof AppSettingsIndexRoute
@@ -305,6 +313,7 @@ export interface FileRoutesById {
   '/app/locations/': typeof AppLocationsIndexRoute
   '/app/orders/': typeof AppOrdersIndexRoute
   '/app/payments/': typeof AppPaymentsIndexRoute
+  '/app/pos-devices/': typeof AppPosDevicesIndexRoute
   '/app/products/': typeof AppProductsIndexRoute
   '/app/roles/': typeof AppRolesIndexRoute
   '/app/settings/': typeof AppSettingsIndexRoute
@@ -342,6 +351,7 @@ export interface FileRouteTypes {
     | '/app/locations/'
     | '/app/orders/'
     | '/app/payments/'
+    | '/app/pos-devices/'
     | '/app/products/'
     | '/app/roles/'
     | '/app/settings/'
@@ -374,6 +384,7 @@ export interface FileRouteTypes {
     | '/app/locations'
     | '/app/orders'
     | '/app/payments'
+    | '/app/pos-devices'
     | '/app/products'
     | '/app/roles'
     | '/app/settings'
@@ -409,6 +420,7 @@ export interface FileRouteTypes {
     | '/app/locations/'
     | '/app/orders/'
     | '/app/payments/'
+    | '/app/pos-devices/'
     | '/app/products/'
     | '/app/roles/'
     | '/app/settings/'
@@ -570,6 +582,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPaymentsIndexRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/pos-devices/': {
+      id: '/app/pos-devices/'
+      path: '/pos-devices'
+      fullPath: '/app/pos-devices/'
+      preLoaderRoute: typeof AppPosDevicesIndexRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/app/products/': {
       id: '/app/products/'
       path: '/'
@@ -719,6 +738,7 @@ interface AppRouteRouteChildren {
   AppLocationsIndexRoute: typeof AppLocationsIndexRoute
   AppOrdersIndexRoute: typeof AppOrdersIndexRoute
   AppPaymentsIndexRoute: typeof AppPaymentsIndexRoute
+  AppPosDevicesIndexRoute: typeof AppPosDevicesIndexRoute
   AppSettingsIndexRoute: typeof AppSettingsIndexRoute
   AppUsersIndexRoute: typeof AppUsersIndexRoute
 }
@@ -739,6 +759,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppLocationsIndexRoute: AppLocationsIndexRoute,
   AppOrdersIndexRoute: AppOrdersIndexRoute,
   AppPaymentsIndexRoute: AppPaymentsIndexRoute,
+  AppPosDevicesIndexRoute: AppPosDevicesIndexRoute,
   AppSettingsIndexRoute: AppSettingsIndexRoute,
   AppUsersIndexRoute: AppUsersIndexRoute,
 }

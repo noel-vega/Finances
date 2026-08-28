@@ -1,29 +1,7 @@
-import { useState } from "react";
-import { CheckIcon, CopyIcon } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "ui/card";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupInput,
-} from "ui/input-group";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "ui/input-group";
+import { CopyButton } from "../../../components/copy-button";
 import { useListApiKeysQuery } from "../api-keys.hooks";
-
-function CopyKeyButton({ value }: { value: string }) {
-  const [copied, setCopied] = useState(false);
-
-  async function handleCopy() {
-    await navigator.clipboard.writeText(value);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  }
-
-  return (
-    <InputGroupButton aria-label="Copy key" onClick={handleCopy}>
-      {copied ? <CheckIcon /> : <CopyIcon />}
-    </InputGroupButton>
-  );
-}
 
 export function ApiKeysView() {
   const apiKeys = useListApiKeysQuery();
@@ -56,7 +34,7 @@ export function ApiKeysView() {
               <InputGroup>
                 <InputGroupInput readOnly value={apiKey.key} />
                 <InputGroupAddon align="inline-end">
-                  <CopyKeyButton value={apiKey.key} />
+                  <CopyButton value={apiKey.key} label="Copy key" />
                 </InputGroupAddon>
               </InputGroup>
             </div>
