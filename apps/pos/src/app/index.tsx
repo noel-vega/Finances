@@ -56,7 +56,10 @@ export default function CatalogScreen() {
           </View>
           <Link href="/scan" asChild>
             <Pressable
-              style={[styles.scanButton, { backgroundColor: theme.backgroundElement }]}>
+              style={StyleSheet.flatten([
+                styles.scanButton,
+                { backgroundColor: theme.backgroundElement },
+              ])}>
               <ThemedText>Scan</ThemedText>
             </Pressable>
           </Link>
@@ -108,7 +111,10 @@ export default function CatalogScreen() {
               return (
                 <Link href={{ pathname: '/product/[id]', params: { id: item.id } }} asChild>
                   <Pressable
-                    style={[styles.row, { borderBottomColor: theme.backgroundElement }]}>
+                    style={StyleSheet.flatten([
+                      styles.row,
+                      { borderBottomColor: theme.backgroundElement },
+                    ])}>
                     {item.images[0]?.url ? (
                       <Image
                         source={{ uri: item.images[0].url }}
