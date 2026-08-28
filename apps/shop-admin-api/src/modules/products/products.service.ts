@@ -18,6 +18,7 @@ import {
   isNull,
   locationsTable,
   notInArray,
+  productBarcodesTable,
   productCategoriesTable,
   productImagesTable,
   productOptionsTable,
@@ -44,6 +45,21 @@ function toProductImage(row: typeof productImagesTable.$inferSelect): ProductIma
     position: row.position,
     variantId: row.variantId,
   };
+}
+
+// trim, drop blanks, dedupe (preserving first-seen order) — used for both
+// create and the full-replace on updateVariant
+function normalizeBarcodes(barcodes: string[] | undefined): string[] {
+  if (!barcodes) return [];
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const raw of barcodes) {
+    const code = raw.trim();
+    if (code.length === 0 || seen.has(code)) continue;
+    seen.add(code);
+    result.push(code);
+  }
+  return result;
 }
 
 // every combination of one value per option, e.g. [[1,2],[3,4]] -> [[1,3],[1,4],[2,3],[2,4]]
@@ -117,6 +133,13 @@ export class ProductsService {
         locationId: location.id,
         stock: createProductDto.stock,
       })
+
+      const barcodes = normalizeBarcodes(createProductDto.barcodes);
+      if (barcodes.length > 0) {
+        await tx.insert(productBarcodesTable).values(
+          barcodes.map((code) => ({ variantId: variant.id, code })),
+        );
+      }
 
       if (createProductDto.categoryIds.length > 0) {
         await tx.insert(productCategoriesTable).values(
@@ -258,7 +281,8 @@ export class ProductsService {
       eq(productVariantsTable.productId, productId),
     );
     const withOptions = await this.attachOptionValues(variants);
-    return await this.attachImages(withOptions);
+    const withBarcodes = await this.attachBarcodes(withOptions);
+    return await this.attachImages(withBarcodes);
   }
 
   // stock is derived — summed across a variant's per-location inventory
@@ -292,21 +316,42 @@ export class ProductsService {
   ): Promise<ProductVariant | undefined> {
     if (!(await this.productExists(productId, accountId))) return undefined;
 
-    await this.db
-      .update(productVariantsTable)
-      .set(updateVariantDto)
-      .where(
-        and(
-          eq(productVariantsTable.id, variantId),
-          eq(productVariantsTable.productId, productId),
-        ),
-      );
+    const { barcodes, ...variantFields } = updateVariantDto;
+
+    await this.db.transaction(async (tx) => {
+      if (Object.keys(variantFields).length > 0) {
+        await tx
+          .update(productVariantsTable)
+          .set({ ...variantFields, updatedAt: new Date() })
+          .where(
+            and(
+              eq(productVariantsTable.id, variantId),
+              eq(productVariantsTable.productId, productId),
+            ),
+          );
+      }
+
+      // full replace — the client sends the complete desired set, same as
+      // category replacement on update()
+      if (barcodes !== undefined) {
+        await tx
+          .delete(productBarcodesTable)
+          .where(eq(productBarcodesTable.variantId, variantId));
+        const codes = normalizeBarcodes(barcodes);
+        if (codes.length > 0) {
+          await tx
+            .insert(productBarcodesTable)
+            .values(codes.map((code) => ({ variantId, code })));
+        }
+      }
+    });
 
     const variants = await this.selectVariants(eq(productVariantsTable.id, variantId));
     if (variants.length === 0) return undefined;
 
     const withOptions = await this.attachOptionValues(variants);
-    const [record] = await this.attachImages(withOptions);
+    const withBarcodes = await this.attachBarcodes(withOptions);
+    const [record] = await this.attachImages(withBarcodes);
     return record;
   }
 
@@ -352,6 +397,40 @@ export class ProductsService {
     return variants.map((variant) => ({
       ...variant,
       optionValues: optionValuesByVariant.get(variant.id) ?? [],
+    }));
+  }
+
+  // folds each variant's scannable codes in — a separate query keyed off
+  // variantId, same shape as attachOptionValues
+  private async attachBarcodes<T extends { id: number }>(
+    variants: T[],
+  ): Promise<(T & { barcodes: string[] })[]> {
+    if (variants.length === 0) return [];
+
+    const rows = await this.db
+      .select({
+        variantId: productBarcodesTable.variantId,
+        code: productBarcodesTable.code,
+      })
+      .from(productBarcodesTable)
+      .where(
+        inArray(
+          productBarcodesTable.variantId,
+          variants.map((v) => v.id),
+        ),
+      )
+      .orderBy(productBarcodesTable.id);
+
+    const byVariant = new Map<number, string[]>();
+    for (const row of rows) {
+      const codes = byVariant.get(row.variantId) ?? [];
+      codes.push(row.code);
+      byVariant.set(row.variantId, codes);
+    }
+
+    return variants.map((variant) => ({
+      ...variant,
+      barcodes: byVariant.get(variant.id) ?? [],
     }));
   }
 
@@ -649,7 +728,8 @@ export class ProductsService {
       inArray(productVariantsTable.id, variantIds),
     );
     const withOptions = await this.attachOptionValues(variants);
-    return await this.attachImages(withOptions);
+    const withBarcodes = await this.attachBarcodes(withOptions);
+    return await this.attachImages(withBarcodes);
   }
 
   async getImageUploadUrl(

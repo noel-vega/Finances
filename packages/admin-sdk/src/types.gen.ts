@@ -660,6 +660,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/pos-devices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PosDevicesController_findAll"];
+        put?: never;
+        post: operations["PosDevicesController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pos-devices/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["PosDevicesController_update"];
+        trace?: never;
+    };
+    "/pos-devices/{id}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PosDevicesController_revoke"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pos-devices/{id}/rotate-pairing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PosDevicesController_rotatePairing"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -762,6 +826,7 @@ export interface components {
             /** @enum {string} */
             status: "draft" | "active" | "archived";
             categoryIds: unknown[];
+            /** @default [] */
             barcodes: string[];
         };
         Product: {
@@ -824,6 +889,7 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
             stock: number;
+            barcodes: string[];
             optionValues: components["schemas"]["VariantOptionValue"][];
             images: components["schemas"]["ProductImage"][];
         };
@@ -862,6 +928,7 @@ export interface components {
             priceCents?: number;
             sku?: string | null;
             weightOz?: number | null;
+            barcodes?: string[];
         };
         GetImageUploadUrlDto: {
             /** @enum {string} */
@@ -1140,6 +1207,38 @@ export interface components {
             outOfStockCount: number;
             recentOrders: components["schemas"]["OrderListItem"][];
             recentCustomers: components["schemas"]["Customer"][];
+        };
+        CreatePosDeviceDto: {
+            name: string;
+            locationId: number;
+        };
+        PosDevicePairing: {
+            id: number;
+            name: string;
+            locationId: number;
+            pairingCode: string;
+            /** Format: date-time */
+            pairingExpiresAt: string;
+        };
+        PosDevice: {
+            id: number;
+            name: string;
+            locationId: number;
+            locationName: string | null;
+            /** @enum {string} */
+            status: "pending" | "active" | "revoked";
+            /** Format: date-time */
+            lastSeenAt: string | null;
+            /** Format: date-time */
+            pairedAt: string | null;
+            /** Format: date-time */
+            revokedAt: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        UpdatePosDeviceDto: {
+            name?: string;
+            locationId?: number;
         };
     };
     responses: never;
@@ -2458,6 +2557,115 @@ export interface operations {
                             };
                         };
                     };
+                };
+            };
+        };
+    };
+    PosDevicesController_findAll: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PosDevice"][];
+                };
+            };
+        };
+    };
+    PosDevicesController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePosDeviceDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PosDevicePairing"];
+                };
+            };
+        };
+    };
+    PosDevicesController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePosDeviceDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PosDevice"];
+                };
+            };
+        };
+    };
+    PosDevicesController_revoke: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PosDevice"];
+                };
+            };
+        };
+    };
+    PosDevicesController_rotatePairing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PosDevicePairing"];
                 };
             };
         };

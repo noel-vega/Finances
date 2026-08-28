@@ -22,6 +22,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { HealthModule } from './modules/health/health.module';
 import { PermissionsModule } from './modules/permissions/permissions.module';
 import { RolesModule } from './modules/roles/roles.module';
+import { PosDevicesModule } from './modules/pos-devices/pos-devices.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { RolesModule } from './modules/roles/roles.module';
     HealthModule,
     PermissionsModule,
     RolesModule,
+    PosDevicesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

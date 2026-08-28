@@ -2075,6 +2075,184 @@
           "Health"
         ]
       }
+    },
+    "/pos-devices": {
+      "post": {
+        "operationId": "PosDevicesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePosDeviceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PosDevicePairing"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "PosDevices"
+        ]
+      },
+      "get": {
+        "operationId": "PosDevicesController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PosDevice"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "PosDevices"
+        ]
+      }
+    },
+    "/pos-devices/{id}": {
+      "patch": {
+        "operationId": "PosDevicesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePosDeviceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PosDevice"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "PosDevices"
+        ]
+      }
+    },
+    "/pos-devices/{id}/revoke": {
+      "post": {
+        "operationId": "PosDevicesController_revoke",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PosDevice"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "PosDevices"
+        ]
+      }
+    },
+    "/pos-devices/{id}/rotate-pairing": {
+      "post": {
+        "operationId": "PosDevicesController_rotatePairing",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PosDevicePairing"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "PosDevices"
+        ]
+      }
     }
   },
   "info": {
@@ -2461,6 +2639,7 @@
             "type": "array"
           },
           "barcodes": {
+            "default": [],
             "type": "array",
             "items": {
               "type": "string"
@@ -2475,8 +2654,7 @@
           "sku",
           "stock",
           "status",
-          "categoryIds",
-          "barcodes"
+          "categoryIds"
         ]
       },
       "Product": {
@@ -2703,6 +2881,12 @@
           "stock": {
             "type": "number"
           },
+          "barcodes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "optionValues": {
             "type": "array",
             "items": {
@@ -2725,6 +2909,7 @@
           "createdAt",
           "updatedAt",
           "stock",
+          "barcodes",
           "optionValues",
           "images"
         ]
@@ -2863,6 +3048,12 @@
           "weightOz": {
             "type": "number",
             "nullable": true
+          },
+          "barcodes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
@@ -3953,6 +4144,116 @@
           "recentOrders",
           "recentCustomers"
         ]
+      },
+      "CreatePosDeviceDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "name",
+          "locationId"
+        ]
+      },
+      "PosDevicePairing": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "number"
+          },
+          "pairingCode": {
+            "type": "string"
+          },
+          "pairingExpiresAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "locationId",
+          "pairingCode",
+          "pairingExpiresAt"
+        ]
+      },
+      "PosDevice": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "number"
+          },
+          "locationName": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "active",
+              "revoked"
+            ]
+          },
+          "lastSeenAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "pairedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "revokedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "locationId",
+          "locationName",
+          "status",
+          "lastSeenAt",
+          "pairedAt",
+          "revokedAt",
+          "createdAt"
+        ]
+      },
+      "UpdatePosDeviceDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "number"
+          }
+        }
       }
     }
   }

@@ -36,6 +36,9 @@ export class ProductVariant implements SelectProductVariant {
   @ApiProperty({ type: Number })
   stock!: number;
 
+  @ApiProperty({ type: [String] })
+  barcodes!: string[];
+
   @ApiProperty({ type: [VariantOptionValue] })
   optionValues!: VariantOptionValue[];
 
