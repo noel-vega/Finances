@@ -5,6 +5,7 @@ import { useColorScheme } from 'react-native';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 
 import { DeviceAuthProvider, useDeviceAuth } from '@/lib/device-auth';
+import { OrderProvider } from '@/features/order/order-store';
 import { asyncStoragePersister, queryClient } from '@/lib/query-client';
 
 SplashScreen.preventAutoHideAsync();
@@ -33,6 +34,10 @@ function RootNavigator() {
           name="scan"
           options={{ presentation: 'modal', headerShown: true, title: 'Scan' }}
         />
+        <Stack.Screen
+          name="checkout"
+          options={{ presentation: 'modal', headerShown: true, title: 'Checkout' }}
+        />
       </Stack.Protected>
       <Stack.Protected guard={!paired}>
         <Stack.Screen name="pair" />
@@ -48,9 +53,11 @@ export default function RootLayout() {
       client={queryClient}
       persistOptions={{ persister: asyncStoragePersister }}>
       <DeviceAuthProvider>
-        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-          <RootNavigator />
-        </ThemeProvider>
+        <OrderProvider>
+          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+            <RootNavigator />
+          </ThemeProvider>
+        </OrderProvider>
       </DeviceAuthProvider>
     </PersistQueryClientProvider>
   );

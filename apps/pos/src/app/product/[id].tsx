@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
@@ -7,17 +7,14 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useProduct } from '@/features/catalog/catalog.queries';
+import { useOrder } from '@/features/order/order-store';
 import { useTheme } from '@/hooks/use-theme';
 import { formatPriceCents } from '@/lib/format';
-import type { PosCatalogVariant } from 'pos-sdk';
-
-function variantLabel(variant: PosCatalogVariant): string {
-  if (variant.optionValues.length === 0) return variant.sku ?? 'Default';
-  return variant.optionValues.map((ov) => ov.value).join(' / ');
-}
+import { variantLabel } from '@/lib/variant';
 
 export default function ProductScreen() {
   const theme = useTheme();
+  const { addVariant } = useOrder();
   const params = useLocalSearchParams<{ id: string; variantId?: string }>();
   const productId = Number(params.id);
 
@@ -96,6 +93,19 @@ export default function ProductScreen() {
             );
           })}
         </View>
+
+        {selected ? (
+          <Pressable
+            onPress={() => {
+              addVariant(product, selected.id);
+              router.back();
+            }}
+            style={[styles.addButton, { backgroundColor: theme.text }]}>
+            <ThemedText style={{ color: theme.background }}>
+              Add to order · {formatPriceCents(selected.priceCents)}
+            </ThemedText>
+          </Pressable>
+        ) : null}
       </ScrollView>
     </ThemedView>
   );
@@ -107,6 +117,12 @@ const styles = StyleSheet.create({
   content: { padding: Spacing.three, gap: Spacing.three },
   hero: { width: '100%', aspectRatio: 1, borderRadius: Spacing.two },
   variantList: { gap: Spacing.two },
+  addButton: {
+    marginTop: Spacing.two,
+    paddingVertical: Spacing.three,
+    borderRadius: Spacing.two,
+    alignItems: 'center',
+  },
   variantChip: {
     flexDirection: 'row',
     justifyContent: 'space-between',
