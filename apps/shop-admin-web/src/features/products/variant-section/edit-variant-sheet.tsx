@@ -1,4 +1,5 @@
-import { Controller, useForm } from "react-hook-form";
+import { useState } from "react";
+import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
 import type { ProductVariant } from "admin-sdk";
@@ -13,7 +14,7 @@ import {
 import { Field, FieldLabel } from "ui/field";
 import { Input } from "ui/input";
 import { Button } from "ui/button";
-import { LoaderCircleIcon } from "lucide-react";
+import { Barcode, LoaderCircleIcon, X } from "lucide-react";
 import { useUpdateVariantMutation } from "../products.hooks";
 import { centsToDollars, dollarsToCents } from "../../../lib/currency";
 import { ImageManager } from "../components/image-manager";
@@ -23,6 +24,9 @@ const EditVariantFormSchema = z.object({
   sku: z.string().nullable(),
   priceCents: z.number().int().min(0, "Must be at least 0"),
   weightOz: z.number().int().min(0, "Must be at least 0").nullable(),
+  // useFieldArray needs an object per row (RHF doesn't support arrays of
+  // primitives); flattened back to string[] before hitting the API.
+  barcodes: z.object({ value: z.string() }).array(),
 });
 
 type EditVariantForm = z.infer<typeof EditVariantFormSchema>;
@@ -38,7 +42,9 @@ export function EditVariantSheet(props: {
       <SheetContent>
         <SheetHeader>
           <SheetTitle>Edit variant</SheetTitle>
-          <SheetDescription>Update this variant's SKU and price.</SheetDescription>
+          <SheetDescription>
+            Update this variant's SKU, price, and barcodes.
+          </SheetDescription>
         </SheetHeader>
         {props.open && props.variant && (
           <EditVariantForm
@@ -66,8 +72,21 @@ function EditVariantForm(props: {
       sku: props.variant.sku,
       priceCents: props.variant.priceCents,
       weightOz: props.variant.weightOz,
+      barcodes: props.variant.barcodes.map((value) => ({ value })),
     },
   });
+
+  const barcodeFields = useFieldArray({ control: form.control, name: "barcodes" });
+  const [barcodeInput, setBarcodeInput] = useState("");
+
+  // hardware barcode scanners type the digits then send Enter
+  const handleBarcodeInputKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    const code = barcodeInput.trim();
+    if (code) barcodeFields.append({ value: code });
+    setBarcodeInput("");
+  };
 
   const handleSubmit = form.handleSubmit(async (data) => {
     await updateVariant.mutateAsync({
@@ -75,6 +94,7 @@ function EditVariantForm(props: {
       sku: data.sku?.trim() || null,
       priceCents: data.priceCents,
       weightOz: data.weightOz,
+      barcodes: data.barcodes.map((b) => b.value),
     });
     props.onDone();
   });
@@ -148,6 +168,40 @@ function EditVariantForm(props: {
             </Field>
           )}
         />
+
+        <Field>
+          <FieldLabel>Barcodes</FieldLabel>
+          <Input
+            placeholder="Click here, then scan a barcode"
+            value={barcodeInput}
+            onChange={(event) => setBarcodeInput(event.currentTarget.value)}
+            onKeyDown={handleBarcodeInputKeyDown}
+          />
+          {barcodeFields.fields.length > 0 && (
+            <ul className="space-y-1">
+              {barcodeFields.fields.map((field, index) => (
+                <li
+                  key={field.id}
+                  className="flex items-center justify-between gap-2 rounded-md border px-2.5 py-1.5 text-sm"
+                >
+                  <span className="flex items-center gap-2">
+                    <Barcode className="text-muted-foreground" />
+                    {form.watch(`barcodes.${index}.value`)}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label="Remove barcode"
+                    onClick={() => barcodeFields.remove(index)}
+                  >
+                    <X />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Field>
 
         <Separator />
 
