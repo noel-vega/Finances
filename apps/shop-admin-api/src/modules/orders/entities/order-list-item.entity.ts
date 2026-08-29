@@ -1,15 +1,18 @@
 import { ApiProperty } from '@nestjs/swagger';
-import type { FulfillmentStatus } from './order-detail.entity';
+import type { FulfillmentStatus, OrderChannel } from './order-detail.entity';
 
 export class OrderListItem {
   @ApiProperty({ type: Number })
   id!: number;
 
-  @ApiProperty()
-  customerName!: string;
+  @ApiProperty({ enum: ['web', 'pos'] })
+  channel!: OrderChannel;
 
-  @ApiProperty()
-  customerEmail!: string;
+  @ApiProperty({ type: 'string', nullable: true })
+  customerName!: string | null;
+
+  @ApiProperty({ type: 'string', nullable: true })
+  customerEmail!: string | null;
 
   @ApiProperty({ type: Number })
   itemCount!: number;

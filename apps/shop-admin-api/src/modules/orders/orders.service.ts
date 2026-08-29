@@ -10,6 +10,8 @@ import {
   inventoryMovementsTable,
   locationsTable,
   orderItemsTable,
+  orderPaymentsTable,
+  orderShippingTable,
   ordersTable,
   sql,
   type db as Db,
@@ -45,6 +47,7 @@ export class OrdersService {
       this.db
         .select({
           id: ordersTable.id,
+          channel: ordersTable.channel,
           customerName: ordersTable.customerName,
           customerEmail: ordersTable.customerEmail,
           amountTotalCents: ordersTable.amountTotalCents,
@@ -101,11 +104,33 @@ export class OrdersService {
       .where(eq(orderItemsTable.orderId, order.id));
     const itemIds = itemRows.map((i) => i.id);
 
-    const [allocationRows, fulfilledByItem, fulfillments] = await Promise.all([
-      this.getAllocations(itemIds),
-      this.getFulfilledQuantityByItem(itemIds),
-      this.getFulfillments(order.id),
-    ]);
+    const [allocationRows, fulfilledByItem, fulfillments, [shipping], payments] =
+      await Promise.all([
+        this.getAllocations(itemIds),
+        this.getFulfilledQuantityByItem(itemIds),
+        this.getFulfillments(order.id),
+        this.db
+          .select({
+            line1: orderShippingTable.line1,
+            line2: orderShippingTable.line2,
+            city: orderShippingTable.city,
+            state: orderShippingTable.state,
+            postalCode: orderShippingTable.postalCode,
+            country: orderShippingTable.country,
+            locationId: orderShippingTable.locationId,
+          })
+          .from(orderShippingTable)
+          .where(eq(orderShippingTable.orderId, order.id)),
+        this.db
+          .select({
+            method: orderPaymentsTable.method,
+            amountCents: orderPaymentsTable.amountCents,
+            amountTenderedCents: orderPaymentsTable.amountTenderedCents,
+          })
+          .from(orderPaymentsTable)
+          .where(eq(orderPaymentsTable.orderId, order.id))
+          .orderBy(orderPaymentsTable.id),
+      ]);
 
     const items = itemRows.map((item) => {
       const fulfilledQuantity = fulfilledByItem.get(item.id) ?? 0;
@@ -124,18 +149,14 @@ export class OrdersService {
 
     return {
       id: order.id,
+      channel: order.channel,
       customerName: order.customerName,
       customerEmail: order.customerEmail,
-      shippingLine1: order.shippingLine1,
-      shippingLine2: order.shippingLine2,
-      shippingCity: order.shippingCity,
-      shippingState: order.shippingState,
-      shippingPostalCode: order.shippingPostalCode,
-      shippingCountry: order.shippingCountry,
+      shipping: shipping ?? null,
+      payments,
       subtotalCents: order.subtotalCents,
       amountTotalCents: order.amountTotalCents,
       shippingCents: order.shippingCents,
-      shippingLocationId: order.shippingLocationId,
       fulfillmentStatus: deriveFulfillmentStatus(totalQuantity, totalFulfilled),
       createdAt: order.createdAt,
       items,

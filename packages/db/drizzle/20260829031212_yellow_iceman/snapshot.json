@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "9c8b3e57-abd4-4e6a-af5d-fdc537a951bd",
+  "id": "db19ddb6-0684-45d7-a683-7e1ab6976b6e",
   "prevIds": [
     "00000000-0000-0000-0000-000000000000"
   ],
@@ -25,6 +25,25 @@
         "adjustment"
       ],
       "name": "inventory_movement_reason",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "web",
+        "pos"
+      ],
+      "name": "order_channel",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "stripe",
+        "cash",
+        "card"
+      ],
+      "name": "order_payment_method",
       "entityType": "enums",
       "schema": "public"
     },
@@ -114,6 +133,12 @@
     },
     {
       "isRlsEnabled": false,
+      "name": "product_barcodes",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
       "name": "inventory_movements",
       "entityType": "tables",
       "schema": "public"
@@ -127,6 +152,12 @@
     {
       "isRlsEnabled": false,
       "name": "locations",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "pos_devices",
       "entityType": "tables",
       "schema": "public"
     },
@@ -157,6 +188,18 @@
     {
       "isRlsEnabled": false,
       "name": "order_items",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "order_payments",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "order_shipping",
       "entityType": "tables",
       "schema": "public"
     },
@@ -1314,6 +1357,67 @@
       "generated": null,
       "identity": {
         "type": "always",
+        "name": "product_barcodes_id_seq",
+        "increment": "1",
+        "startWith": "1",
+        "minValue": "1",
+        "maxValue": "2147483647",
+        "cache": 1,
+        "cycle": false
+      },
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "product_barcodes"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "variantId",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "product_barcodes"
+    },
+    {
+      "type": "varchar(64)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "code",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "product_barcodes"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "product_barcodes"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": {
+        "type": "always",
         "name": "inventory_movements_id_seq",
         "increment": "1",
         "startWith": "1",
@@ -1656,6 +1760,184 @@
       "entityType": "columns",
       "schema": "public",
       "table": "locations"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": {
+        "type": "always",
+        "name": "pos_devices_id_seq",
+        "increment": "1",
+        "startWith": "1",
+        "minValue": "1",
+        "maxValue": "2147483647",
+        "cache": 1,
+        "cycle": false
+      },
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "pos_devices"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "accountId",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "pos_devices"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "locationId",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "pos_devices"
+    },
+    {
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "name",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "pos_devices"
+    },
+    {
+      "type": "varchar(64)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "token",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "pos_devices"
+    },
+    {
+      "type": "varchar(12)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "pairing_code",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "pos_devices"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "pairing_expires_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "pos_devices"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "paired_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "pos_devices"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "last_seen_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "pos_devices"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "revoked_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "pos_devices"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "created_by_user_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "pos_devices"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "pos_devices"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "pos_devices"
     },
     {
       "type": "integer",
@@ -2218,6 +2500,258 @@
       "generated": null,
       "identity": {
         "type": "always",
+        "name": "order_payments_id_seq",
+        "increment": "1",
+        "startWith": "1",
+        "minValue": "1",
+        "maxValue": "2147483647",
+        "cache": 1,
+        "cycle": false
+      },
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "order_payments"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "orderId",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "order_payments"
+    },
+    {
+      "type": "order_payment_method",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "method",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "order_payments"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "amountCents",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "order_payments"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "amountTenderedCents",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "order_payments"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "stripeCheckoutSessionId",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "order_payments"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "stripePaymentIntentId",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "order_payments"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "order_payments"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": {
+        "type": "always",
+        "name": "order_shipping_id_seq",
+        "increment": "1",
+        "startWith": "1",
+        "minValue": "1",
+        "maxValue": "2147483647",
+        "cache": 1,
+        "cycle": false
+      },
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "order_shipping"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "orderId",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "order_shipping"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "line1",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "order_shipping"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "line2",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "order_shipping"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "city",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "order_shipping"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "state",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "order_shipping"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "postalCode",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "order_shipping"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "country",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "order_shipping"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "locationId",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "order_shipping"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "order_shipping"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": {
+        "type": "always",
         "name": "orders_id_seq",
         "increment": "1",
         "startWith": "1",
@@ -2245,9 +2779,48 @@
       "table": "orders"
     },
     {
+      "type": "order_channel",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'web'",
+      "generated": null,
+      "identity": null,
+      "name": "channel",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "orders"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "locationId",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "orders"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "posDeviceId",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "orders"
+    },
+    {
       "type": "text",
       "typeSchema": null,
-      "notNull": true,
+      "notNull": false,
       "dimensions": 0,
       "default": null,
       "generated": null,
@@ -2260,90 +2833,12 @@
     {
       "type": "text",
       "typeSchema": null,
-      "notNull": true,
+      "notNull": false,
       "dimensions": 0,
       "default": null,
       "generated": null,
       "identity": null,
       "name": "customerName",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "orders"
-    },
-    {
-      "type": "text",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "shippingLine1",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "orders"
-    },
-    {
-      "type": "text",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "shippingLine2",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "orders"
-    },
-    {
-      "type": "text",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "shippingCity",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "orders"
-    },
-    {
-      "type": "text",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "shippingState",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "orders"
-    },
-    {
-      "type": "text",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "shippingPostalCode",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "orders"
-    },
-    {
-      "type": "text",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "shippingCountry",
       "entityType": "columns",
       "schema": "public",
       "table": "orders"
@@ -2366,10 +2861,10 @@
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
-      "default": null,
+      "default": "0",
       "generated": null,
       "identity": null,
-      "name": "amountTotalCents",
+      "name": "taxCents",
       "entityType": "columns",
       "schema": "public",
       "table": "orders"
@@ -2390,38 +2885,12 @@
     {
       "type": "integer",
       "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "shippingLocationId",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "orders"
-    },
-    {
-      "type": "text",
-      "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "stripeCheckoutSessionId",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "orders"
-    },
-    {
-      "type": "text",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "stripePaymentIntentId",
+      "name": "amountTotalCents",
       "entityType": "columns",
       "schema": "public",
       "table": "orders"
@@ -3105,6 +3574,23 @@
       ],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
+      "name": "product_barcodes_variantId_product_variants_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "product_barcodes"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "variantId"
+      ],
+      "schemaTo": "public",
+      "tableTo": "product_variants",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
       "name": "inventory_movements_variantId_product_variants_id_fkey",
       "entityType": "fks",
       "schema": "public",
@@ -3211,6 +3697,57 @@
       "entityType": "fks",
       "schema": "public",
       "table": "locations"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "accountId"
+      ],
+      "schemaTo": "public",
+      "tableTo": "accounts",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "pos_devices_accountId_accounts_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "pos_devices"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "locationId"
+      ],
+      "schemaTo": "public",
+      "tableTo": "locations",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "RESTRICT",
+      "name": "pos_devices_locationId_locations_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "pos_devices"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "created_by_user_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "users",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "SET NULL",
+      "name": "pos_devices_created_by_user_id_users_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "pos_devices"
     },
     {
       "nameExplicit": false,
@@ -3385,6 +3922,57 @@
     {
       "nameExplicit": false,
       "columns": [
+        "orderId"
+      ],
+      "schemaTo": "public",
+      "tableTo": "orders",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "order_payments_orderId_orders_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "order_payments"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "orderId"
+      ],
+      "schemaTo": "public",
+      "tableTo": "orders",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "order_shipping_orderId_orders_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "order_shipping"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "locationId"
+      ],
+      "schemaTo": "public",
+      "tableTo": "locations",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "SET NULL",
+      "name": "order_shipping_locationId_locations_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "order_shipping"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
         "accountId"
       ],
       "schemaTo": "public",
@@ -3402,7 +3990,7 @@
     {
       "nameExplicit": false,
       "columns": [
-        "shippingLocationId"
+        "locationId"
       ],
       "schemaTo": "public",
       "tableTo": "locations",
@@ -3411,7 +3999,24 @@
       ],
       "onUpdate": "NO ACTION",
       "onDelete": "SET NULL",
-      "name": "orders_shippingLocationId_locations_id_fkey",
+      "name": "orders_locationId_locations_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "orders"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "posDeviceId"
+      ],
+      "schemaTo": "public",
+      "tableTo": "pos_devices",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "SET NULL",
+      "name": "orders_posDeviceId_pos_devices_id_fkey",
       "entityType": "fks",
       "schema": "public",
       "table": "orders"
@@ -3687,6 +4292,16 @@
         "id"
       ],
       "nameExplicit": false,
+      "name": "product_barcodes_pkey",
+      "schema": "public",
+      "table": "product_barcodes",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
       "name": "inventory_movements_pkey",
       "schema": "public",
       "table": "inventory_movements",
@@ -3710,6 +4325,16 @@
       "name": "locations_pkey",
       "schema": "public",
       "table": "locations",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "pos_devices_pkey",
+      "schema": "public",
+      "table": "pos_devices",
       "entityType": "pks"
     },
     {
@@ -3760,6 +4385,26 @@
       "name": "order_items_pkey",
       "schema": "public",
       "table": "order_items",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "order_payments_pkey",
+      "schema": "public",
+      "table": "order_payments",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "order_shipping_pkey",
+      "schema": "public",
+      "table": "order_shipping",
       "entityType": "pks"
     },
     {
@@ -3901,6 +4546,17 @@
     {
       "nameExplicit": false,
       "columns": [
+        "orderId"
+      ],
+      "nullsNotDistinct": false,
+      "name": "order_shipping_orderId_unique",
+      "entityType": "uniques",
+      "schema": "public",
+      "table": "order_shipping"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
         "accountId",
         "name"
       ],
@@ -3968,6 +4624,28 @@
     {
       "nameExplicit": false,
       "columns": [
+        "code"
+      ],
+      "nullsNotDistinct": false,
+      "name": "product_barcodes_code_key",
+      "schema": "public",
+      "table": "product_barcodes",
+      "entityType": "uniques"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "token"
+      ],
+      "nullsNotDistinct": false,
+      "name": "pos_devices_token_key",
+      "schema": "public",
+      "table": "pos_devices",
+      "entityType": "uniques"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
         "token"
       ],
       "nullsNotDistinct": false,
@@ -3982,9 +4660,9 @@
         "stripeCheckoutSessionId"
       ],
       "nullsNotDistinct": false,
-      "name": "orders_stripeCheckoutSessionId_key",
+      "name": "order_payments_stripeCheckoutSessionId_key",
       "schema": "public",
-      "table": "orders",
+      "table": "order_payments",
       "entityType": "uniques"
     },
     {

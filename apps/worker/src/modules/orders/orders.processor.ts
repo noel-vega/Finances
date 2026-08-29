@@ -12,6 +12,8 @@ import {
   inventoryMovementsTable,
   inventoryTable,
   orderItemsTable,
+  orderPaymentsTable,
+  orderShippingTable,
   ordersTable,
   productVariantsTable,
   sql,
@@ -70,8 +72,9 @@ export class OrdersProcessor extends WorkerHost {
     // duplicate Stripe delivery racing a job that's still in flight
     const [existing] = await this.db
       .select({ id: ordersTable.id, confirmationEmailQueuedAt: ordersTable.confirmationEmailQueuedAt })
-      .from(ordersTable)
-      .where(eq(ordersTable.stripeCheckoutSessionId, data.stripeCheckoutSessionId));
+      .from(orderPaymentsTable)
+      .innerJoin(ordersTable, eq(ordersTable.id, orderPaymentsTable.orderId))
+      .where(eq(orderPaymentsTable.stripeCheckoutSessionId, data.stripeCheckoutSessionId));
     if (existing) {
       // the order itself is done, but if the worker died between the
       // transaction below committing and the email enqueueing (BullMQ
@@ -112,23 +115,34 @@ export class OrdersProcessor extends WorkerHost {
         .insert(ordersTable)
         .values({
           accountId: data.accountId,
+          channel: 'web',
           customerEmail: data.customerEmail,
           customerName: data.customerName,
-          shippingLine1: data.shippingLine1,
-          shippingLine2: data.shippingLine2,
-          shippingCity: data.shippingCity,
-          shippingState: data.shippingState,
-          shippingPostalCode: data.shippingPostalCode,
-          shippingCountry: data.shippingCountry,
           subtotalCents: data.subtotalCents,
           amountTotalCents: data.amountTotalCents,
           shippingCents: data.shippingCents,
-          shippingLocationId: data.shippingLocationId,
-          stripeCheckoutSessionId: data.stripeCheckoutSessionId,
-          stripePaymentIntentId: data.stripePaymentIntentId,
         })
         .returning();
       orderId = order.id;
+
+      await tx.insert(orderShippingTable).values({
+        orderId: order.id,
+        line1: data.shippingLine1,
+        line2: data.shippingLine2,
+        city: data.shippingCity,
+        state: data.shippingState,
+        postalCode: data.shippingPostalCode,
+        country: data.shippingCountry,
+        locationId: data.shippingLocationId,
+      });
+
+      await tx.insert(orderPaymentsTable).values({
+        orderId: order.id,
+        method: 'stripe',
+        amountCents: data.amountTotalCents,
+        stripeCheckoutSessionId: data.stripeCheckoutSessionId,
+        stripePaymentIntentId: data.stripePaymentIntentId,
+      });
 
       for (const item of data.items) {
         // snapshotted so a later label purchase doesn't depend on the

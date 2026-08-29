@@ -5,6 +5,7 @@ import { DatabaseModule } from './database/database.module';
 import { PosAuthModule } from './modules/pos-auth/pos-auth.module';
 import { PairingModule } from './modules/pairing/pairing.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
+import { OrdersModule } from './modules/orders/orders.module';
 import { HealthModule } from './modules/health/health.module';
 
 @Module({
@@ -13,6 +14,7 @@ import { HealthModule } from './modules/health/health.module';
     PosAuthModule,
     PairingModule,
     CatalogModule,
+    OrdersModule,
     HealthModule,
   ],
   controllers: [AppController],

@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { type ColumnDef, type Row } from "@tanstack/react-table";
 import { format } from "date-fns";
 import type { OrderListItem } from "admin-sdk";
+import { Badge } from "ui/badge";
 import { getListOrdersQueryOptions } from "../orders.hooks";
 import { formatCents } from "../../../lib/currency";
 import { DataTable } from "../../../components/data-table";
@@ -14,16 +15,28 @@ const columns: ColumnDef<OrderListItem>[] = [
     header: "ID",
   },
   {
+    accessorKey: "channel",
+    header: "Channel",
+    cell: ({ row }) => (
+      <Badge variant="outline">
+        {row.original.channel === "pos" ? "In-store" : "Online"}
+      </Badge>
+    ),
+  },
+  {
     accessorKey: "customerName",
     header: "Customer",
-    cell: ({ row }) => (
-      <div>
-        <div>{row.original.customerName}</div>
-        <div className="text-xs text-muted-foreground">
-          {row.original.customerEmail}
+    cell: ({ row }) =>
+      row.original.customerName || row.original.customerEmail ? (
+        <div>
+          <div>{row.original.customerName ?? "—"}</div>
+          <div className="text-xs text-muted-foreground">
+            {row.original.customerEmail}
+          </div>
         </div>
-      </div>
-    ),
+      ) : (
+        <span className="text-muted-foreground">Walk-in</span>
+      ),
   },
   {
     accessorKey: "itemCount",

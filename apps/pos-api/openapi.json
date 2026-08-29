@@ -200,6 +200,42 @@
         ]
       }
     },
+    "/pos/orders": {
+      "post": {
+        "operationId": "OrdersController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PosOrder"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "PosDevice-auth": []
+          }
+        ],
+        "tags": [
+          "orders"
+        ]
+      }
+    },
     "/health": {
       "get": {
         "operationId": "HealthController_check",
@@ -650,6 +686,158 @@
           "locationId",
           "locationName",
           "deviceName"
+        ]
+      },
+      "CreateOrderItemDto": {
+        "type": "object",
+        "properties": {
+          "variantId": {
+            "type": "number"
+          },
+          "quantity": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "variantId",
+          "quantity"
+        ]
+      },
+      "CreateOrderPaymentDto": {
+        "type": "object",
+        "properties": {
+          "method": {
+            "type": "string",
+            "enum": [
+              "cash",
+              "card"
+            ]
+          },
+          "amountTenderedCents": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "method"
+        ]
+      },
+      "CreateOrderDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateOrderItemDto"
+            }
+          },
+          "payment": {
+            "$ref": "#/components/schemas/CreateOrderPaymentDto"
+          }
+        },
+        "required": [
+          "items",
+          "payment"
+        ]
+      },
+      "PosOrderItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "variantId": {
+            "type": "number",
+            "nullable": true
+          },
+          "productName": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string",
+            "nullable": true
+          },
+          "optionsLabel": {
+            "type": "string",
+            "nullable": true
+          },
+          "priceCents": {
+            "type": "number"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "lineCents": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "variantId",
+          "productName",
+          "sku",
+          "optionsLabel",
+          "priceCents",
+          "quantity",
+          "lineCents"
+        ]
+      },
+      "PosOrder": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "pos"
+            ]
+          },
+          "subtotalCents": {
+            "type": "number"
+          },
+          "taxCents": {
+            "type": "number"
+          },
+          "totalCents": {
+            "type": "number"
+          },
+          "paymentMethod": {
+            "type": "string",
+            "enum": [
+              "cash",
+              "card"
+            ]
+          },
+          "amountTenderedCents": {
+            "type": "number",
+            "nullable": true
+          },
+          "changeCents": {
+            "type": "number",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PosOrderItem"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "channel",
+          "subtotalCents",
+          "taxCents",
+          "totalCents",
+          "paymentMethod",
+          "amountTenderedCents",
+          "changeCents",
+          "createdAt",
+          "items"
         ]
       }
     }

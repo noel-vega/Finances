@@ -3,6 +3,44 @@ import { Fulfillment } from '../../fulfillments/entities/fulfillment.entity';
 
 export type FulfillmentStatus = 'unfulfilled' | 'partially_fulfilled' | 'fulfilled';
 
+export type OrderChannel = 'web' | 'pos';
+
+class OrderShippingInfo {
+  @ApiProperty()
+  line1!: string;
+
+  @ApiProperty({ type: 'string', nullable: true })
+  line2!: string | null;
+
+  @ApiProperty()
+  city!: string;
+
+  @ApiProperty({ type: 'string', nullable: true })
+  state!: string | null;
+
+  @ApiProperty()
+  postalCode!: string;
+
+  @ApiProperty()
+  country!: string;
+
+  @ApiProperty({ type: Number, nullable: true })
+  locationId!: number | null;
+}
+
+class OrderPayment {
+  @ApiProperty({ enum: ['stripe', 'cash', 'card'] })
+  method!: 'stripe' | 'cash' | 'card';
+
+  @ApiProperty({ type: Number })
+  amountCents!: number;
+
+  // cash tenders only — what the customer handed over; change due is
+  // amountTenderedCents - amountCents
+  @ApiProperty({ type: Number, nullable: true })
+  amountTenderedCents!: number | null;
+}
+
 class OrderItemAllocation {
   @ApiProperty({ type: Number })
   locationId!: number;
@@ -54,29 +92,21 @@ export class OrderDetail {
   @ApiProperty({ type: Number })
   id!: number;
 
-  @ApiProperty()
-  customerName!: string;
-
-  @ApiProperty()
-  customerEmail!: string;
-
-  @ApiProperty()
-  shippingLine1!: string;
+  @ApiProperty({ enum: ['web', 'pos'] })
+  channel!: OrderChannel;
 
   @ApiProperty({ type: 'string', nullable: true })
-  shippingLine2!: string | null;
-
-  @ApiProperty()
-  shippingCity!: string;
+  customerName!: string | null;
 
   @ApiProperty({ type: 'string', nullable: true })
-  shippingState!: string | null;
+  customerEmail!: string | null;
 
-  @ApiProperty()
-  shippingPostalCode!: string;
+  // present for web orders, null for in-person POS sales
+  @ApiProperty({ type: () => OrderShippingInfo, nullable: true })
+  shipping!: OrderShippingInfo | null;
 
-  @ApiProperty()
-  shippingCountry!: string;
+  @ApiProperty({ type: () => [OrderPayment] })
+  payments!: OrderPayment[];
 
   @ApiProperty({ type: Number })
   subtotalCents!: number;
@@ -86,9 +116,6 @@ export class OrderDetail {
 
   @ApiProperty({ type: Number })
   shippingCents!: number;
-
-  @ApiProperty({ type: Number, nullable: true })
-  shippingLocationId!: number | null;
 
   // derived from items[].fulfilledQuantity vs .quantity at read time, not
   // stored — can't drift out of sync with the fulfillments that back it

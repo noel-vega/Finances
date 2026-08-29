@@ -12,7 +12,7 @@ import {
   eq,
   isNotNull,
   locationsTable,
-  ordersTable,
+  orderPaymentsTable,
   productVariantsTable,
   stripeAccountsTable,
   type db as Db,
@@ -295,11 +295,12 @@ export class CheckoutService {
     const cartToken = session.metadata?.cartToken;
     if (!accountId || !cartToken) return;
 
-    // idempotency — Stripe retries webhooks on non-2xx/timeouts
+    // idempotency — Stripe retries webhooks on non-2xx/timeouts. The
+    // checkout session id lives on the order's payment row now.
     const [existing] = await this.db
-      .select({ id: ordersTable.id })
-      .from(ordersTable)
-      .where(eq(ordersTable.stripeCheckoutSessionId, session.id));
+      .select({ id: orderPaymentsTable.id })
+      .from(orderPaymentsTable)
+      .where(eq(orderPaymentsTable.stripeCheckoutSessionId, session.id));
     if (existing) return;
 
     // the cart, not Stripe's line items, is the source of truth for what

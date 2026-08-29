@@ -10,6 +10,7 @@ import {
   inArray,
   locationsTable,
   orderItemsTable,
+  orderShippingTable,
   ordersTable,
   type db as Db,
 } from 'db';
@@ -36,7 +37,10 @@ export class FulfillmentsService {
   ) {}
 
   async getRates(dto: GetFulfillmentRatesDto, accountId: number): Promise<ShippingRate[]> {
-    const { order, location, totalWeightOz } = await this.resolveRequest(dto, accountId);
+    const { order, shipping, location, totalWeightOz } = await this.resolveRequest(
+      dto,
+      accountId,
+    );
 
     const [account] = await this.db
       .select({ phone: accountsTable.phone, email: accountsTable.email })
@@ -57,13 +61,13 @@ export class FulfillmentsService {
           email: account?.email,
         },
         addressTo: {
-          name: order.customerName,
-          street1: order.shippingLine1,
-          street2: order.shippingLine2 ?? undefined,
-          city: order.shippingCity,
-          state: order.shippingState ?? undefined,
-          zip: order.shippingPostalCode,
-          country: order.shippingCountry,
+          name: order.customerName ?? undefined,
+          street1: shipping.line1,
+          street2: shipping.line2 ?? undefined,
+          city: shipping.city,
+          state: shipping.state ?? undefined,
+          zip: shipping.postalCode,
+          country: shipping.country,
         },
         parcels: [
           {
@@ -206,6 +210,14 @@ export class FulfillmentsService {
       .where(and(eq(ordersTable.id, dto.orderId), eq(ordersTable.accountId, accountId)));
     if (!order) throw new NotFoundException('Order not found');
 
+    const [shipping] = await this.db
+      .select()
+      .from(orderShippingTable)
+      .where(eq(orderShippingTable.orderId, order.id));
+    if (!shipping) {
+      throw new BadRequestException('This order has no shipping address to fulfill');
+    }
+
     const [location] = await this.db
       .select()
       .from(locationsTable)
@@ -245,6 +257,6 @@ export class FulfillmentsService {
       totalWeightOz += (item.weightOz ?? DEFAULT_ITEM_WEIGHT_OZ) * requested.quantity;
     }
 
-    return { order, location, totalWeightOz };
+    return { order, shipping, location, totalWeightOz };
   }
 }

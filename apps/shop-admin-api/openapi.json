@@ -3630,11 +3630,20 @@
           "id": {
             "type": "number"
           },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "web",
+              "pos"
+            ]
+          },
           "customerName": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "customerEmail": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "itemCount": {
             "type": "number"
@@ -3657,6 +3666,7 @@
         },
         "required": [
           "id",
+          "channel",
           "customerName",
           "customerEmail",
           "itemCount",
@@ -3689,6 +3699,69 @@
           "total",
           "limit",
           "offset"
+        ]
+      },
+      "OrderShippingInfo": {
+        "type": "object",
+        "properties": {
+          "line1": {
+            "type": "string"
+          },
+          "line2": {
+            "type": "string",
+            "nullable": true
+          },
+          "city": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "nullable": true
+          },
+          "postalCode": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "number",
+            "nullable": true
+          }
+        },
+        "required": [
+          "line1",
+          "line2",
+          "city",
+          "state",
+          "postalCode",
+          "country",
+          "locationId"
+        ]
+      },
+      "OrderPayment": {
+        "type": "object",
+        "properties": {
+          "method": {
+            "type": "string",
+            "enum": [
+              "stripe",
+              "cash",
+              "card"
+            ]
+          },
+          "amountCents": {
+            "type": "number"
+          },
+          "amountTenderedCents": {
+            "type": "number",
+            "nullable": true
+          }
+        },
+        "required": [
+          "method",
+          "amountCents",
+          "amountTenderedCents"
         ]
       },
       "OrderItemAllocation": {
@@ -3844,31 +3917,35 @@
           "id": {
             "type": "number"
           },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "web",
+              "pos"
+            ]
+          },
           "customerName": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "customerEmail": {
-            "type": "string"
-          },
-          "shippingLine1": {
-            "type": "string"
-          },
-          "shippingLine2": {
             "type": "string",
             "nullable": true
           },
-          "shippingCity": {
-            "type": "string"
+          "shipping": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OrderShippingInfo"
+              }
+            ]
           },
-          "shippingState": {
-            "type": "string",
-            "nullable": true
-          },
-          "shippingPostalCode": {
-            "type": "string"
-          },
-          "shippingCountry": {
-            "type": "string"
+          "payments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderPayment"
+            }
           },
           "subtotalCents": {
             "type": "number"
@@ -3878,10 +3955,6 @@
           },
           "shippingCents": {
             "type": "number"
-          },
-          "shippingLocationId": {
-            "type": "number",
-            "nullable": true
           },
           "fulfillmentStatus": {
             "type": "string",
@@ -3910,18 +3983,14 @@
         },
         "required": [
           "id",
+          "channel",
           "customerName",
           "customerEmail",
-          "shippingLine1",
-          "shippingLine2",
-          "shippingCity",
-          "shippingState",
-          "shippingPostalCode",
-          "shippingCountry",
+          "shipping",
+          "payments",
           "subtotalCents",
           "amountTotalCents",
           "shippingCents",
-          "shippingLocationId",
           "fulfillmentStatus",
           "createdAt",
           "items",

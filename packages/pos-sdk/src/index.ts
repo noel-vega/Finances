@@ -7,6 +7,9 @@ export type PosCatalogVariant = components["schemas"]["PosCatalogVariant"];
 export type PosScanResult = components["schemas"]["PosScanResult"];
 export type PosSession = components["schemas"]["PosSession"];
 export type PairingResult = components["schemas"]["PairingResult"];
+export type PosOrder = components["schemas"]["PosOrder"];
+export type PosOrderItem = components["schemas"]["PosOrderItem"];
+export type CreateOrderPayload = components["schemas"]["CreateOrderDto"];
 
 const DEVICE_TOKEN_HEADER = "x-pos-device-token";
 
@@ -68,6 +71,15 @@ export class PosClient {
       const { data } = await this.client.GET("/pos/catalog/{id}", {
         params: { path: { id } },
       });
+      return data;
+    },
+  };
+
+  orders = {
+    create: async (
+      body: CreateOrderPayload,
+    ): Promise<PosOrder | undefined> => {
+      const { data } = await this.client.POST("/pos/orders", { body });
       return data;
     },
   };

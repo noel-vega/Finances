@@ -5,6 +5,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import type { OrderDetail, ShippingRate } from "admin-sdk";
 import { ArrowLeftIcon, LoaderCircleIcon, TruckIcon } from "lucide-react";
 import { Button } from "ui/button";
+import { Badge } from "ui/badge";
 import { Separator } from "ui/separator";
 import { cn } from "ui/utils";
 import {
@@ -28,6 +29,12 @@ import { FulfillmentStatusBadge } from "../components/fulfillment-status-badge";
 
 type OrderItem = OrderDetail["items"][number];
 type OrderFulfillment = OrderDetail["fulfillments"][number];
+
+const PAYMENT_METHOD_LABEL: Record<OrderDetail["payments"][number]["method"], string> = {
+  stripe: "Card (online)",
+  card: "Card",
+  cash: "Cash",
+};
 
 const columns: ColumnDef<OrderItem>[] = [
   {
@@ -384,7 +391,12 @@ export function OrderView({ id }: { id: number }) {
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-semibold">Order #{data.id}</h1>
-              <FulfillmentStatusBadge status={data.fulfillmentStatus} />
+              <Badge variant="outline">
+                {data.channel === "pos" ? "In-store" : "Online"}
+              </Badge>
+              {data.shipping && (
+                <FulfillmentStatusBadge status={data.fulfillmentStatus} />
+              )}
             </div>
             <p className="text-sm text-muted-foreground">
               Placed {format(new Date(data.createdAt), "MM/dd/yyyy hh:mm a")}
@@ -396,18 +408,35 @@ export function OrderView({ id }: { id: number }) {
       <div className="grid grid-cols-2 gap-8 mb-8 text-sm">
         <div>
           <h2 className="font-medium mb-1">Customer</h2>
-          <p>{data.customerName}</p>
-          <p className="text-muted-foreground">{data.customerEmail}</p>
+          {data.customerName || data.customerEmail ? (
+            <>
+              <p>{data.customerName ?? "—"}</p>
+              <p className="text-muted-foreground">{data.customerEmail}</p>
+            </>
+          ) : (
+            <p className="text-muted-foreground">Walk-in customer</p>
+          )}
         </div>
         <div>
-          <h2 className="font-medium mb-1">Shipping address</h2>
-          <p>{data.shippingLine1}</p>
-          {data.shippingLine2 && <p>{data.shippingLine2}</p>}
-          <p>
-            {data.shippingCity}
-            {data.shippingState ? `, ${data.shippingState}` : ""} {data.shippingPostalCode}
-          </p>
-          <p>{data.shippingCountry}</p>
+          <h2 className="font-medium mb-1">
+            {data.shipping ? "Shipping address" : "Fulfillment"}
+          </h2>
+          {data.shipping ? (
+            <>
+              <p>{data.shipping.line1}</p>
+              {data.shipping.line2 && <p>{data.shipping.line2}</p>}
+              <p>
+                {data.shipping.city}
+                {data.shipping.state ? `, ${data.shipping.state}` : ""}{" "}
+                {data.shipping.postalCode}
+              </p>
+              <p>{data.shipping.country}</p>
+            </>
+          ) : (
+            <p className="text-muted-foreground">
+              In-store sale — carried out, no shipping
+            </p>
+          )}
         </div>
       </div>
 
@@ -417,16 +446,41 @@ export function OrderView({ id }: { id: number }) {
 
       <div className="flex justify-end gap-8 text-sm">
         <span className="text-muted-foreground">Subtotal: {formatCents(data.subtotalCents)}</span>
-        <span className="text-muted-foreground">Shipping: {formatCents(data.shippingCents)}</span>
+        {data.shipping && (
+          <span className="text-muted-foreground">
+            Shipping: {formatCents(data.shippingCents)}
+          </span>
+        )}
         <span className="font-medium">Total: {formatCents(data.amountTotalCents)}</span>
       </div>
 
-      <Separator className="my-4" />
+      {data.payments.length > 0 && (
+        <>
+          <Separator className="my-4" />
+          <div className="text-sm">
+            <h2 className="font-medium mb-1">Payment</h2>
+            {data.payments.map((payment, i) => (
+              <p key={i} className="text-muted-foreground">
+                {PAYMENT_METHOD_LABEL[payment.method]}: {formatCents(payment.amountCents)}
+                {payment.amountTenderedCents != null &&
+                  ` — tendered ${formatCents(payment.amountTenderedCents)}, change ${formatCents(
+                    payment.amountTenderedCents - payment.amountCents,
+                  )}`}
+              </p>
+            ))}
+          </div>
+        </>
+      )}
 
-      <div className="space-y-6">
-        <ExistingFulfillments order={data} />
-        <CreateFulfillmentFlow order={data} />
-      </div>
+      {data.shipping && (
+        <>
+          <Separator className="my-4" />
+          <div className="space-y-6">
+            <ExistingFulfillments order={data} />
+            <CreateFulfillmentFlow order={data} />
+          </div>
+        </>
+      )}
     </div>
   );
 }

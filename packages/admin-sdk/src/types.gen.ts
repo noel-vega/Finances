@@ -1080,8 +1080,10 @@ export interface components {
         };
         OrderListItem: {
             id: number;
-            customerName: string;
-            customerEmail: string;
+            /** @enum {string} */
+            channel: "web" | "pos";
+            customerName: string | null;
+            customerEmail: string | null;
             itemCount: number;
             amountTotalCents: number;
             /** @enum {string} */
@@ -1094,6 +1096,21 @@ export interface components {
             total: number;
             limit: number;
             offset: number;
+        };
+        OrderShippingInfo: {
+            line1: string;
+            line2: string | null;
+            city: string;
+            state: string | null;
+            postalCode: string;
+            country: string;
+            locationId: number | null;
+        };
+        OrderPayment: {
+            /** @enum {string} */
+            method: "stripe" | "cash" | "card";
+            amountCents: number;
+            amountTenderedCents: number | null;
         };
         OrderItemAllocation: {
             locationId: number;
@@ -1132,18 +1149,15 @@ export interface components {
         };
         OrderDetail: {
             id: number;
-            customerName: string;
-            customerEmail: string;
-            shippingLine1: string;
-            shippingLine2: string | null;
-            shippingCity: string;
-            shippingState: string | null;
-            shippingPostalCode: string;
-            shippingCountry: string;
+            /** @enum {string} */
+            channel: "web" | "pos";
+            customerName: string | null;
+            customerEmail: string | null;
+            shipping: components["schemas"]["OrderShippingInfo"] | null;
+            payments: components["schemas"]["OrderPayment"][];
             subtotalCents: number;
             amountTotalCents: number;
             shippingCents: number;
-            shippingLocationId: number | null;
             /** @enum {string} */
             fulfillmentStatus: "unfulfilled" | "partially_fulfilled" | "fulfilled";
             /** Format: date-time */

@@ -1,5 +1,7 @@
 CREATE TYPE "product_status" AS ENUM('draft', 'active', 'archived');--> statement-breakpoint
 CREATE TYPE "inventory_movement_reason" AS ENUM('received', 'sold', 'return', 'damaged', 'adjustment');--> statement-breakpoint
+CREATE TYPE "order_channel" AS ENUM('web', 'pos');--> statement-breakpoint
+CREATE TYPE "order_payment_method" AS ENUM('stripe', 'cash', 'card');--> statement-breakpoint
 CREATE TABLE "accounts" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "accounts_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"name" text NOT NULL,
@@ -126,6 +128,13 @@ CREATE TABLE "product_images" (
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "product_barcodes" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "product_barcodes_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"variantId" integer NOT NULL,
+	"code" varchar(64) NOT NULL UNIQUE,
+	"created_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "inventory_movements" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "inventory_movements_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"variantId" integer NOT NULL,
@@ -160,6 +169,22 @@ CREATE TABLE "locations" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "locations_accountId_name_unique" UNIQUE("accountId","name")
+);
+--> statement-breakpoint
+CREATE TABLE "pos_devices" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "pos_devices_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"accountId" integer NOT NULL,
+	"locationId" integer NOT NULL,
+	"name" varchar(255) NOT NULL,
+	"token" varchar(64) UNIQUE,
+	"pairing_code" varchar(12),
+	"pairing_expires_at" timestamp,
+	"paired_at" timestamp,
+	"last_seen_at" timestamp,
+	"revoked_at" timestamp,
+	"created_by_user_id" integer,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "cart_items" (
@@ -217,23 +242,42 @@ CREATE TABLE "order_items" (
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "order_payments" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "order_payments_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"orderId" integer NOT NULL,
+	"method" "order_payment_method" NOT NULL,
+	"amountCents" integer NOT NULL,
+	"amountTenderedCents" integer,
+	"stripeCheckoutSessionId" text UNIQUE,
+	"stripePaymentIntentId" text,
+	"created_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "order_shipping" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "order_shipping_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"orderId" integer NOT NULL UNIQUE,
+	"line1" text NOT NULL,
+	"line2" text,
+	"city" text NOT NULL,
+	"state" text,
+	"postalCode" text NOT NULL,
+	"country" text NOT NULL,
+	"locationId" integer,
+	"created_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "orders" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "orders_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"accountId" integer NOT NULL,
-	"customerEmail" text NOT NULL,
-	"customerName" text NOT NULL,
-	"shippingLine1" text NOT NULL,
-	"shippingLine2" text,
-	"shippingCity" text NOT NULL,
-	"shippingState" text,
-	"shippingPostalCode" text NOT NULL,
-	"shippingCountry" text NOT NULL,
+	"channel" "order_channel" DEFAULT 'web'::"order_channel" NOT NULL,
+	"locationId" integer,
+	"posDeviceId" integer,
+	"customerEmail" text,
+	"customerName" text,
 	"subtotalCents" integer NOT NULL,
-	"amountTotalCents" integer NOT NULL,
+	"taxCents" integer DEFAULT 0 NOT NULL,
 	"shippingCents" integer DEFAULT 0 NOT NULL,
-	"shippingLocationId" integer,
-	"stripeCheckoutSessionId" text NOT NULL UNIQUE,
-	"stripePaymentIntentId" text,
+	"amountTotalCents" integer NOT NULL,
 	"confirmation_email_queued_at" timestamp,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
@@ -298,6 +342,7 @@ ALTER TABLE "variant_option_values" ADD CONSTRAINT "variant_option_values_varian
 ALTER TABLE "variant_option_values" ADD CONSTRAINT "variant_option_values_UT3bgWWxRC6D_fkey" FOREIGN KEY ("optionValueId") REFERENCES "product_option_values"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "product_images" ADD CONSTRAINT "product_images_productId_products_id_fkey" FOREIGN KEY ("productId") REFERENCES "products"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "product_images" ADD CONSTRAINT "product_images_variantId_product_variants_id_fkey" FOREIGN KEY ("variantId") REFERENCES "product_variants"("id") ON DELETE CASCADE;--> statement-breakpoint
+ALTER TABLE "product_barcodes" ADD CONSTRAINT "product_barcodes_variantId_product_variants_id_fkey" FOREIGN KEY ("variantId") REFERENCES "product_variants"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "inventory_movements" ADD CONSTRAINT "inventory_movements_variantId_product_variants_id_fkey" FOREIGN KEY ("variantId") REFERENCES "product_variants"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "inventory_movements" ADD CONSTRAINT "inventory_movements_locationId_locations_id_fkey" FOREIGN KEY ("locationId") REFERENCES "locations"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "inventory_movements" ADD CONSTRAINT "inventory_movements_orderItemId_order_items_id_fkey" FOREIGN KEY ("orderItemId") REFERENCES "order_items"("id") ON DELETE SET NULL;--> statement-breakpoint
@@ -305,6 +350,9 @@ ALTER TABLE "inventory_movements" ADD CONSTRAINT "inventory_movements_createdByU
 ALTER TABLE "inventory" ADD CONSTRAINT "inventory_variantId_product_variants_id_fkey" FOREIGN KEY ("variantId") REFERENCES "product_variants"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "inventory" ADD CONSTRAINT "inventory_locationId_locations_id_fkey" FOREIGN KEY ("locationId") REFERENCES "locations"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "locations" ADD CONSTRAINT "locations_accountId_accounts_id_fkey" FOREIGN KEY ("accountId") REFERENCES "accounts"("id") ON DELETE CASCADE;--> statement-breakpoint
+ALTER TABLE "pos_devices" ADD CONSTRAINT "pos_devices_accountId_accounts_id_fkey" FOREIGN KEY ("accountId") REFERENCES "accounts"("id") ON DELETE CASCADE;--> statement-breakpoint
+ALTER TABLE "pos_devices" ADD CONSTRAINT "pos_devices_locationId_locations_id_fkey" FOREIGN KEY ("locationId") REFERENCES "locations"("id") ON DELETE RESTRICT;--> statement-breakpoint
+ALTER TABLE "pos_devices" ADD CONSTRAINT "pos_devices_created_by_user_id_users_id_fkey" FOREIGN KEY ("created_by_user_id") REFERENCES "users"("id") ON DELETE SET NULL;--> statement-breakpoint
 ALTER TABLE "cart_items" ADD CONSTRAINT "cart_items_cartId_carts_id_fkey" FOREIGN KEY ("cartId") REFERENCES "carts"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "cart_items" ADD CONSTRAINT "cart_items_variantId_product_variants_id_fkey" FOREIGN KEY ("variantId") REFERENCES "product_variants"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "carts" ADD CONSTRAINT "carts_accountId_accounts_id_fkey" FOREIGN KEY ("accountId") REFERENCES "accounts"("id") ON DELETE CASCADE;--> statement-breakpoint
@@ -315,8 +363,12 @@ ALTER TABLE "fulfillments" ADD CONSTRAINT "fulfillments_orderId_orders_id_fkey" 
 ALTER TABLE "fulfillments" ADD CONSTRAINT "fulfillments_locationId_locations_id_fkey" FOREIGN KEY ("locationId") REFERENCES "locations"("id");--> statement-breakpoint
 ALTER TABLE "order_items" ADD CONSTRAINT "order_items_orderId_orders_id_fkey" FOREIGN KEY ("orderId") REFERENCES "orders"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "order_items" ADD CONSTRAINT "order_items_variantId_product_variants_id_fkey" FOREIGN KEY ("variantId") REFERENCES "product_variants"("id") ON DELETE SET NULL;--> statement-breakpoint
+ALTER TABLE "order_payments" ADD CONSTRAINT "order_payments_orderId_orders_id_fkey" FOREIGN KEY ("orderId") REFERENCES "orders"("id") ON DELETE CASCADE;--> statement-breakpoint
+ALTER TABLE "order_shipping" ADD CONSTRAINT "order_shipping_orderId_orders_id_fkey" FOREIGN KEY ("orderId") REFERENCES "orders"("id") ON DELETE CASCADE;--> statement-breakpoint
+ALTER TABLE "order_shipping" ADD CONSTRAINT "order_shipping_locationId_locations_id_fkey" FOREIGN KEY ("locationId") REFERENCES "locations"("id") ON DELETE SET NULL;--> statement-breakpoint
 ALTER TABLE "orders" ADD CONSTRAINT "orders_accountId_accounts_id_fkey" FOREIGN KEY ("accountId") REFERENCES "accounts"("id") ON DELETE CASCADE;--> statement-breakpoint
-ALTER TABLE "orders" ADD CONSTRAINT "orders_shippingLocationId_locations_id_fkey" FOREIGN KEY ("shippingLocationId") REFERENCES "locations"("id") ON DELETE SET NULL;--> statement-breakpoint
+ALTER TABLE "orders" ADD CONSTRAINT "orders_locationId_locations_id_fkey" FOREIGN KEY ("locationId") REFERENCES "locations"("id") ON DELETE SET NULL;--> statement-breakpoint
+ALTER TABLE "orders" ADD CONSTRAINT "orders_posDeviceId_pos_devices_id_fkey" FOREIGN KEY ("posDeviceId") REFERENCES "pos_devices"("id") ON DELETE SET NULL;--> statement-breakpoint
 ALTER TABLE "stripe_accounts" ADD CONSTRAINT "stripe_accounts_accountId_accounts_id_fkey" FOREIGN KEY ("accountId") REFERENCES "accounts"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "role_permissions" ADD CONSTRAINT "role_permissions_roleId_roles_id_fkey" FOREIGN KEY ("roleId") REFERENCES "roles"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "role_permissions" ADD CONSTRAINT "role_permissions_permissionId_permissions_id_fkey" FOREIGN KEY ("permissionId") REFERENCES "permissions"("id") ON DELETE CASCADE;--> statement-breakpoint
