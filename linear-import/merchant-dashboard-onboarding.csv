@@ -1,0 +1,148 @@
+Title,Description,Priority,Labels,Project,Milestone
+Regenerate `routeTree.gen.ts`; delete stale `src/routes/index.tsx` + `src/routes/inventory.tsx` + top-level dupes,"Milestone: M1 — Fix what's half-built
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"bug,admin,tech-debt",Merchant dashboard & onboarding,M1
+"Fix `vite.config.ts` port (says 3001, actually 5000)","Milestone: M1 — Fix what's half-built
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"chore,admin",Merchant dashboard & onboarding,M1
+Remove the commented-out pre-SDK block in `lib/admin-api-client.ts` + `console.log`s in `__root.tsx`,"Milestone: M1 — Fix what's half-built
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"tech-debt,admin",Merchant dashboard & onboarding,M1
+Router-level `pendingComponent` (skeletons) on route groups,"Milestone: M1 — Fix what's half-built
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,admin",Merchant dashboard & onboarding,M1
+Router-level `errorComponent` + shared error boundary,"Milestone: M1 — Fix what's half-built
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,admin",Merchant dashboard & onboarding,M1
+One mutation-error surfacing pattern (toast + inline) applied across feature hooks,"Milestone: M1 — Fix what's half-built
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,admin",Merchant dashboard & onboarding,M1
+admin-api: paginate + search `GET /customers`,"Milestone: M1 — Fix what's half-built
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,admin,api",Merchant dashboard & onboarding,M1
+admin-api: paginate + search + status filter `GET /products`,"Milestone: M1 — Fix what's half-built
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,admin,api",Merchant dashboard & onboarding,M1
+admin-api: paginate + search `GET /users`,"Milestone: M1 — Fix what's half-built
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,admin,api",Merchant dashboard & onboarding,M1
+admin-api: paginate + filter `GET /inventory` + `GET /inventory/movements`,"Milestone: M1 — Fix what's half-built
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,admin,api",Merchant dashboard & onboarding,M1
+"admin-api: paginate `GET /locations`, `/brands`, `/categories`, `/roles`, `/permissions`","Milestone: M1 — Fix what's half-built
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,admin,api",Merchant dashboard & onboarding,M1
+"admin-web: wire search + pagination on customers, products, users lists","Milestone: M1 — Fix what's half-built
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,admin",Merchant dashboard & onboarding,M1
+"admin-web: wire search + pagination on inventory, locations, brands, categories, roles","Milestone: M1 — Fix what's half-built
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,admin",Merchant dashboard & onboarding,M1
+admin-api: `GET /onboarding/status` computing checklist state,"Milestone: M2 — Self-serve onboarding
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,admin,api",Merchant dashboard & onboarding,M2
+Dashboard onboarding-checklist component (Stripe / location / product / app key),"Milestone: M2 — Self-serve onboarding
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,admin",Merchant dashboard & onboarding,M2
+"""Connect Stripe"" step deep-links into the existing Payments onboarding + reflects completion","Milestone: M2 — Self-serve onboarding
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,admin",Merchant dashboard & onboarding,M2
+"""Add your first product"" guided empty-state CTA on Products","Milestone: M2 — Self-serve onboarding
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,admin",Merchant dashboard & onboarding,M2
+admin-api: API-key create endpoint (`account_api_keys`),"Milestone: M2 — Self-serve onboarding
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,admin,api",Merchant dashboard & onboarding,M2
+admin-api: API-key revoke endpoint,"Milestone: M2 — Self-serve onboarding
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,admin,api",Merchant dashboard & onboarding,M2
+admin-web: API-key create/revoke UI on Developers,"Milestone: M2 — Self-serve onboarding
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,admin",Merchant dashboard & onboarding,M2
+Surface the storefront app key + storefront URL prominently during onboarding,"Milestone: M2 — Self-serve onboarding
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,admin",Merchant dashboard & onboarding,M2
+"Signup first-run — confirm auto-seeded ""Default"" location + Owner role; handle every empty state","Milestone: M2 — Self-serve onboarding
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,admin",Merchant dashboard & onboarding,M2
+Apply `@RequirePermissions` to `products` + add missing permission keys,"Milestone: M3 — Staff & permissions (RBAC enforcement)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,admin,api,rbac",Merchant dashboard & onboarding,M3
+Apply to `orders` + `fulfillments`,"Milestone: M3 — Staff & permissions (RBAC enforcement)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,admin,api,rbac",Merchant dashboard & onboarding,M3
+Apply to `inventory` + `locations`,"Milestone: M3 — Staff & permissions (RBAC enforcement)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,admin,api,rbac",Merchant dashboard & onboarding,M3
+Apply to `customers` + `carts`,"Milestone: M3 — Staff & permissions (RBAC enforcement)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,admin,api,rbac",Merchant dashboard & onboarding,M3
+Apply to `api-keys` + `account` + `pos-devices` + `stripe-connect`,"Milestone: M3 — Staff & permissions (RBAC enforcement)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,admin,api,rbac",Merchant dashboard & onboarding,M3
+"Frontend permission context — decode effective permissions, `<Can>` gate component","Milestone: M3 — Staff & permissions (RBAC enforcement)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,admin,rbac",Merchant dashboard & onboarding,M3
+Hide/disable nav items + action buttons by permission across feature pages,"Milestone: M3 — Staff & permissions (RBAC enforcement)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,admin,rbac",Merchant dashboard & onboarding,M3
+RBAC integration tests — owner vs limited role per module,"Milestone: M3 — Staff & permissions (RBAC enforcement)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"test,admin,api,rbac",Merchant dashboard & onboarding,M3
+"""Access denied"" UX + a 403 route","Milestone: M3 — Staff & permissions (RBAC enforcement)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,admin,rbac",Merchant dashboard & onboarding,M3
+users: `GET /users/:id` + profile edit + deactivate/remove,"Milestone: M3 — Staff & permissions (RBAC enforcement)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,admin,api",Merchant dashboard & onboarding,M3
+user invites: resend + revoke pending invite,"Milestone: M3 — Staff & permissions (RBAC enforcement)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,admin,api",Merchant dashboard & onboarding,M3
+brands: update + delete endpoints + UI,"Milestone: M4 — Catalog / inventory / customer management
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,admin,api",Merchant dashboard & onboarding,M4
+categories: update + delete endpoints + UI,"Milestone: M4 — Catalog / inventory / customer management
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,admin,api",Merchant dashboard & onboarding,M4
+locations: delete endpoint (guard if in use) + UI,"Milestone: M4 — Catalog / inventory / customer management
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,admin,api",Merchant dashboard & onboarding,M4
+Customer detail view — profile + order history + lifetime value,"Milestone: M4 — Catalog / inventory / customer management
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,admin,api",Merchant dashboard & onboarding,M4
+"Bulk actions (archive, category assign) for products","Milestone: M4 — Catalog / inventory / customer management
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,admin",Merchant dashboard & onboarding,M4
+CSV import / export for products + inventory,"Milestone: M4 — Catalog / inventory / customer management
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,admin",Merchant dashboard & onboarding,M4
+Saved views / filters on list pages,"Milestone: M4 — Catalog / inventory / customer management
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,admin",Merchant dashboard & onboarding,M4
+Dashboard v2 — date-range selector,"Milestone: M5 — Dashboard & insights
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,admin",Merchant dashboard & onboarding,M5
+Dashboard v2 — revenue + orders trend charts (add a chart lib),"Milestone: M5 — Dashboard & insights
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,admin",Merchant dashboard & onboarding,M5
+Dashboard v2 — top products + low-stock list; move `getOutOfStockCount` to SQL,"Milestone: M5 — Dashboard & insights
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,admin,api",Merchant dashboard & onboarding,M5
+Integration tests: fulfillment rate quote + label purchase; mixed POS/web order read models,"Milestone: M6 — Fulfillment & shipping
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"test,admin,api",Merchant dashboard & onboarding,M6
+Idempotency key on `POST /fulfillments` (double-label-buy guard),"Milestone: M6 — Fulfillment & shipping
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,admin,api",Merchant dashboard & onboarding,M6
+Shippo webhook — update `fulfillments` tracking status after purchase,"Milestone: M6 — Fulfillment & shipping
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,admin,api",Merchant dashboard & onboarding,M6
+"Partial-fulfillment UI polish (multi-location, multi-shipment)","Milestone: M6 — Fulfillment & shipping
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,admin",Merchant dashboard & onboarding,M6
+Audit log — generalize `order_events` to entity history; write on product/price/role/inventory changes,"Milestone: M7 — Audit log
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,admin,api,db",Merchant dashboard & onboarding,M7
+"Per-entity history panel (product, order, role)","Milestone: M7 — Audit log
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,admin",Merchant dashboard & onboarding,M7

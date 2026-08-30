@@ -1,0 +1,79 @@
+Title,Description,Priority,Labels,Project,Milestone
+Fix the broken primary CTA — point `/signup` links at the admin signup URL,"Milestone: M1 — Fix the funnel
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"bug,website",Marketing site,M1
+Build-time env config for the app URLs in Astro,"Milestone: M1 — Fix the funnel
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"chore,website",Marketing site,M1
+Meta description + OG/Twitter tags + canonical on the landing page,"Milestone: M1 — Fix the funnel
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,website,seo",Marketing site,M1
+`@astrojs/sitemap` + `robots.txt`,"Milestone: M1 — Fix the funnel
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,website,seo",Marketing site,M1
+Favicon / app-icon set + web manifest,"Milestone: M1 — Fix the funnel
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"chore,website",Marketing site,M1
+Privacy-friendly analytics + signup-CTA click tracking,"Milestone: M1 — Fix the funnel
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,website",Marketing site,M1
+Extract a base layout + `<head>` component from `index.astro`,"Milestone: M2 — Structure & core pages
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"tech-debt,website",Marketing site,M2
+Break `index.astro` sections into components,"Milestone: M2 — Structure & core pages
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"tech-debt,website",Marketing site,M2
+Adopt a styling system (tokens or Tailwind) — replace scattered inline `<style>`,"Milestone: M2 — Structure & core pages
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"tech-debt,website",Marketing site,M2
+Pricing page (mirrors the platform fee model — with Payments M4),"Milestone: M2 — Structure & core pages
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,website",Marketing site,M2
+Features detail page(s) with screenshots,"Milestone: M2 — Structure & core pages
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,website",Marketing site,M2
+"""How it works"" / merchant onboarding walkthrough page","Milestone: M2 — Structure & core pages
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,website",Marketing site,M2
+Docs entry point — link to Swagger UIs + a getting-started guide,"Milestone: M2 — Structure & core pages
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,website",Marketing site,M2
+Contact / support page,"Milestone: M2 — Structure & core pages
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,website",Marketing site,M2
+Real footer with working links + nav cleanup,"Milestone: M2 — Structure & core pages
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,website",Marketing site,M2
+Terms of Service page,"Milestone: M3 — Legal & trust
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,website",Marketing site,M3
+Privacy Policy page,"Milestone: M3 — Legal & trust
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,website",Marketing site,M3
+Cookie policy + consent copy consistent with analytics,"Milestone: M3 — Legal & trust
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,website",Marketing site,M3
+Acceptable-use / merchant agreement (or link from signup),"Milestone: M3 — Legal & trust
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,website",Marketing site,M3
+Changelog / public roadmap page,"Milestone: M3 — Legal & trust
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,website",Marketing site,M3
+Social-proof / testimonials section structure,"Milestone: M3 — Legal & trust
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,website",Marketing site,M3
+Blog scaffold (Astro content collections),"Milestone: M4 — Content & polish
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,website,seo",Marketing site,M4
+404 + error pages,"Milestone: M4 — Content & polish
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,website",Marketing site,M4
+Accessibility + Lighthouse pass (95+ all categories),"Milestone: M4 — Content & polish
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"chore,website",Marketing site,M4
+Remove the unused `cookie` dependency,"Milestone: M4 — Content & polish
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"tech-debt,website",Marketing site,M4
+Per-page OG image generation,"Milestone: M4 — Content & polish
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,website,seo",Marketing site,M4

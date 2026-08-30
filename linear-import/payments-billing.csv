@@ -1,0 +1,127 @@
+Title,Description,Priority,Labels,Project,Milestone
+"Run a real Stripe test checkout end-to-end (connected account, embedded checkout, Shippo rates); document it; fix what breaks","Milestone: M1 — Web checkout: verified & tested
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"test,payments,storefront",Payments & billing,M1
+Integration test: `checkout-completed` worker — order + shipping + payment + items + inventory decrement + cart delete + idempotency,"Milestone: M1 — Web checkout: verified & tested
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"test,payments,api",Payments & billing,M1
+"Integration test: checkout session creation — server-authoritative line items from cart, connected account, shipping options","Milestone: M1 — Web checkout: verified & tested
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"test,payments,api",Payments & billing,M1
+"Integration test: `checkout.session.completed` webhook — signature, `payment_status` guard, idempotency on `stripeCheckoutSessionId`, enqueue","Milestone: M1 — Web checkout: verified & tested
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"test,payments,api",Payments & billing,M1
+Handle `checkout.session` expired + async payment failed (webhook branch + storefront return-page states),"Milestone: M1 — Web checkout: verified & tested
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,payments,storefront",Payments & billing,M1
+"Reconcile ""payment succeeded but order write failed"" — recovery path + `failed_orders` surfacing (with Observability 7)","Milestone: M1 — Web checkout: verified & tested
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,payments,api",Payments & billing,M1
+Idempotency key on checkout session creation (no duplicate sessions per cart),"Milestone: M1 — Web checkout: verified & tested
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,payments,api",Payments & billing,M1
+Schema: `order_status` enum + column + backfill (`paid`) + `order_events` table,"Milestone: M2 — Order lifecycle: status, cancel, refund
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,payments,api,db",Payments & billing,M2
+admin-api: order status-transition endpoint + allowed-transition rules,"Milestone: M2 — Order lifecycle: status, cancel, refund
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,payments,api",Payments & billing,M2
+admin-web: order status badge + event timeline on the order detail page,"Milestone: M2 — Order lifecycle: status, cancel, refund
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,payments,admin",Payments & billing,M2
+admin-api: full refund via the Stripe connected account,"Milestone: M2 — Order lifecycle: status, cancel, refund
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,payments,api",Payments & billing,M2
+admin-api: partial / line-item refund,"Milestone: M2 — Order lifecycle: status, cancel, refund
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,payments,api",Payments & billing,M2
+Refund writes negative `order_payments` + `inventory_movements` `return` + status update,"Milestone: M2 — Order lifecycle: status, cancel, refund
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,payments,api",Payments & billing,M2
+"admin-web: refund UI on order detail (amount, reason, restock toggle)","Milestone: M2 — Order lifecycle: status, cancel, refund
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,payments,admin",Payments & billing,M2
+admin-api: cancel order (pre-fulfillment) — restock + refund + status,"Milestone: M2 — Order lifecycle: status, cancel, refund
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,payments,api",Payments & billing,M2
+admin-web: cancel-order UI + confirmation,"Milestone: M2 — Order lifecycle: status, cancel, refund
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,payments,admin",Payments & billing,M2
+Stripe `charge.refunded` / `charge.dispute.*` webhook events → update order + payment records,"Milestone: M2 — Order lifecycle: status, cancel, refund
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,payments,api",Payments & billing,M2
+Integration tests: refund (full + partial) + cancel + status transitions,"Milestone: M2 — Order lifecycle: status, cancel, refund
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"test,payments,api",Payments & billing,M2
+Spike: choose reader path (Tap to Pay on iPhone/Android vs BBPOS/WisePOS); hardware + cost + fee decision doc,"Milestone: M3 — POS card payments (Stripe Terminal, server-side)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"chore,payments,pos",Payments & billing,M3
+"pos-api: Terminal connection-token endpoint, scoped to the tenant's connected account","Milestone: M3 — POS card payments (Stripe Terminal, server-side)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,payments,api,pos",Payments & billing,M3
+"pos-api: create PaymentIntent for a POS sale (manual capture, connected account, application fee)","Milestone: M3 — POS card payments (Stripe Terminal, server-side)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,payments,api,pos",Payments & billing,M3
+pos-api: capture PaymentIntent + write `order_payments` (`card`) row transactionally with the order,"Milestone: M3 — POS card payments (Stripe Terminal, server-side)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,payments,api,pos",Payments & billing,M3
+pos-api: PaymentIntent webhook handler (async capture / failure reconciliation),"Milestone: M3 — POS card payments (Stripe Terminal, server-side)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,payments,api,pos",Payments & billing,M3
+pos-api: Terminal card-refund endpoint (for POS returns),"Milestone: M3 — POS card payments (Stripe Terminal, server-side)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,payments,api,pos",Payments & billing,M3
+"pos-api: Terminal payment-flow tests — happy path, decline, cancel, partial capture, refund","Milestone: M3 — POS card payments (Stripe Terminal, server-side)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"test,payments,api,pos",Payments & billing,M3
+Decide the platform fee model (flat % / % + fixed / tiered) and document it,"Milestone: M4 — Platform economics
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"chore,payments",Payments & billing,M4
+Implement `application_fee_amount` on web Checkout sessions,"Milestone: M4 — Platform economics
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,payments,api",Payments & billing,M4
+Implement application fee on POS PaymentIntents,"Milestone: M4 — Platform economics
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,payments,api,pos",Payments & billing,M4
+Fee handling on refunds — reverse the application fee proportionally (full + partial),"Milestone: M4 — Platform economics
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,payments,api",Payments & billing,M4
+Merchant payout / balance visibility — wire the Stripe embedded balances + payouts components in admin Payments,"Milestone: M4 — Platform economics
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,payments,admin",Payments & billing,M4
+"Dispute / chargeback handling — webhook, order status, merchant notification, evidence-submission link","Milestone: M4 — Platform economics
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,payments,api",Payments & billing,M4
+"Internal platform-revenue report (fees collected, by merchant, by period)","Milestone: M4 — Platform economics
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,payments",Payments & billing,M4
+Connect account health in admin — `charges_enabled` / `payouts_enabled` / requirements due,"Milestone: M4 — Platform economics
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,payments,admin",Payments & billing,M4
+Handle Connect `account.updated` requirements changes (only chargesEnabled/detailsSubmitted synced today),"Milestone: M4 — Platform economics
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,payments,api",Payments & billing,M4
+Schema: `discounts` + `discount_redemptions`,"Milestone: M5 — Discounts & tax engine
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,payments,api,db",Payments & billing,M5
+"admin-api: discount CRUD + rules (percent/amount, min spend, usage caps, date window, product/category scope)","Milestone: M5 — Discounts & tax engine
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,payments,api",Payments & billing,M5
+admin-web: discount management UI,"Milestone: M5 — Discounts & tax engine
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,payments,admin",Payments & billing,M5
+Shared order-pricing service — applies discounts; used by web checkout + POS + order totals,"Milestone: M5 — Discounts & tax engine
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,payments,api",Payments & billing,M5
+Storefront: discount-code entry at checkout (apply / remove / validation errors),"Milestone: M5 — Discounts & tax engine
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,payments,storefront",Payments & billing,M5
+POS: apply a discount code or manual line-item discount in the cart (permission-gated),"Milestone: M5 — Discounts & tax engine
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,payments,pos,rbac",Payments & billing,M5
+Schema + settings: tax config per account / location (flat rate table vs provider — spike first),"Milestone: M5 — Discounts & tax engine
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,payments,api,db",Payments & billing,M5
+"Shared tax-calc service — wire into web checkout, POS, order totals; stop hardcoding `taxCents = 0`","Milestone: M5 — Discounts & tax engine
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,payments,api",Payments & billing,M5

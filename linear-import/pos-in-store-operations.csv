@@ -1,0 +1,127 @@
+Title,Description,Priority,Labels,Project,Milestone
+Run the POS app on a real device end-to-end; log every bug found,"Milestone: M1 — Runs end-to-end (verified)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"test,pos",POS in-store operations,M1
+Triage & fix the bugs from the first device run,"Milestone: M1 — Runs end-to-end (verified)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"bug,pos",POS in-store operations,M1
+Set up the EAS dev-build + install loop; document it (README is Expo boilerplate),"Milestone: M1 — Runs end-to-end (verified)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"chore,pos",POS in-store operations,M1
+"pos-api: unit tests for order creation — pricing, cash change, inventory movement, payment row, tx rollback","Milestone: M1 — Runs end-to-end (verified)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"test,pos,api",POS in-store operations,M1
+"pos-api: tests for catalog — search, cursor pagination, scan-by-barcode, variant stock","Milestone: M1 — Runs end-to-end (verified)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"test,pos,api",POS in-store operations,M1
+"pos-api: tests for pairing — code redemption, expiry, single-use, revoked-device rejection","Milestone: M1 — Runs end-to-end (verified)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"test,pos,api",POS in-store operations,M1
+Show the paired session (account / location / device) in a header or status bar,"Milestone: M1 — Runs end-to-end (verified)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,pos",POS in-store operations,M1
+"Settings screen scaffold, navigable from the home screen","Milestone: M1 — Runs end-to-end (verified)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,pos",POS in-store operations,M1
+"""Unpair this device"" action in Settings — wire `unpair()` / `refreshSession()`","Milestone: M1 — Runs end-to-end (verified)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,pos",POS in-store operations,M1
+Error boundary + consistent loading / error / empty states across screens,"Milestone: M1 — Runs end-to-end (verified)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,pos",POS in-store operations,M1
+Add the Stripe Terminal RN SDK + native config for dev and prod builds,"Milestone: M2 — Card payments (app-side Terminal UX)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,pos,payments",POS in-store operations,M2
+Reader discovery & connection screen,"Milestone: M2 — Card payments (app-side Terminal UX)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,pos,payments",POS in-store operations,M2
+Persist the selected reader per device (secure-store),"Milestone: M2 — Card payments (app-side Terminal UX)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,pos,payments",POS in-store operations,M2
+Reader connection-status indicator in the header,"Milestone: M2 — Card payments (app-side Terminal UX)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,pos,payments",POS in-store operations,M2
+"Collect-payment flow in checkout — call the pos-api PaymentIntent endpoints; replace the ""take payment on the terminal"" stub","Milestone: M2 — Card payments (app-side Terminal UX)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,pos,payments",POS in-store operations,M2
+Decline / cancel / network-drop / retry handling with clear UI,"Milestone: M2 — Card payments (app-side Terminal UX)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,pos,payments",POS in-store operations,M2
+"On success, route to the receipt screen with the captured payment","Milestone: M2 — Card payments (app-side Terminal UX)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,pos,payments",POS in-store operations,M2
+End-to-end test: set up a test reader + run a test card sale + a test card refund,"Milestone: M2 — Card payments (app-side Terminal UX)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"test,pos,payments",POS in-store operations,M2
+Client-generated idempotency key on `POST /pos/orders`; server-side dedupe,"Milestone: M3 — Sale reliability & offline
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,pos,api",POS in-store operations,M3
+Offline sale queue — persist completed-but-unsent sales to AsyncStorage,"Milestone: M3 — Sale reliability & offline
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,pos",POS in-store operations,M3
+Offline sale queue — background retry + duplicate handling on reconnect,"Milestone: M3 — Sale reliability & offline
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,pos",POS in-store operations,M3
+"Offline sale queue — UI: pending-sales indicator + ""retry now""","Milestone: M3 — Sale reliability & offline
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,pos",POS in-store operations,M3
+"Insufficient-stock check at checkout — warn (or block, per decision); today it silently oversells","Milestone: M3 — Sale reliability & offline
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,pos,api",POS in-store operations,M3
+"pos-api: compute a receipt payload server-side (lines, tax, tender, change, store info)","Milestone: M4 — Receipts & customer capture
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,pos,api",POS in-store operations,M4
+"On-screen receipt after a sale — replace the bare ""Sale complete"" screen","Milestone: M4 — Receipts & customer capture
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,pos",POS in-store operations,M4
+"Email receipt — capture email at checkout, enqueue an `email` job","Milestone: M4 — Receipts & customer capture
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,pos",POS in-store operations,M4
+Receipt email template (react-email in `packages/email-templates`),"Milestone: M4 — Receipts & customer capture
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,pos",POS in-store operations,M4
+Attach a customer to a POS sale — search existing customers,"Milestone: M4 — Receipts & customer capture
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,pos,api",POS in-store operations,M4
+Attach a customer to a POS sale — inline quick-create,"Milestone: M4 — Receipts & customer capture
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,pos,api",POS in-store operations,M4
+Bluetooth/USB receipt-printer support (spike + basic ESC/POS),"Milestone: M4 — Receipts & customer capture
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,pos",POS in-store operations,M4
+"POS ""recent sales"" list + sale detail (device/location scoped)","Milestone: M4 — Receipts & customer capture
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,pos,api",POS in-store operations,M4
+Reprint / re-send receipt for a past sale,"Milestone: M4 — Receipts & customer capture
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,pos",POS in-store operations,M4
+Schema: `pos_shifts` + `cash_movements`,"Milestone: M5 — Cash management & shift reporting
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,pos,db",POS in-store operations,M5
+"Open/close drawer flow — starting float, blind close count, variance","Milestone: M5 — Cash management & shift reporting
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,pos",POS in-store operations,M5
+"Cash in / cash out (paid-in, paid-out, drops) with reason","Milestone: M5 — Cash management & shift reporting
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,pos",POS in-store operations,M5
+X-report (mid-shift) + Z-report (close-out) by tender,"Milestone: M5 — Cash management & shift reporting
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,pos",POS in-store operations,M5
+Return / refund at POS — cash path,"Milestone: M6 — Returns, voids, discounts
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,pos,api",POS in-store operations,M6
+Return / refund at POS — card path (calls the Payments Terminal-refund endpoint),"Milestone: M6 — Returns, voids, discounts
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,pos,payments",POS in-store operations,M6
+Return/refund writes `inventory_movements` `return` + updates order status,"Milestone: M6 — Returns, voids, discounts
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,pos,api",POS in-store operations,M6
+Void an in-progress or just-completed sale,"Milestone: M6 — Returns, voids, discounts
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,pos,api",POS in-store operations,M6
+Split tender — multiple `order_payments` rows in one sale,"Milestone: M6 — Returns, voids, discounts
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,pos",POS in-store operations,M6
+"Barcode-scan cleanup — one shared wedge hook, drop dead `use-order-scanner` states, delete Expo-template leftovers","Milestone: M6 — Returns, voids, discounts
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"tech-debt,pos",POS in-store operations,M6

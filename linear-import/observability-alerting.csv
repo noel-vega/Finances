@@ -1,0 +1,133 @@
+Title,Description,Priority,Labels,Project,Milestone
+Sentry project + SDK in `admin-api`,"Milestone: M1 — Know when it breaks
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,observability",Observability & alerting,M1
+Sentry in `storefront-api` + `pos-api`,"Milestone: M1 — Know when it breaks
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,observability",Observability & alerting,M1
+Sentry in `worker` (+ BullMQ job-failure capture),"Milestone: M1 — Know when it breaks
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,observability",Observability & alerting,M1
+Sentry in `admin-web` + `storefront-web` (upload source maps in CI),"Milestone: M1 — Know when it breaks
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,observability",Observability & alerting,M1
+Sentry in the POS app (Expo) — release + dist tagging,"Milestone: M1 — Know when it breaks
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,observability,pos",Observability & alerting,M1
+Thread the existing correlation ID into Sentry scope/tags everywhere,"Milestone: M1 — Know when it breaks
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,observability",Observability & alerting,M1
+Dead-letter alert — an order job that exhausts its 8 retries → Sentry + SNS/email + a persisted `failed_orders` record,"Milestone: M1 — Know when it breaks
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,observability,api",Observability & alerting,M1
+"Uptime monitor — `/health` on all four services (external, paging)","Milestone: M1 — Know when it breaks
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,observability",Observability & alerting,M1
+Uptime monitor — storefront + admin root URLs + both Stripe webhook endpoints,"Milestone: M1 — Know when it breaks
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,observability",Observability & alerting,M1
+CloudWatch alarm — ECS task crash-loop / service unhealthy → SNS,"Milestone: M1 — Know when it breaks
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,observability,infra",Observability & alerting,M1
+CloudWatch alarm — ALB 5xx rate + latency → SNS,"Milestone: M1 — Know when it breaks
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,observability,infra",Observability & alerting,M1
+CloudWatch alarm — RDS CPU / free storage / connections → SNS,"Milestone: M1 — Know when it breaks
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,observability,infra",Observability & alerting,M1
+CloudWatch alarm — ElastiCache evictions / memory / CPU → SNS,"Milestone: M1 — Know when it breaks
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,observability,infra",Observability & alerting,M1
+SNS → SMS + email subscriptions; document the alert channels,"Milestone: M1 — Know when it breaks
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"chore,observability",Observability & alerting,M1
+Logging: PII / secret redaction in `packages/logging`,"Milestone: M2 — See the revenue path
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,observability",Observability & alerting,M2
+Logging: configurable level + consistent request/response middleware across APIs,"Milestone: M2 — See the revenue path
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,observability,api",Observability & alerting,M2
+Metrics transport decision (CloudWatch EMF vs Prometheus + agent) — spike + base impl,"Milestone: M2 — See the revenue path
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"chore,observability",Observability & alerting,M2
+Metric: orders created (web + POS) by channel,"Milestone: M2 — See the revenue path
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,observability,api",Observability & alerting,M2
+Metric: checkout sessions created / completed / abandoned,"Milestone: M2 — See the revenue path
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,observability,api",Observability & alerting,M2
+Metric: Stripe webhook received / processed / failed by event type,"Milestone: M2 — See the revenue path
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,observability,api",Observability & alerting,M2
+Metric: email jobs sent/failed; order jobs processed/retried/dead-lettered,"Milestone: M2 — See the revenue path
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,observability",Observability & alerting,M2
+Metric: BullMQ queue depth + job latency (both queues),"Milestone: M2 — See the revenue path
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,observability",Observability & alerting,M2
+Metric: per-service HTTP p50/p95/p99 + error rate,"Milestone: M2 — See the revenue path
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,observability,api",Observability & alerting,M2
+"Dashboard: revenue-path board (orders, GMV, queue depth, webhook failures, email failures)","Milestone: M2 — See the revenue path
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,observability",Observability & alerting,M2
+"Dashboard: service-health board (latency, error rate, CPU/mem, DB connections)","Milestone: M2 — See the revenue path
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,observability",Observability & alerting,M2
+Alert: checkout success-rate drop + webhook-failure spike + queue backlog,"Milestone: M2 — See the revenue path
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,observability",Observability & alerting,M2
+Stripe webhook (storefront + admin): structured log + metric + alert on signature failure / unhandled event type,"Milestone: M2 — See the revenue path
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,observability,payments",Observability & alerting,M2
+OpenTelemetry SDK + auto-instrumentation in all four NestJS services,"Milestone: M3 — Diagnose fast
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,observability,api",Observability & alerting,M3
+Propagate trace context through BullMQ jobs (producer → worker),"Milestone: M3 — Diagnose fast
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,observability,api",Observability & alerting,M3
+Span the Stripe + Shippo client calls,"Milestone: M3 — Diagnose fast
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,observability,api",Observability & alerting,M3
+Trace exporter → X-Ray (or hosted) + sampling policy,"Milestone: M3 — Diagnose fast
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,observability,infra",Observability & alerting,M3
+"Log aggregation: CloudWatch Logs Insights saved queries (errors by service, by correlation ID, failed orders)","Milestone: M3 — Diagnose fast
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,observability",Observability & alerting,M3
+Alert on error-level log volume per service,"Milestone: M3 — Diagnose fast
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,observability",Observability & alerting,M3
+Health-check depth — confirm `pos-api` `/health` includes Redis; add a storefront app-key-path check,"Milestone: M3 — Diagnose fast
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"bug,observability,api",Observability & alerting,M3
+`/health` vs `/ready` split (liveness vs readiness) for ECS + ALB,"Milestone: M3 — Diagnose fast
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,observability,api",Observability & alerting,M3
+"Define SLOs (checkout success rate, order-job processing time, API availability) + error-budget alerts","Milestone: M4 — SLOs, business view, hygiene
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"chore,observability",Observability & alerting,M4
+"Synthetic transaction — scheduled end-to-end test checkout in prod, alert on failure","Milestone: M4 — SLOs, business view, hygiene
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,observability",Observability & alerting,M4
+"Business digest email — daily orders, GMV, refunds, new merchants, failed payments","Milestone: M4 — SLOs, business view, hygiene
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,observability",Observability & alerting,M4
+Frontend RUM / Core Web Vitals on the storefront,"Milestone: M4 — SLOs, business view, hygiene
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,observability,storefront",Observability & alerting,M4
+Public status page fed by the uptime monitor,"Milestone: M4 — SLOs, business view, hygiene
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,observability",Observability & alerting,M4
+"Incident runbook — ""checkout down"", ""orders not processing"", ""site down""; escalation contacts","Milestone: M4 — SLOs, business view, hygiene
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"chore,observability",Observability & alerting,M4
+"Auth/security event stream (logins, failures, permission denials, API-key usage) + anomaly alert","Milestone: M4 — SLOs, business view, hygiene
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,observability,auth",Observability & alerting,M4
+Cost observability — spend per service via tags + Cost Explorer,"Milestone: M4 — SLOs, business view, hygiene
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,observability,infra",Observability & alerting,M4
+"Retention + sampling policy — per-stream CloudWatch retention, trace sampling, bounded cost","Milestone: M4 — SLOs, business view, hygiene
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"chore,observability",Observability & alerting,M4

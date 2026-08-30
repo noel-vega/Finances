@@ -1,0 +1,121 @@
+Title,Description,Priority,Labels,Project,Milestone
+Spike/decide: React Router 7 framework mode (SSR) vs Vite SSG prerender for catalog pages,"Milestone: M1 — Rendering & SEO
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"chore,storefront,seo",Storefront customer experience,M1
+"Migrate the app shell to the chosen SSR/prerender setup (routing, data loading)","Milestone: M1 — Rendering & SEO
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,storefront,seo",Storefront customer experience,M1
+Per-product `<title>` + meta description + OG/Twitter tags,"Milestone: M1 — Rendering & SEO
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,storefront,seo",Storefront customer experience,M1
+JSON-LD `Product` + `Offer` structured data on product pages,"Milestone: M1 — Rendering & SEO
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,storefront,seo",Storefront customer experience,M1
+`sitemap.xml` (products/categories/brands) + `robots.txt` + canonical URLs,"Milestone: M1 — Rendering & SEO
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,storefront,seo",Storefront customer experience,M1
+Category / brand page meta + OG,"Milestone: M1 — Rendering & SEO
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,storefront,seo",Storefront customer experience,M1
+storefront-api: `GET /products` — pagination (cursor or limit/offset + total),"Milestone: M2 — Discovery
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,storefront,api",Storefront customer experience,M2
+storefront-api: `GET /products` — text search (name/description/SKU/barcode),"Milestone: M2 — Discovery
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,storefront,api",Storefront customer experience,M2
+"storefront-api: `GET /products` — filter by category, brand, price range, in-stock","Milestone: M2 — Discovery
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,storefront,api",Storefront customer experience,M2
+"storefront-api: `GET /products` — sort (price, newest, name)","Milestone: M2 — Discovery
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,storefront,api",Storefront customer experience,M2
+"storefront-web: listing UI — search box wired, results + pagination","Milestone: M2 — Discovery
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,storefront",Storefront customer experience,M2
+"storefront-web: filter controls + sort dropdown, URL-param driven","Milestone: M2 — Discovery
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,storefront",Storefront customer experience,M2
+storefront-api: category list + `GET /categories/:id` (with products),"Milestone: M2 — Discovery
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,storefront,api",Storefront customer experience,M2
+storefront-api: brand list + `GET /brands/:id` (with products),"Milestone: M2 — Discovery
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,storefront,api",Storefront customer experience,M2
+storefront-web: `/categories/:id` + `/brands/:id` pages; make card badges links,"Milestone: M2 — Discovery
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,storefront",Storefront customer experience,M2
+storefront-web: skeleton / empty / error states for listing + detail,"Milestone: M2 — Discovery
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,storefront",Storefront customer experience,M2
+storefront-web: catch-all `*` 404 route,"Milestone: M2 — Discovery
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,storefront",Storefront customer experience,M2
+"storefront-api: `GET /customer/orders` (customer + tenant scoped, paginated)","Milestone: M3 — Customer accounts & order tracking
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,storefront,api",Storefront customer experience,M3
+"storefront-api: `GET /customer/orders/:id` (items, payments, fulfillments)","Milestone: M3 — Customer accounts & order tracking
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,storefront,api",Storefront customer experience,M3
+storefront-web: order-history list on `/account`,"Milestone: M3 — Customer accounts & order tracking
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,storefront",Storefront customer experience,M3
+"storefront-web: order-detail page (items, totals, status, tracking)","Milestone: M3 — Customer accounts & order tracking
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,storefront",Storefront customer experience,M3
+Order tracking — surface `fulfillments` carrier / tracking number / URL to the customer,"Milestone: M3 — Customer accounts & order tracking
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,storefront",Storefront customer experience,M3
+Forgot-password: request endpoint + email token (via `email` queue),"Milestone: M3 — Customer accounts & order tracking
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,storefront,api,auth",Storefront customer experience,M3
+Forgot-password: reset endpoint + reset page,"Milestone: M3 — Customer accounts & order tracking
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,storefront,api,auth",Storefront customer experience,M3
+"Email verification on signup — token, verify + resend endpoints, gated UI hints","Milestone: M3 — Customer accounts & order tracking
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,storefront,api,auth",Storefront customer experience,M3
+Address book — schema + storefront-api CRUD,"Milestone: M3 — Customer accounts & order tracking
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,storefront,api,db",Storefront customer experience,M3
+Address book — pick/prefill a saved address at checkout,"Milestone: M3 — Customer accounts & order tracking
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,storefront",Storefront customer experience,M3
+Guest order lookup by email + order number (no account),"Milestone: M3 — Customer accounts & order tracking
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,storefront,api",Storefront customer experience,M3
+"Revalidate stock + price before add-to-cart; clear ""changed"" messaging","Milestone: M4 — Checkout UX & resilience
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,storefront,api",Storefront customer experience,M4
+Revalidate cart at checkout start; block with a clear diff view,"Milestone: M4 — Checkout UX & resilience
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,storefront,api",Storefront customer experience,M4
+Idempotency key on cart mutations,"Milestone: M4 — Checkout UX & resilience
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,storefront,api",Storefront customer experience,M4
+Checkout return-page: robust loading / open / complete / error states + retry,"Milestone: M4 — Checkout UX & resilience
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,storefront",Storefront customer experience,M4
+Real home/landing page at `/` (replace redirect to `/products`),"Milestone: M5 — Brand & theming
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,storefront",Storefront customer experience,M5
+"Tenant-aware branding — name/logo from account settings, drop hardcoded ""Shop""","Milestone: M5 — Brand & theming
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,storefront,api",Storefront customer experience,M5
+Storefront theming — account-configurable colors/fonts/hero; admin UI + storefront consumption,"Milestone: M5 — Brand & theming
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,storefront,admin",Storefront customer experience,M5
+"Analytics events (pageview, product view, add-to-cart, checkout steps) + consent banner","Milestone: M6 — Post-launch growth
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,storefront",Storefront customer experience,M6
+"Product reviews & ratings — schema, verified-purchase submit, display","Milestone: M6 — Post-launch growth
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,storefront,api,db",Storefront customer experience,M6
+Related products / recently viewed,"Milestone: M6 — Post-launch growth
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,storefront",Storefront customer experience,M6
+Wishlist / save for later,"Milestone: M6 — Post-launch growth
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,storefront,api,db",Storefront customer experience,M6
+Multi-currency + international countries (remove hardcoded USD / `['US']`),"Milestone: M6 — Post-launch growth
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,storefront,api",Storefront customer experience,M6

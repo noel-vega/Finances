@@ -1,0 +1,187 @@
+Title,Description,Priority,Labels,Project,Milestone
+Fix `docker/shop-admin-api.Dockerfile` name + `COPY` paths (and any other renamed Dockerfile),"Milestone: M1 — Unbreak CI (post-rename)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"bug,infra,ci-cd",Production readiness,M1
+"Fix `.github/workflows/ci.yml` — workspace names, test matrix, smoke-build matrix","Milestone: M1 — Unbreak CI (post-rename)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"bug,infra,ci-cd",Production readiness,M1
+Fix `.github/workflows/cd.yml` app-name references (even while dormant),"Milestone: M1 — Unbreak CI (post-rename)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"bug,infra,ci-cd",Production readiness,M1
+Fix `packages/admin-sdk` `generate` path → `apps/admin-api/openapi.json`,"Milestone: M1 — Unbreak CI (post-rename)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"bug,infra,sdk",Production readiness,M1
+"Sweep `infra/terraform/**` for `shop-admin-*` → `admin-*` (modules, resources, tags, SSM keys)","Milestone: M1 — Unbreak CI (post-rename)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"bug,infra",Production readiness,M1
+Fix `terraform.tfvars` `github_repo` → `noel-vega/ordersail`; `terraform plan` clean,"Milestone: M1 — Unbreak CI (post-rename)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"bug,infra",Production readiness,M1
+Update `README.md` + `ARCHITECTURE.md` app names + ports,"Milestone: M1 — Unbreak CI (post-rename)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"chore,infra",Production readiness,M1
+"Add `pos-api` to `ci.yml` (build, lint, test, smoke-build)","Milestone: M1 — Unbreak CI (post-rename)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,infra,ci-cd",Production readiness,M1
+"Add `pos` (Expo) to `ci.yml` (lint, typecheck, `expo-doctor`)","Milestone: M1 — Unbreak CI (post-rename)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,infra,ci-cd",Production readiness,M1
+Standalone `typecheck` job across all workspaces,"Milestone: M1 — Unbreak CI (post-rename)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,infra,ci-cd",Production readiness,M1
+Verify a green CI run on a PR to `main`,"Milestone: M1 — Unbreak CI (post-rename)
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"test,infra,ci-cd",Production readiness,M1
+`.env.example` for `admin-api`,"Milestone: M2 — Local dev experience
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"chore,infra",Production readiness,M2
+`.env.example` for `storefront-api`,"Milestone: M2 — Local dev experience
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"chore,infra",Production readiness,M2
+`.env.example` for `worker`,"Milestone: M2 — Local dev experience
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"chore,infra",Production readiness,M2
+`.env.example` for `admin-web` + `storefront-web`,"Milestone: M2 — Local dev experience
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"chore,infra",Production readiness,M2
+Root `docker-compose.yml` — postgres + redis + minio + mailpit together,"Milestone: M2 — Local dev experience
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,infra",Production readiness,M2
+"Root task runner (`Taskfile`/`Makefile`/npm scripts) — `up`, `down`, `reset`, `seed`, `dev`","Milestone: M2 — Local dev experience
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"feature,infra",Production readiness,M2
+"Rewrite README ""Getting started"" for the one-command flow","Milestone: M2 — Local dev experience
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"chore,infra",Production readiness,M2
+`.env` schema validation at boot (zod) in each API — fail fast,"Milestone: M2 — Local dev experience
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,infra,api",Production readiness,M2
+"Dev bootstrap script — wait-for-postgres, migrate, seed","Milestone: M2 — Local dev experience
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,infra",Production readiness,M2
+Create the `production` GitHub Environment + required reviewer; set `AWS_*` repo vars,"Milestone: M3 — Deploy pipeline for all services
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"chore,infra,ci-cd",Production readiness,M3
+`cd.yml` `build-and-push` live for `admin-api`,"Milestone: M3 — Deploy pipeline for all services
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,infra,ci-cd",Production readiness,M3
+`cd.yml` live for `storefront-api`,"Milestone: M3 — Deploy pipeline for all services
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,infra,ci-cd",Production readiness,M3
+`cd.yml` live for `worker`,"Milestone: M3 — Deploy pipeline for all services
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,infra,ci-cd",Production readiness,M3
+Migrator job — wire + test the `aws ecs run-task` migration gate,"Milestone: M3 — Deploy pipeline for all services
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,infra,ci-cd",Production readiness,M3
+`deploy-services` job for the three APIs (task-def patch + wait-stable),"Milestone: M3 — Deploy pipeline for all services
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,infra,ci-cd",Production readiness,M3
+`deploy-frontends` — add `admin-web`,"Milestone: M3 — Deploy pipeline for all services
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,infra,ci-cd",Production readiness,M3
+`deploy-frontends` — add `storefront-web` + its SSR/prerender output (with Storefront M1),"Milestone: M3 — Deploy pipeline for all services
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,infra,ci-cd",Production readiness,M3
+Terraform: ECR repo + ECS service + target group for `pos-api`,"Milestone: M3 — Deploy pipeline for all services
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,infra",Production readiness,M3
+Terraform: ALB routing / subdomain for `pos-api`,"Milestone: M3 — Deploy pipeline for all services
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,infra",Production readiness,M3
+Add `pos-api` to `cd.yml`,"Milestone: M3 — Deploy pipeline for all services
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,infra,ci-cd",Production readiness,M3
+Pin image tags to git SHA (drop `:latest` reliance); ECR immutability,"Milestone: M3 — Deploy pipeline for all services
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,infra,ci-cd",Production readiness,M3
+Post-deploy smoke-test job (`/health` + one real endpoint per service),"Milestone: M3 — Deploy pipeline for all services
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,infra,ci-cd",Production readiness,M3
+Terraform: parametrize env; stand up a `staging` environment,"Milestone: M4 — Staging & rollback
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,infra",Production readiness,M4
+CD to staging on merge to `main`; prod on tag / manual approval,"Milestone: M4 — Staging & rollback
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,infra,ci-cd",Production readiness,M4
+Rollback workflow — redeploy the previous ECS task-def revision by service,"Milestone: M4 — Staging & rollback
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,infra,ci-cd",Production readiness,M4
+DB migration rollback runbook (no Drizzle down migrations) + PITR-restore steps,"Milestone: M4 — Staging & rollback
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"chore,infra",Production readiness,M4
+CI service containers (postgres + redis) + a `test:integration` job,"Milestone: M4 — Staging & rollback
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,infra,ci-cd",Production readiness,M4
+RDS Multi-AZ (or a documented RTO/RPO decision),"Milestone: M5 — Data resilience
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,infra",Production readiness,M5
+RDS: automated-backup restore drill + off-region snapshot copy,"Milestone: M5 — Data resilience
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"chore,infra",Production readiness,M5
+RDS Proxy (or PgBouncer) + `pg` pool tuning in `packages/db`,"Milestone: M5 — Data resilience
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,infra,db",Production readiness,M5
+ElastiCache: enable snapshots,"Milestone: M5 — Data resilience
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,infra",Production readiness,M5
+ElastiCache: auth token + transit/at-rest encryption,"Milestone: M5 — Data resilience
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,infra",Production readiness,M5
+Migration job: advisory-lock / lock-timeout guard for concurrent runs,"Milestone: M5 — Data resilience
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,infra,db",Production readiness,M5
+Remove `infra/terraform/bootstrap/terraform.tfstate` (+ backup) from git; fix `.gitignore`,"Milestone: M6 — Security & secrets
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",High,"bug,infra",Production readiness,M6
+Rotate anything exposed by the committed state / tfvars; review `backend.tf` account-id exposure,"Milestone: M6 — Security & secrets
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"chore,infra",Production readiness,M6
+Enable Dependabot (or Renovate),"Milestone: M6 — Security & secrets
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,infra,ci-cd",Production readiness,M6
+gitleaks (or trufflehog) in CI + pre-commit,"Milestone: M6 — Security & secrets
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,infra,ci-cd",Production readiness,M6
+`npm audit` gate in CI,"Milestone: M6 — Security & secrets
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,infra,ci-cd",Production readiness,M6
+Trivy / Grype container scan on built images,"Milestone: M6 — Security & secrets
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,infra,ci-cd",Production readiness,M6
+`helmet` on `admin-api`,"Milestone: M6 — Security & secrets
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,infra,api",Production readiness,M6
+`helmet` on `storefront-api` + `pos-api`,"Milestone: M6 — Security & secrets
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,infra,api",Production readiness,M6
+"CloudFront response-headers policy (HSTS, CSP, X-Frame-Options, X-Content-Type-Options) on all distributions","Milestone: M6 — Security & secrets
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,infra",Production readiness,M6
+`@nestjs/throttler` on auth endpoints (all three APIs),"Milestone: M6 — Security & secrets
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,infra,api",Production readiness,M6
+Rate limits on webhook + app-key + pairing endpoints,"Milestone: M6 — Security & secrets
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,infra,api",Production readiness,M6
+AWS WAF on the ALBs / CloudFront (managed rules + rate rule),"Milestone: M6 — Security & secrets
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,infra",Production readiness,M6
+SES production-access request (currently sandbox); move SMTP creds to Secrets Manager,"Milestone: M6 — Security & secrets
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"chore,infra",Production readiness,M6
+AWS Budgets + Cost Anomaly Detection + billing alarm → SNS,"Milestone: M7 — Cost & tooling
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Medium,"feature,infra",Production readiness,M7
+Review always-on footprint (2 ALBs → 1 shared? NAT strategy) for cost,"Milestone: M7 — Cost & tooling
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"chore,infra",Production readiness,M7
+"Shared config packages — `tsconfig`, `eslint`, `prettier`","Milestone: M7 — Cost & tooling
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"tech-debt,infra",Production readiness,M7
+Converge on one linter + align TypeScript versions across workspaces,"Milestone: M7 — Cost & tooling
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"tech-debt,infra",Production readiness,M7
+"Configure Nx — target defaults, caching, `affected` in CI","Milestone: M7 — Cost & tooling
+
+Seed issue from the launch backlog plan. Flesh out using the Feature/Bug template before starting.",Low,"feature,infra,ci-cd",Production readiness,M7
