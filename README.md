@@ -57,7 +57,7 @@ Started 2026-07-07. In active early development.
 - Stripe webhook handling for both the platform (account onboarding) and per-account checkout events
 
 **Apps**
-- `shop-admin-web` — merchant-facing dashboard (products, inventory, orders, carts, locations, customers, payments, roles, settings, developer API keys)
+- `admin-web` — merchant-facing dashboard (products, inventory, orders, carts, locations, customers, payments, roles, settings, developer API keys)
 - `storefront-web` — customer-facing storefront (browse products, cart, Stripe-hosted checkout, order return page)
 - `website` — public marketing site introducing Ordersail to prospective merchants
 
@@ -71,8 +71,8 @@ An Nx-managed npm workspace monorepo.
 
 | Path | What it is | Stack |
 |---|---|---|
-| `apps/shop-admin-api` | Merchant-facing REST API — auth, accounts, products, inventory, orders, Stripe Connect, API keys | NestJS (Fastify), Drizzle, JWT |
-| `apps/shop-admin-web` | Merchant dashboard | React 19, TanStack Router/Query/Table, Tailwind |
+| `apps/admin-api` | Merchant-facing REST API — auth, accounts, products, inventory, orders, Stripe Connect, API keys | NestJS (Fastify), Drizzle, JWT |
+| `apps/admin-web` | Merchant dashboard | React 19, TanStack Router/Query/Table, Tailwind |
 | `apps/storefront-api` | Public REST API consumed by storefronts — products, cart, checkout | NestJS (Express), Drizzle, Stripe, Shippo |
 | `apps/storefront-web` | Customer-facing storefront app | React 19, React Router, Stripe Elements, Tailwind |
 | `apps/website` | Marketing site | Astro |
@@ -93,9 +93,9 @@ cd packages/db && npm run up
 npm run push
 
 # 3. run an app (from its own directory)
-cd apps/shop-admin-api && npm run start:dev   # admin API — :3000
+cd apps/admin-api && npm run start:dev   # admin API — :3000
 cd apps/storefront-api && npm run start:dev   # storefront API — :3001
-cd apps/shop-admin-web && npm run dev         # admin dashboard — :5000
+cd apps/admin-web && npm run dev         # admin dashboard — :5000
 cd apps/storefront-web && npm run dev         # storefront app
 cd apps/website && npm run dev                # marketing site
 ```

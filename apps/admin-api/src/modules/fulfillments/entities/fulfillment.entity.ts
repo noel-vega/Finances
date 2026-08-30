@@ -8,7 +8,7 @@ export class FulfillmentItem {
   quantity!: number;
 }
 
-// embedded in OrderDetail.fulfillments — see apps/shop-admin-api's
+// embedded in OrderDetail.fulfillments — see apps/admin-api's
 // orders/entities/order-detail.entity.ts
 export class Fulfillment {
   @ApiProperty({ type: Number })

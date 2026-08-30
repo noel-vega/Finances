@@ -12,7 +12,7 @@ const IDLE_MS = 250;
 /**
  * Invisible, always-focused input that turns a hardware barcode scanner
  * (which acts as a keyboard) into an onScan callback — the RN-native
- * equivalent of shop-admin-web's `useBarcodeScanner` window keydown listener.
+ * equivalent of admin-web's `useBarcodeScanner` window keydown listener.
  * Mount it on a screen where scanning should silently add to the order,
  * instead of opening the camera.
  *

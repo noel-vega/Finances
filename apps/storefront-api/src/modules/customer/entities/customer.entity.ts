@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 // deliberately not `implements SelectCustomer` — customersTable's JS
 // properties are firstname/lastname (see CustomerService.toCustomer, same
-// reasoning as shop-admin-api's User entity), and password is never
+// reasoning as admin-api's User entity), and password is never
 // included here
 export class Customer {
   @ApiProperty({ type: Number })

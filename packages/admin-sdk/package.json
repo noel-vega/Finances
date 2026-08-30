@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "generate": "openapi-typescript ../../apps/shop-admin-api/openapi.json -o ./src/types.gen.ts",
+    "generate": "openapi-typescript ../../apps/admin-api/openapi.json -o ./src/types.gen.ts",
     "build": "tsc -p tsconfig.json"
   },
   "keywords": [],

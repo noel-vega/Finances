@@ -12,8 +12,8 @@ WORKDIR /app
 FROM base AS deps
 COPY package.json package-lock.json ./
 COPY apps/pos-api/package.json apps/pos-api/package.json
-COPY apps/shop-admin-api/package.json apps/shop-admin-api/package.json
-COPY apps/shop-admin-web/package.json apps/shop-admin-web/package.json
+COPY apps/admin-api/package.json apps/admin-api/package.json
+COPY apps/admin-web/package.json apps/admin-web/package.json
 COPY apps/storefront-api/package.json apps/storefront-api/package.json
 COPY apps/storefront-web/package.json apps/storefront-web/package.json
 COPY apps/website/package.json apps/website/package.json
@@ -42,8 +42,8 @@ RUN npm run build --workspace=pos-api
 FROM base AS prod-deps
 COPY package.json package-lock.json ./
 COPY apps/pos-api/package.json apps/pos-api/package.json
-COPY apps/shop-admin-api/package.json apps/shop-admin-api/package.json
-COPY apps/shop-admin-web/package.json apps/shop-admin-web/package.json
+COPY apps/admin-api/package.json apps/admin-api/package.json
+COPY apps/admin-web/package.json apps/admin-web/package.json
 COPY apps/storefront-api/package.json apps/storefront-api/package.json
 COPY apps/storefront-web/package.json apps/storefront-web/package.json
 COPY apps/website/package.json apps/website/package.json

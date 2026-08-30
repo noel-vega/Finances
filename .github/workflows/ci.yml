@@ -34,10 +34,10 @@ jobs:
 
       - name: Build apps
         run: |
-          npm run build --workspace=shop-admin-api \
+          npm run build --workspace=admin-api \
             --workspace=storefront-api \
             --workspace=worker \
-            --workspace=shop-admin-web \
+            --workspace=admin-web \
             --workspace=storefront-web \
             --workspace=website
 
@@ -46,7 +46,7 @@ jobs:
 
       - name: Test
         run: |
-          npm run test --workspace=shop-admin-api \
+          npm run test --workspace=admin-api \
             --workspace=storefront-api \
             --workspace=worker
 
@@ -54,7 +54,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        target: [shop-admin-api, storefront-api, worker, migrate]
+        target: [admin-api, storefront-api, worker, migrate]
     steps:
       - uses: actions/checkout@v4
 

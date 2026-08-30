@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 #
 # Build from the repo root:
-#   docker build -f docker/shop-admin-api.Dockerfile -t ordersail-shop-admin-api:local .
+#   docker build -f docker/admin-api.Dockerfile -t ordersail-admin-api:local .
 
 FROM node:22-alpine AS base
 WORKDIR /app
@@ -11,8 +11,8 @@ WORKDIR /app
 # package.json changes, not on every source edit.
 FROM base AS deps
 COPY package.json package-lock.json ./
-COPY apps/shop-admin-api/package.json apps/shop-admin-api/package.json
-COPY apps/shop-admin-web/package.json apps/shop-admin-web/package.json
+COPY apps/admin-api/package.json apps/admin-api/package.json
+COPY apps/admin-web/package.json apps/admin-web/package.json
 COPY apps/storefront-api/package.json apps/storefront-api/package.json
 COPY apps/storefront-web/package.json apps/storefront-web/package.json
 COPY apps/website/package.json apps/website/package.json
@@ -33,7 +33,7 @@ RUN npm ci
 FROM deps AS build
 COPY . .
 RUN npm run build --workspace=logging --workspace=db --workspace=queue --workspace=storage
-RUN npm run build --workspace=shop-admin-api
+RUN npm run build --workspace=admin-api
 
 # --- prod-deps: same package.json-only copy, but omit devDependencies —
 # produces a lean node_modules for the runtime image. Installs prod deps for
@@ -41,8 +41,8 @@ RUN npm run build --workspace=shop-admin-api
 # acceptable at this repo size.
 FROM base AS prod-deps
 COPY package.json package-lock.json ./
-COPY apps/shop-admin-api/package.json apps/shop-admin-api/package.json
-COPY apps/shop-admin-web/package.json apps/shop-admin-web/package.json
+COPY apps/admin-api/package.json apps/admin-api/package.json
+COPY apps/admin-web/package.json apps/admin-web/package.json
 COPY apps/storefront-api/package.json apps/storefront-api/package.json
 COPY apps/storefront-web/package.json apps/storefront-web/package.json
 COPY apps/website/package.json apps/website/package.json
@@ -72,7 +72,7 @@ COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=prod-deps /app/package.json ./package.json
 COPY --from=prod-deps /app/apps ./apps
 COPY --from=prod-deps /app/packages ./packages
-COPY --from=build /app/apps/shop-admin-api/dist ./apps/shop-admin-api/dist
+COPY --from=build /app/apps/admin-api/dist ./apps/admin-api/dist
 COPY --from=build /app/packages/logging/dist ./packages/logging/dist
 COPY --from=build /app/packages/db/dist ./packages/db/dist
 COPY --from=build /app/packages/queue/dist ./packages/queue/dist
@@ -81,4 +81,4 @@ USER app
 EXPOSE 3000
 HEALTHCHECK --interval=15s --timeout=5s --start-period=20s --retries=3 \
   CMD node -e "fetch('http://localhost:'+(process.env.PORT||3000)+'/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
-CMD ["node", "apps/shop-admin-api/dist/src/main.js"]
+CMD ["node", "apps/admin-api/dist/src/main.js"]
