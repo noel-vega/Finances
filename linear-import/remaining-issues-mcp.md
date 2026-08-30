@@ -98,6 +98,23 @@ workspace hit the **free-plan issue cap (~250)**.
 
 ---
 
+## NEW — found 2026-08-30 while unbreaking CI
+
+Add to **Production readiness → M1 — Unbreak CI (post-rename)**
+`project: 27f8ac8a-6046-4676-ba8b-e2af9aef31e7` · `milestone: 9107268a-4438-45ab-b829-41cdae4dc635`
+
+The `shop-admin-* → admin-*` rename (branch `chore/unbreak-ci-admin-rename`) fixes only the **build**
+failure + makes `docker-smoke-build` green. `build-lint-test` is red for more, pre-existing reasons:
+
+| # | Priority | Title | Labels | Notes |
+|---|---|---|---|---|
+| 35 | P0 | Fix jest ESM/CJS — workspace deps can't load under ts-jest | bug, api, test | `packages/queue` is `"type":"module"` (ESM); `admin-api` / `storefront-api` jest is ts-jest/CJS → `Cannot use import statement outside a module` → 6/7 admin-api + 2/3 storefront-api suites fail. Fix: `moduleNameMapper` in each app's jest config → `../../packages/<x>/src/index.ts` for `queue`, `db`, `logging`, `storage`, `email`. Pre-existing. |
+| 36 | P1 | admin-api eslint: resolve the rule errors blocking CI lint | bug, api | ✅ DONE on branch `fix/admin-api-lint` (stacked on the rename PR). Typed `AuthenticatedRequest extends FastifyRequest`, removed unused vars, sync `logout`. Kept for the record. |
+| 37 | P0 | CI lint has never been green repo-wide | bug, ci-cd | `worker` has **no eslint config** (exit 2 under eslint 9); `storefront-api` (23) + `pos-api` (9): `.spec.ts` outside tsconfig `projectService` scope + the same `no-unsafe-*` correlation-id-middleware pattern fixed in admin-api; `admin-web` (5): react-hooks on TanStack Router route components; `pos` (2): real setState-in-effect. Needs: worker eslint config; include specs in each Nest tsconfig (or `allowDefaultProject`); replicate the `AuthenticatedRequest` typing to storefront-api/pos-api; fix pos's effects; resolve/exempt admin-web's route-component rule. |
+| 38 | P0 | Split `ci.yml` `build-lint-test` into separate build / lint / test jobs | feature, ci-cd | So a green `build` (+ `docker-smoke-build`) isn't hidden behind red lint/test. Re-close OS-15 when all are green. |
+
+---
+
 ## Milestone ID reference (all projects, for completeness)
 
 **Production readiness** `27f8ac8a-6046-4676-ba8b-e2af9aef31e7`
