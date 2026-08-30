@@ -24,9 +24,9 @@ jobs:
     strategy:
       matrix:
         include:
-          - app: shop-admin-api
-            dockerfile: docker/shop-admin-api.Dockerfile
-            ssm_key: shop-admin-api-uri
+          - app: admin-api
+            dockerfile: docker/admin-api.Dockerfile
+            ssm_key: admin-api-uri
           - app: storefront-api
             dockerfile: docker/storefront-api.Dockerfile
             ssm_key: storefront-api-uri
@@ -106,7 +106,7 @@ jobs:
     environment: production
     strategy:
       matrix:
-        app: [shop-admin-api, storefront-api, worker]
+        app: [admin-api, storefront-api, worker]
     steps:
       - uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -140,8 +140,8 @@ jobs:
     strategy:
       matrix:
         include:
-          - app: shop-admin-web
-            ssm_prefix: shop-admin-web
+          - app: admin-web
+            ssm_prefix: admin-web
           - app: storefront-web
             ssm_prefix: storefront-web
           - app: website
@@ -167,7 +167,7 @@ jobs:
       - name: Resolve API base URLs
         id: api-urls
         run: |
-          ADMIN_API_DNS=$(aws ssm get-parameter --name /ordersail/production/alb/shop-admin-api-dns --query 'Parameter.Value' --output text)
+          ADMIN_API_DNS=$(aws ssm get-parameter --name /ordersail/production/alb/admin-api-dns --query 'Parameter.Value' --output text)
           STOREFRONT_API_DNS=$(aws ssm get-parameter --name /ordersail/production/alb/storefront-api-dns --query 'Parameter.Value' --output text)
           echo "admin_api=http://$ADMIN_API_DNS" >> "$GITHUB_OUTPUT"
           echo "storefront_api=http://$STOREFRONT_API_DNS" >> "$GITHUB_OUTPUT"

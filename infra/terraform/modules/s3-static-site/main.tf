@@ -1,5 +1,5 @@
 # Private S3 bucket + CloudFront (Origin Access Control), instantiated once
-# per frontend (shop-admin-web, storefront-web, website). Custom domain is
+# per frontend (admin-web, storefront-web, website). Custom domain is
 # opt-in per instance via `aliases`/`acm_certificate_arn` — see dns.tf in
 # envs/production for the Route53 zone + ACM cert those are sourced from.
 

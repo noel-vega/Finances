@@ -10,7 +10,7 @@ data "aws_route53_zone" "this" {
 
 # Wildcard SAN covers admin.${domain}/shop.${domain} in advance, even
 # though only the apex (-> website) is wired up below. When
-# shop-admin-web/storefront-web's own milestones land, pointing their
+# admin-web/storefront-web's own milestones land, pointing their
 # subdomains at this same cert is a two-line change with no re-validation.
 resource "aws_acm_certificate" "frontends" {
   domain_name               = var.domain_name
@@ -64,8 +64,8 @@ resource "aws_route53_record" "admin_web_alias" {
   type    = "A"
 
   alias {
-    name                   = module.frontend_shop_admin_web.distribution_domain_name
-    zone_id                = module.frontend_shop_admin_web.distribution_hosted_zone_id
+    name                   = module.frontend_admin_web.distribution_domain_name
+    zone_id                = module.frontend_admin_web.distribution_hosted_zone_id
     evaluate_target_health = false
   }
 }

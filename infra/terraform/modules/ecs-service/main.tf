@@ -1,5 +1,5 @@
 # Reusable Fargate service module, instantiated once each for
-# shop-admin-api, storefront-api, and worker in envs/production/main.tf.
+# admin-api, storefront-api, and worker in envs/production/main.tf.
 # target_group_arn is null for worker (no ALB — pure BullMQ consumer, ECS's
 # own container health check is the only liveness signal it needs).
 
@@ -49,7 +49,7 @@ resource "aws_iam_role_policy" "execution_secrets" {
 }
 
 # --- task role: the app's own AWS permissions at runtime (e.g.
-# shop-admin-api's direct S3 access to the product-images bucket, per the
+# admin-api's direct S3 access to the product-images bucket, per the
 # packages/storage credential fix — no static IAM user key needed).
 data "aws_iam_policy_document" "task_assume" {
   statement {
