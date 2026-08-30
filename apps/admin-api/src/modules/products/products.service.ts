@@ -214,6 +214,9 @@ export class ProductsService {
       and(eq(productImagesTable.productId, id), isNull(productImagesTable.variantId)),
     );
 
+    // brandId is destructured out so the resolved `brand` object below
+    // replaces the raw FK in the response
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { brandId, ...rest } = product;
     return {
       ...rest,

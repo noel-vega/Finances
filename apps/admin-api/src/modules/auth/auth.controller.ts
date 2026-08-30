@@ -14,7 +14,7 @@ import { AcceptInviteDto } from './dto/accept-invite.dto';
 import { AccessTokenDto } from './dto/access-token.dto';
 import { Public } from './auth.decorators';
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { ApiBearerAuth, ApiConflictResponse, ApiOkResponse, ApiResponse, ApiUnauthorizedResponse } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiConflictResponse, ApiOkResponse, ApiUnauthorizedResponse } from '@nestjs/swagger';
 
 const REFRESH_TOKEN_COOKIE = 'refresh_token';
 
@@ -110,7 +110,7 @@ export class AuthController {
   @Public()
   @Post('logout')
   @ApiOkResponse()
-  async logout(@Res({ passthrough: true }) res: FastifyReply): Promise<void> {
+  logout(@Res({ passthrough: true }) res: FastifyReply): void {
     // refresh_token is httpOnly, so it can only be cleared by the server —
     // the client can't just delete it itself
     res.clearCookie(REFRESH_TOKEN_COOKIE, { path: '/' });
@@ -121,10 +121,7 @@ export class AuthController {
   @ApiOkResponse({ type: AccessTokenDto })
   @ApiUnauthorizedResponse()
   @Get('token/refresh')
-  async refreshToken(
-    @Req() req: FastifyRequest,
-    @Res({ passthrough: true }) res: FastifyReply,
-  ): Promise<AccessTokenDto> {
+  async refreshToken(@Req() req: FastifyRequest): Promise<AccessTokenDto> {
     const refreshToken = req.cookies[REFRESH_TOKEN_COOKIE];
     if (!refreshToken) {
       throw new UnauthorizedException('Invalid or expired token');

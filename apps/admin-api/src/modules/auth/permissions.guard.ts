@@ -1,7 +1,7 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable, Provider } from '@nestjs/common';
 import { APP_GUARD, Reflector } from '@nestjs/core';
 import { PermissionsService } from '../permissions/permissions.service';
-import { IS_PUBLIC_KEY, PERMISSIONS_KEY, type AuthenticatedUser } from './auth.decorators';
+import { IS_PUBLIC_KEY, PERMISSIONS_KEY, type AuthenticatedRequest } from './auth.decorators';
 
 // authorization ("what"), separate from AuthGuard's authentication ("who").
 // A no-op for any route without @RequirePermissions() — every existing
@@ -33,8 +33,8 @@ export class PermissionsGuard implements CanActivate {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest();
-    const user = request.user as AuthenticatedUser | undefined;
+    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
+    const user = request.user;
     if (!user) {
       // AuthGuard runs first and always populates this for a non-@Public()
       // route — reaching here with no user means something upstream is

@@ -21,6 +21,7 @@ import {
 } from 'db';
 import * as bcrypt from 'bcryptjs';
 import { generateApiKey } from '../api-keys/api-keys.util';
+import type { AuthenticatedUser } from './auth.decorators';
 
 @Injectable()
 export class AuthService {
@@ -168,7 +169,6 @@ export class AuthService {
     accountId: number,
     firstName: string,
     lastName: string,
-    expiresIn: string,
   ) {
     const payload = { sub, email, accountId, firstName, lastName };
     const token =  await this.jwtService.signAsync(payload, {
@@ -184,7 +184,7 @@ export class AuthService {
     firstName: string,
     lastName: string,
   ) {
-    return await this.createToken(sub, email, accountId, firstName, lastName, '8h')
+    return await this.createToken(sub, email, accountId, firstName, lastName)
   }
 
 
@@ -195,13 +195,14 @@ export class AuthService {
     firstName: string,
     lastName: string,
   ) {
-    return await this.createToken(sub, email, accountId, firstName, lastName, '7d')
+    return await this.createToken(sub, email, accountId, firstName, lastName)
   }
 
   async refreshAccessToken(refreshToken: string) {
     try {
       // Returns the decoded payload if valid
-      const payload = await this.jwtService.verifyAsync(refreshToken);
+      const payload =
+        await this.jwtService.verifyAsync<AuthenticatedUser>(refreshToken);
       const token = await this.createAccessToken(
         payload.sub,
         payload.email,
@@ -210,7 +211,7 @@ export class AuthService {
         payload.lastName,
       )
       return token
-    } catch (error) {
+    } catch {
       // Throws error if token is expired, tampered, or invalid
       throw new UnauthorizedException('Invalid or expired token');
     }
