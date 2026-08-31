@@ -14,6 +14,7 @@ export default defineConfig({
     react()
   ],
   server: {
-    port: 3001
+    // matches the `dev` script's `--port 5000`; 3001 collided with storefront-api
+    port: 5000
   }
 })

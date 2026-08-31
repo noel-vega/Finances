@@ -2,15 +2,12 @@
   "name": "shop",
   "version": "0.0.0",
   "private": true,
+  "packageManager": "npm@11.6.0",
   "devDependencies": {
     "nx": "23.0.1"
   },
   "workspaces": [
     "apps/*",
     "packages/*"
-  ],
-  "overrides": {
-    "react": "^19.2.3",
-    "react-dom": "^19.2.3"
-  }
+  ]
 }

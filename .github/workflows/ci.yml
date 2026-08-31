@@ -43,9 +43,24 @@ jobs:
             --workspace=website
 
       - name: Lint
-        run: npm run lint --workspaces --if-present
+        # explicit list rather than --workspaces: `pos` (Expo) needs
+        # `pos-sdk` built for its import resolver and isn't wired into CI
+        # yet — that's OS-13
+        run: |
+          npm run lint --workspace=merchant-api \
+            --workspace=storefront-api \
+            --workspace=pos-api \
+            --workspace=worker \
+            --workspace=merchant-web \
+            --workspace=storefront-web \
+            --workspace=ui
 
       - name: Test
+        # packages/db creates its pool at import time from DATABASE_URL; the
+        # unit specs mock the connection but the string still has to parse.
+        # A real DB + integration tests are OS-42.
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/test
         run: |
           npm run test --workspace=merchant-api \
             --workspace=storefront-api \
