@@ -37,6 +37,7 @@ jobs:
         run: |
           npm run build --workspace=merchant-api \
             --workspace=storefront-api \
+            --workspace=pos-api \
             --workspace=worker \
             --workspace=merchant-web \
             --workspace=storefront-web \
@@ -64,13 +65,14 @@ jobs:
         run: |
           npm run test --workspace=merchant-api \
             --workspace=storefront-api \
+            --workspace=pos-api \
             --workspace=worker
 
   docker-smoke-build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        target: [merchant-api, storefront-api, worker, migrate]
+        target: [merchant-api, storefront-api, pos-api, worker, migrate]
     steps:
       - uses: actions/checkout@v4
 
