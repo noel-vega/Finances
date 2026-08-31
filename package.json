@@ -7,7 +7,7 @@
     "setup": "node scripts/copy-env-examples.mjs",
     "up": "docker compose up -d --wait",
     "down": "docker compose down",
-    "bootstrap": "npm run push -w db && npm run seed -w seed",
+    "bootstrap": "node scripts/bootstrap.mjs",
     "reset": "docker compose down -v && npm run up && npm run bootstrap",
     "seed": "npm run seed -w seed",
     "push": "npm run push -w db",

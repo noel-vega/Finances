@@ -110,7 +110,7 @@ All commands run from the repo root.
 npm ci
 npm run setup       # .env from every .env.example — placeholder secrets, see "Secrets"
 npm run up          # Postgres + Redis + MinIO + Mailpit (waits until healthy)
-npm run bootstrap   # drizzle push + seed the demo catalog
+npm run bootstrap   # wait for Postgres, drizzle push, seed the demo catalog
                     #  ↳ copy the "Created storefront API key: sfk_…" line it prints
 npm run dev         # the six coupled app servers, in parallel
 ```
