@@ -7,7 +7,7 @@
     "dev": "vite",
     "lint": "eslint .",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc -b --noEmit",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },

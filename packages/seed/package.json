@@ -4,7 +4,8 @@
   "description": "Seeds local dev with a demo sneaker-store catalog and its product photos.",
   "scripts": {
     "seed": "npm run build -w db -w storage --if-present && tsx scripts/seed.ts",
-    "seed:images": "tsx scripts/download-seed-images.ts"
+    "seed:images": "tsx scripts/download-seed-images.ts",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [],
   "author": "",
