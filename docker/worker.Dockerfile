@@ -18,6 +18,7 @@ COPY apps/storefront-web/package.json apps/storefront-web/package.json
 COPY apps/website/package.json apps/website/package.json
 COPY apps/worker/package.json apps/worker/package.json
 COPY packages/merchant-sdk/package.json packages/merchant-sdk/package.json
+COPY packages/config/package.json packages/config/package.json
 COPY packages/db/package.json packages/db/package.json
 COPY packages/email/package.json packages/email/package.json
 COPY packages/email-templates/package.json packages/email-templates/package.json
@@ -32,7 +33,7 @@ RUN npm ci
 # (dependency order), then the app itself.
 FROM deps AS build
 COPY . .
-RUN npm run build --workspace=logging --workspace=db --workspace=queue --workspace=email --workspace=email-templates
+RUN npm run build --workspace=config --workspace=logging --workspace=db --workspace=queue --workspace=email --workspace=email-templates
 RUN npm run build --workspace=worker
 
 # --- prod-deps: same package.json-only copy, but omit devDependencies —
@@ -46,6 +47,7 @@ COPY apps/storefront-web/package.json apps/storefront-web/package.json
 COPY apps/website/package.json apps/website/package.json
 COPY apps/worker/package.json apps/worker/package.json
 COPY packages/merchant-sdk/package.json packages/merchant-sdk/package.json
+COPY packages/config/package.json packages/config/package.json
 COPY packages/db/package.json packages/db/package.json
 COPY packages/email/package.json packages/email/package.json
 COPY packages/email-templates/package.json packages/email-templates/package.json
@@ -71,6 +73,7 @@ COPY --from=prod-deps /app/package.json ./package.json
 COPY --from=prod-deps /app/apps ./apps
 COPY --from=prod-deps /app/packages ./packages
 COPY --from=build /app/apps/worker/dist ./apps/worker/dist
+COPY --from=build /app/packages/config/dist ./packages/config/dist
 COPY --from=build /app/packages/logging/dist ./packages/logging/dist
 COPY --from=build /app/packages/db/dist ./packages/db/dist
 COPY --from=build /app/packages/queue/dist ./packages/queue/dist

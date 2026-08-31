@@ -1,7 +1,6 @@
-// no db/email/storage import runs early enough elsewhere in this app to
-// load env vars as a side effect (unlike merchant-api/storefront-api,
-// which pick it up transitively via `db`) — loaded explicitly here instead
-import 'dotenv/config';
+// validates process.env (and loads .env via `config`'s dotenv) before
+// anything else — nothing else in this app imports env early enough
+import { env } from './env';
 import { NestFactory } from '@nestjs/core';
 import { CorrelatedLogger } from 'logging';
 import { AppModule } from './app.module';
@@ -13,9 +12,9 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: new CorrelatedLogger(undefined, {
-      json: process.env.NODE_ENV === 'production',
+      json: env.NODE_ENV === 'production',
     }),
   });
-  await app.listen(process.env.PORT ?? 3003);
+  await app.listen(env.PORT);
 }
 bootstrap();

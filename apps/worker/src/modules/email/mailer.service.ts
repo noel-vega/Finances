@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { createMailer } from 'email';
+import { env } from '../../env';
 
-const FROM = process.env.SMTP_FROM ?? 'Ordersail <no-reply@ordersail.local>';
+const FROM = env.SMTP_FROM;
 
 // this app is now the only consumer of `email`'s createMailer — the two
 // APIs enqueue jobs instead of talking to SMTP directly
@@ -10,11 +11,11 @@ export class MailerService {
   // auth is only set when SMTP_USER is present — local Mailpit takes no
   // auth, SES SMTP requires it
   private readonly mailer = createMailer({
-    host: process.env.SMTP_HOST ?? 'localhost',
-    port: Number(process.env.SMTP_PORT ?? 1025),
-    secure: process.env.SMTP_SECURE === 'true',
-    auth: process.env.SMTP_USER
-      ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS! }
+    host: env.SMTP_HOST,
+    port: env.SMTP_PORT,
+    secure: env.SMTP_SECURE === 'true',
+    auth: env.SMTP_USER
+      ? { user: env.SMTP_USER, pass: env.SMTP_PASS ?? '' }
       : undefined,
   });
 

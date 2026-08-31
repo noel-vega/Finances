@@ -1,3 +1,4 @@
+import { env } from './env'; // validates process.env before anything else loads
 import { randomUUID } from 'node:crypto';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
@@ -19,7 +20,7 @@ async function bootstrap() {
     {
       rawBody: true,
       logger: new CorrelatedLogger(undefined, {
-        json: process.env.NODE_ENV === 'production',
+        json: env.NODE_ENV === 'production',
       }),
     },
   );
@@ -44,7 +45,7 @@ async function bootstrap() {
   });
 
   app.enableCors({
-    origin: process.env.MERCHANT_WEB_URL ?? 'http://localhost:5000',
+    origin: env.MERCHANT_WEB_URL,
     credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'DELETE'],
   });
@@ -52,6 +53,6 @@ async function bootstrap() {
   // Fastify defaults to binding 'localhost' (loopback only) when no host is given — fine for
   // local dev (same machine), but unreachable from the ALB in ECS, which connects to the
   // task's real VPC IP, not loopback.
-  await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
+  await app.listen(env.PORT, '0.0.0.0');
 }
 bootstrap();

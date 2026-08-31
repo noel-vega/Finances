@@ -1,3 +1,4 @@
+import { env } from "./env"; // validates process.env before anything else loads
 import { randomUUID } from "node:crypto";
 import { NestFactory } from "@nestjs/core";
 import { ValidationPipe } from "@nestjs/common";
@@ -10,7 +11,7 @@ import { createSwaggerConfig } from "./swagger.config";
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: new CorrelatedLogger(undefined, {
-      json: process.env.NODE_ENV === "production",
+      json: env.NODE_ENV === "production",
     }),
   });
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
@@ -26,7 +27,7 @@ async function bootstrap() {
   // the POS client is a native app, not a browser — CORS is only relevant
   // for the Swagger UI and any web-based tooling
   app.enableCors({
-    origin: process.env.POS_WEB_URL ?? true,
+    origin: env.POS_WEB_URL ?? true,
     methods: ["GET", "POST", "PATCH", "DELETE"],
     allowedHeaders: ["content-type", "x-pos-device-token", "x-request-id"],
   });
@@ -36,6 +37,6 @@ async function bootstrap() {
     jsonDocumentUrl: "swagger/json",
   });
 
-  await app.listen(process.env.PORT ?? 3004);
+  await app.listen(env.PORT);
 }
 bootstrap();

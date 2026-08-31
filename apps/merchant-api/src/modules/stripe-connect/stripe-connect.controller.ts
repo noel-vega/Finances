@@ -14,6 +14,7 @@ import {
   ApiOkResponse,
   ApiQuery,
 } from '@nestjs/swagger';
+import { env } from '../../env';
 import { StripeConnectService } from './stripe-connect.service';
 import { StripeConnectStatus } from './entities/stripe-connect-status.entity';
 import { AccountSessionResponse } from './entities/account-session.entity';
@@ -63,7 +64,7 @@ export class StripeConnectController {
     const event = stripe.webhooks.constructEvent(
       req.rawBody,
       signature,
-      process.env.STRIPE_ACCOUNT_WEBHOOK_SECRET!,
+      env.STRIPE_ACCOUNT_WEBHOOK_SECRET,
     );
 
     if (event.type === 'account.updated' && event.account) {

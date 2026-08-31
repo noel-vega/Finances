@@ -9,6 +9,7 @@ import { InjectQueue } from '@nestjs/bullmq';
 import type { Queue } from 'bullmq';
 import { QUEUE_NAMES, type OrderJobData } from 'queue';
 import { getCorrelationId } from 'logging';
+import { env } from '../../env';
 import { DRIZZLE } from '../../database/database.constants';
 import {
   and,
@@ -322,7 +323,7 @@ export class CheckoutService {
     const event = stripe.webhooks.constructEvent(
       rawBody,
       signature,
-      process.env.STRIPE_CHECKOUT_WEBHOOK_SECRET!,
+      env.STRIPE_CHECKOUT_WEBHOOK_SECRET,
     );
 
     if (event.type !== 'checkout.session.completed') return;
@@ -381,7 +382,7 @@ export class CheckoutService {
       amountTotalCents: session.amount_total ?? cart.subtotalCents,
       shippingCents: session.shipping_cost?.amount_total ?? 0,
       shippingLocationId: Number(session.metadata?.shippingLocationId) || null,
-      storefrontUrl: process.env.STOREFRONT_WEB_URL ?? 'http://localhost:3002',
+      storefrontUrl: env.STOREFRONT_WEB_URL,
       items: cart.items.map((item) => ({
         variantId: item.variantId,
         productName: item.productName,

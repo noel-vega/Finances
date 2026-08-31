@@ -1,6 +1,7 @@
 import Stripe from 'stripe';
+import { env } from '../../env';
 
 // platform's own secret key — Connect API calls act on behalf of a
 // connected account via the `stripeAccount` request option, not a
 // per-merchant key
-export const stripe: Stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+export const stripe: Stripe = new Stripe(env.STRIPE_SECRET_KEY);

@@ -28,7 +28,8 @@ jobs:
       # directly) — deliberately excluded here.
       - name: Build shared packages
         run: |
-          npm run build --workspace=db \
+          npm run build --workspace=config \
+            --workspace=db \
             --workspace=logging \
             --workspace=queue \
             --workspace=storage \
@@ -91,7 +92,8 @@ jobs:
       # same list as build-lint-test plus pos-sdk (apps/pos imports it)
       - name: Build shared packages
         run: |
-          npm run build --workspace=db \
+          npm run build --workspace=config \
+            --workspace=db \
             --workspace=logging \
             --workspace=queue \
             --workspace=storage \

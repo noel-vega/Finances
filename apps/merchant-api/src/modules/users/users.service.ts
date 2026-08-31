@@ -13,6 +13,7 @@ import { generateToken } from '../../common/generate-token.util';
 import { resolveOwned } from '../../common/resolve-owned.util';
 import { groupBy } from '../../common/group-by.util';
 import { assertCanGrant } from '../../common/assert-can-grant.util';
+import { env } from '../../env';
 import { getPermissionKeysForRoles } from '../../common/get-permission-keys-for-roles.util';
 import { DRIZZLE } from 'src/database/database.constants';
 import {
@@ -196,7 +197,7 @@ export class UsersService {
         return { user, token };
       });
 
-      const inviteUrl = `${process.env.MERCHANT_WEB_URL ?? 'http://localhost:5000'}/join?token=${token}`;
+      const inviteUrl = `${env.MERCHANT_WEB_URL}/join?token=${token}`;
       await this.emailService.sendInviteEmail(user.email, {
         firstName: user.firstname,
         inviteUrl,
