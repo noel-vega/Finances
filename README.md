@@ -85,23 +85,32 @@ An Nx-managed npm workspace monorepo.
 
 ## Getting started
 
+All commands run from the repo root.
+
 ```bash
-# 1. start local infra — Postgres, Redis, MinIO, Mailpit (from repo root)
-npm run up
-
-# 2. push the schema (dev workflow — no migration files needed)
-npm run push -w db
-
-# 3. seed demo data (one-time; prints a storefront API key for storefront-web)
-npm run seed -w seed
-
-# 4. run an app (from its own directory)
-cd apps/merchant-api && npm run start:dev   # merchant API — :3000
-cd apps/storefront-api && npm run start:dev   # storefront API — :3001
-cd apps/merchant-web && npm run dev         # merchant dashboard — :5000
-cd apps/storefront-web && npm run dev         # storefront app
-cd apps/website && npm run dev                # marketing site
+npm ci
+npm run setup       # create .env files from .env.example, then fill in secrets
+npm run up          # local infra — Postgres, Redis, MinIO, Mailpit
+npm run bootstrap   # push the schema + seed demo data (prints a storefront API key)
+npm run dev         # every app's dev server, in parallel
 ```
+
+| App | URL |
+| --- | --- |
+| merchant-api | http://localhost:3000 |
+| storefront-api | http://localhost:3001 |
+| storefront-web | http://localhost:3002 |
+| worker (health only) | http://localhost:3003 |
+| pos-api | http://localhost:3004 |
+| merchant-web | http://localhost:5000 |
+
+`npm run dev` covers the six coupled apps. The marketing site
+(`npm run dev:website`, :4321 — runs as its own persistent Astro server, stop with
+`cd apps/website && npx astro dev stop`) and the Expo POS app (`npm run dev:pos`)
+start on their own.
+
+Other root tasks: `npm run down` / `npm run reset` (wipe volumes + re-seed),
+`npm run logs`, `npm run build`, `npm run typecheck`, `npm run push` / `npm run migrate`.
 
 Each NestJS API exposes Swagger/OpenAPI at runtime and has a `generate:openapi` script that regenerates `openapi.json`, which in turn feeds the corresponding SDK package.
 

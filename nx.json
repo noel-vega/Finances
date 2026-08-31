@@ -1,4 +1,9 @@
 {
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
-  "analytics": true
+  "analytics": true,
+  "parallel": 8,
+  "targetDefaults": {
+    "build": { "dependsOn": ["^build"] },
+    "dev": { "dependsOn": ["^build"], "cache": false, "continuous": true }
+  }
 }
