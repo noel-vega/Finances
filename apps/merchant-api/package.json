@@ -40,6 +40,7 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "cookie-parser": "^1.4.7",
+    "config": "*",
     "db": "*",
     "fastify": "5.11.3",
     "logging": "*",
@@ -103,9 +104,13 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
+    "setupFiles": [
+      "<rootDir>/../../../test/jest.env-setup.cjs"
+    ],
     "moduleNameMapper": {
       "^src/(.*)$": "<rootDir>/$1",
       "^(\\.{1,2}/.*)\\.js$": "$1",
+      "^config$": "<rootDir>/../../../packages/config/src/index.ts",
       "^queue$": "<rootDir>/../../../packages/queue/src/index.ts",
       "^logging$": "<rootDir>/../../../packages/logging/src/index.ts",
       "^db$": "<rootDir>/../../../packages/db/src/index.ts",

@@ -27,8 +27,8 @@
     "@nestjs/core": "^11.0.1",
     "@nestjs/terminus": "^11.1.1",
     "bullmq": "^6.1.0",
+    "config": "*",
     "db": "*",
-    "dotenv": "^17.4.2",
     "email": "*",
     "email-templates": "*",
     "logging": "*",
@@ -85,8 +85,12 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
+    "setupFiles": [
+      "<rootDir>/../../../test/jest.env-setup.cjs"
+    ],
     "moduleNameMapper": {
       "^(\\.{1,2}/.*)\\.js$": "$1",
+      "^config$": "<rootDir>/../../../packages/config/src/index.ts",
       "^queue$": "<rootDir>/../../../packages/queue/src/index.ts",
       "^logging$": "<rootDir>/../../../packages/logging/src/index.ts",
       "^db$": "<rootDir>/../../../packages/db/src/index.ts",

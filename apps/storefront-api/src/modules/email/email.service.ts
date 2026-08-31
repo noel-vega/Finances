@@ -4,6 +4,7 @@ import { InjectQueue } from '@nestjs/bullmq';
 import type { Queue } from 'bullmq';
 import { QUEUE_NAMES, type EmailJobData } from 'queue';
 import { Logger, getCorrelationId } from 'logging';
+import { env } from '../../env';
 
 // this no longer talks to SMTP at all — it enqueues a job for apps/worker
 // to actually send. Send failures are retried by the worker; a failure to
@@ -22,8 +23,7 @@ export class EmailService {
     to: string,
     params: { firstName: string; accountName: string },
   ) {
-    const storefrontUrl =
-      process.env.STOREFRONT_WEB_URL ?? 'http://localhost:3002';
+    const storefrontUrl = env.STOREFRONT_WEB_URL;
     try {
       await this.emailQueue.add('customer-thank-you', {
         type: 'customer-thank-you',

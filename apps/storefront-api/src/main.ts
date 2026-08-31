@@ -1,3 +1,4 @@
+import { env } from './env'; // validates process.env before anything else loads
 import { randomUUID } from 'node:crypto';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
@@ -12,7 +13,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     rawBody: true,
     logger: new CorrelatedLogger(undefined, {
-      json: process.env.NODE_ENV === 'production',
+      json: env.NODE_ENV === 'production',
     }),
   });
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
@@ -34,7 +35,7 @@ async function bootstrap() {
   // customer signin now sets an httpOnly refresh cookie, so this can no
   // longer be a wildcard origin like it used to be
   app.enableCors({
-    origin: process.env.STOREFRONT_WEB_URL ?? 'http://localhost:3002',
+    origin: env.STOREFRONT_WEB_URL,
     credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'DELETE'],
     allowedHeaders: [
@@ -50,6 +51,6 @@ async function bootstrap() {
     jsonDocumentUrl: 'swagger/json',
   });
 
-  await app.listen(process.env.PORT ?? 3001);
+  await app.listen(env.PORT);
 }
 bootstrap();

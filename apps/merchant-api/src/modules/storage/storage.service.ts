@@ -1,6 +1,7 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { Logger } from 'logging';
 import { createStorageClient } from 'storage';
+import { env } from '../../env';
 
 @Injectable()
 export class StorageService implements OnModuleInit {
@@ -10,15 +11,13 @@ export class StorageService implements OnModuleInit {
   // MinIO); omitted in prod so the AWS SDK falls back to the default credential
   // chain and picks up the ECS task role instead of a static key pair
   private readonly client = createStorageClient({
-    endpoint: process.env.MINIO_ENDPOINT ?? 'http://localhost:9000',
-    accessKeyId: process.env.MINIO_ACCESS_KEY,
-    secretAccessKey: process.env.MINIO_SECRET_KEY,
-    bucket: process.env.MINIO_BUCKET ?? 'ordersail-product-images',
-    publicBaseUrl:
-      process.env.MINIO_PUBLIC_BASE_URL ??
-      'http://localhost:9000/ordersail-product-images',
-    forcePathStyle: process.env.MINIO_FORCE_PATH_STYLE
-      ? process.env.MINIO_FORCE_PATH_STYLE === 'true'
+    endpoint: env.MINIO_ENDPOINT,
+    accessKeyId: env.MINIO_ACCESS_KEY,
+    secretAccessKey: env.MINIO_SECRET_KEY,
+    bucket: env.MINIO_BUCKET,
+    publicBaseUrl: env.MINIO_PUBLIC_BASE_URL,
+    forcePathStyle: env.MINIO_FORCE_PATH_STYLE
+      ? env.MINIO_FORCE_PATH_STYLE === 'true'
       : undefined,
   });
 
