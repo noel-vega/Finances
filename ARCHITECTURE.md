@@ -86,8 +86,6 @@ flowchart TB
   ends up running it. `worker`'s check also verifies each queue's consumption loop is actually
   draining a backlog, not just that Redis is reachable — a plain Redis ping can't tell the two apart
   (see the worker-reconnect-stall note in memory).
-- `merchant-web`'s `vite.config.ts` says port 3001, but its `dev` script passes `--port 5000`,
-  which wins — 5000 is what's actually served (matches the README).
 - `website` is fully standalone: no workspace deps, no outbound calls, static marketing content.
 - Every account is a tenant with its own Stripe Connect account — `merchant-api` and
   `storefront-api` both call Stripe directly (Connect onboarding vs. Checkout Sessions
