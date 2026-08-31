@@ -159,6 +159,10 @@ jobs:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
 
+      # honor packageManager (package.json) — node 22 ships npm 10, whose
+      # `npm ci` can't reconcile this lockfile's `overrides`
+      - run: npm install -g npm@11
+
       - run: npm ci
 
       - name: Build shared packages this frontend needs

@@ -15,6 +15,10 @@ jobs:
           node-version: 22
           cache: npm
 
+      # honor packageManager (package.json) — node 22 ships npm 10, whose
+      # `npm ci` can't reconcile this lockfile's `overrides`
+      - run: npm install -g npm@11
+
       - run: npm ci
 
       # shared packages first — apps' `tsc`/`nest build` resolve workspace
