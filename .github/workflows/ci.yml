@@ -71,6 +71,38 @@ jobs:
             --workspace=pos-api \
             --workspace=worker
 
+  typecheck:
+    # `tsc --noEmit` per workspace — catches type errors the build steps
+    # miss (test/ specs, packages/ui, packages/seed, website .astro).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm install -g npm@11
+
+      - run: npm ci
+
+      # shared packages' dist/ + .d.ts feed cross-workspace type imports —
+      # same list as build-lint-test plus pos-sdk (apps/pos imports it)
+      - name: Build shared packages
+        run: |
+          npm run build --workspace=db \
+            --workspace=logging \
+            --workspace=queue \
+            --workspace=storage \
+            --workspace=email \
+            --workspace=email-templates \
+            --workspace=merchant-sdk \
+            --workspace=storefront-sdk \
+            --workspace=pos-sdk
+
+      - run: npm run typecheck --workspaces --if-present
+
   pos:
     # apps/pos (Expo): its own toolchain — eslint-config-expo (flat), no
     # nest build / jest. pos-sdk must be built first — pos imports it in

@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "generate": "openapi-typescript ../../apps/storefront-api/openapi.json -o ./src/types.gen.ts",
-    "build": "tsc -p tsconfig.json"
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [],
   "author": "",
