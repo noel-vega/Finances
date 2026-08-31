@@ -48,9 +48,8 @@ jobs:
             --workspace=website
 
       - name: Lint
-        # explicit list rather than --workspaces: `pos` (Expo) needs
-        # `pos-sdk` built for its import resolver and isn't wired into CI
-        # yet — that's OS-13
+        # explicit list rather than --workspaces: `pos` (Expo) is a
+        # different toolchain and runs in its own `pos` job below
         run: |
           npm run lint --workspace=merchant-api \
             --workspace=storefront-api \
@@ -71,6 +70,36 @@ jobs:
             --workspace=storefront-api \
             --workspace=pos-api \
             --workspace=worker
+
+  pos:
+    # apps/pos (Expo): its own toolchain — eslint-config-expo (flat), no
+    # nest build / jest. pos-sdk must be built first — pos imports it in
+    # several files and its eslint import resolver + tsc need the dist/.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm install -g npm@11
+
+      - run: npm ci
+
+      - run: npm run build --workspace=pos-sdk
+
+      - name: Lint
+        run: npm run lint --workspace=pos
+
+      - name: Typecheck
+        run: npm run typecheck --workspace=pos
+
+      - name: expo-doctor
+        env:
+          EXPO_NO_TELEMETRY: "1"
+        run: npm run doctor --workspace=pos
 
   docker-smoke-build:
     runs-on: ubuntu-latest
