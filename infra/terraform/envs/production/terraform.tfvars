@@ -3,7 +3,7 @@
 region      = "us-east-1"
 name_prefix = "ordersail"
 
-github_repo = "noel-vega/shop"
+github_repo = "noel-vega/ordersail"
 
 domain_name = "ordersail.com"
 

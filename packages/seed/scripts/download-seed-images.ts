@@ -51,7 +51,7 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Wikimedia's bot policy throttles requests with no identifying User-Agent
 // more aggressively than ones that provide one
-const FETCH_USER_AGENT = 'ShopSeedScript/1.0 (local dev seed; https://github.com/noel-vega/shop)';
+const FETCH_USER_AGENT = 'OrdersailSeedScript/1.0 (local dev seed; https://github.com/noel-vega/ordersail)';
 
 // Wikimedia Commons rate-limits bursts of requests (429) — back off and
 // retry rather than failing the whole batch over a transient throttle
