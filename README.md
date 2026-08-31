@@ -1,10 +1,10 @@
 # Ordersail
 
-**A multi-tenant e-commerce platform: back-office admin, storefront, and payments, in one place.**
+**A multi-tenant e-commerce platform: merchant back-office, storefront, POS, and payments, in one place.**
 
 > "Everything your store needs — products, orders, inventory, and payouts, in one place."
 
-Ordersail is a self-serve platform that lets any retailer spin up an account, catalog their products, connect a Stripe account, and start selling — with a public storefront API/app for customers and an admin dashboard for the merchant. Every account is an isolated tenant with its own catalog, inventory, orders, and Stripe Connect account; the platform itself never touches merchant funds.
+Ordersail is a self-serve platform that lets any retailer spin up an account, catalog their products, connect a Stripe account, and start selling — with a public storefront API/app for customers and a merchant dashboard for running the store. Every account is an isolated tenant with its own catalog, inventory, orders, and Stripe Connect account; the platform itself never touches merchant funds.
 
 Started 2026-07-07. In active early development.
 
@@ -27,13 +27,13 @@ Started 2026-07-07. In active early development.
 - Account profile management (name, shipping contact phone/email — required up front since some carriers reject label purchases without it)
 - User management (list, view, update, delete) within an account
 - Role scaffolding for staff access (roles UI in progress)
-- Account-scoped developer API keys, issued and viewable from the admin dashboard
+- Account-scoped developer API keys, issued and viewable from the merchant dashboard
 
 **Catalog**
 - Products with options and option values (e.g. Size, Color) and generated variants
 - Full CRUD on products, variants, options, and option values
 - Categories and brands, with products assignable to both
-- Barcode scanner support in the admin UI for fast lookups
+- Barcode scanner support in the merchant dashboard for fast lookups
 
 **Inventory**
 - Multi-location support (a merchant can run one store or several)
@@ -59,10 +59,11 @@ Started 2026-07-07. In active early development.
 **Apps**
 - `merchant-web` — merchant-facing dashboard (products, inventory, orders, carts, locations, customers, payments, roles, settings, developer API keys)
 - `storefront-web` — customer-facing storefront (browse products, cart, Stripe-hosted checkout, order return page)
+- `pos` — Expo (React Native) point-of-sale: build an order, scan or tap to add items, cash/card checkout — web and in-person sales share one orders model
 - `website` — public marketing site introducing Ordersail to prospective merchants
 
 **Developer experience**
-- OpenAPI specs generated from both APIs, with typed SDKs (`merchant-sdk`, `storefront-sdk`) generated from them and consumed directly by the React apps
+- OpenAPI specs generated from every API, with typed SDKs (`merchant-sdk`, `storefront-sdk`, `pos-sdk`) generated from them and consumed directly by the client apps
 - Shared `ui` component package and Drizzle-based `db` schema package used across every app
 
 ## Architecture
@@ -75,42 +76,96 @@ An Nx-managed npm workspace monorepo.
 | `apps/merchant-web` | Merchant dashboard | React 19, TanStack Router/Query/Table, Tailwind |
 | `apps/storefront-api` | Public REST API consumed by storefronts — products, cart, checkout | NestJS (Express), Drizzle, Stripe, Shippo |
 | `apps/storefront-web` | Customer-facing storefront app | React 19, React Router, Stripe Elements, Tailwind |
+| `apps/pos-api` | REST API for the POS app — device pairing, catalog, in-person orders | NestJS, Drizzle |
+| `apps/pos` | Point-of-sale app — pairs to the account, builds orders, cash/card checkout | Expo / React Native |
+| `apps/worker` | Background job consumer — order processing + transactional email; exposes `GET /health` only | NestJS, BullMQ |
 | `apps/website` | Marketing site | Astro |
-| `packages/db` | Shared Postgres schema & migrations (single source of truth for both APIs) | Drizzle ORM, Postgres 17 |
-| `packages/merchant-sdk` | Typed client generated from the merchant API's OpenAPI spec | openapi-typescript |
-| `packages/storefront-sdk` | Typed client generated from the storefront API's OpenAPI spec | openapi-typescript |
+| `packages/db` | Shared Postgres schema & migrations (single source of truth for every API) | Drizzle ORM, Postgres 17 |
+| `packages/merchant-sdk` / `storefront-sdk` / `pos-sdk` | Typed clients generated from each API's OpenAPI spec | openapi-typescript |
+| `packages/queue` | Shared BullMQ queue names + job type definitions | BullMQ, ioredis |
+| `packages/storage` | S3/MinIO client wrapper — presigned uploads, public-read bucket | AWS SDK v3 |
+| `packages/email` / `email-templates` | Nodemailer transport + React Email templates | nodemailer, react-email |
+| `packages/logging` | Correlated request logger shared by the NestJS apps | — |
+| `packages/seed` | Local dev seed — demo "Sneaker Depot" catalog + images | tsx |
 | `packages/ui` | Shared component library used by both React apps | React, Tailwind |
 
 **Data model highlights** (`packages/db/src/schema`): `accounts` and `users` anchor multi-tenancy; `products` → `product_options`/`product_option_values` → `product_variants` model catalog variation; `categories` and `brands` classify products; `locations` + `inventory` + `inventory_movements` track stock with history; `carts`/`cart_items` are ephemeral pre-purchase state while `orders`/`order_items` are permanent, snapshotted records; `stripe_accounts` links an account to its Stripe Connect account (a missing row simply means "not connected yet"); `account_api_keys` scopes storefront API access per account.
 
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for the full system map (service-to-service
+edges, queues, third-party calls).
+
 ## Getting started
+
+### Prerequisites
+
+- **Node ≥ 22.12** and **npm 11** — the repo pins `npm@11.6.0` via `packageManager`,
+  so `corepack enable` (or `npm i -g npm@11`) once, since Node 22 still ships npm 10.
+- **Docker** with Compose v2 — for the local Postgres / Redis / MinIO / Mailpit stack.
+
+### Quickstart
 
 All commands run from the repo root.
 
 ```bash
 npm ci
-npm run setup       # create .env files from .env.example, then fill in secrets
-npm run up          # local infra — Postgres, Redis, MinIO, Mailpit
-npm run bootstrap   # push the schema + seed demo data (prints a storefront API key)
-npm run dev         # every app's dev server, in parallel
+npm run setup       # .env from every .env.example — placeholder secrets, see "Secrets"
+npm run up          # Postgres + Redis + MinIO + Mailpit (waits until healthy)
+npm run bootstrap   # drizzle push + seed the demo catalog
+                    #  ↳ copy the "Created storefront API key: sfk_…" line it prints
+npm run dev         # the six coupled app servers, in parallel
 ```
 
-| App | URL |
-| --- | --- |
-| merchant-api | http://localhost:3000 |
-| storefront-api | http://localhost:3001 |
-| storefront-web | http://localhost:3002 |
-| worker (health only) | http://localhost:3003 |
-| pos-api | http://localhost:3004 |
-| merchant-web | http://localhost:5000 |
+**One manual step:** paste that `sfk_…` key into `apps/storefront-web/.env` as
+`VITE_STOREFRONT_APP_KEY=` (or mint one in merchant-web → Developers) — without it
+`storefront-web` gets 401s from `storefront-api`. It's only printed the first time
+`bootstrap` runs.
 
-`npm run dev` covers the six coupled apps. The marketing site
-(`npm run dev:website`, :4321 — runs as its own persistent Astro server, stop with
-`cd apps/website && npx astro dev stop`) and the Expo POS app (`npm run dev:pos`)
-start on their own.
+**Demo login:** `owner@sneakerdepot.test` / `password123` at http://localhost:5000.
 
-Other root tasks: `npm run down` / `npm run reset` (wipe volumes + re-seed),
-`npm run logs`, `npm run build`, `npm run typecheck`, `npm run push` / `npm run migrate`.
+### Ports
+
+| Service | URL | Notes |
+| --- | --- | --- |
+| merchant-web | http://localhost:5000 | merchant dashboard |
+| storefront-web | http://localhost:3002 | customer storefront |
+| merchant-api | http://localhost:3000 | Swagger UI at `/swagger` |
+| storefront-api | http://localhost:3001 | Swagger UI at `/swagger` |
+| pos-api | http://localhost:3004 | |
+| worker | http://localhost:3003 | `GET /health` only |
+| website | http://localhost:4321 | `npm run dev:website` (separate) |
+| Postgres | `localhost:5432` | `postgres` / `postgres`, db `ordersail` |
+| Redis | `localhost:6379` | |
+| MinIO | http://localhost:9000 · console http://localhost:9001 | `minioadmin` / `minioadmin` |
+| Mailpit | http://localhost:8025 | catches all outbound dev email |
+
+### Standalone apps — website & pos
+
+`npm run dev` runs the six coupled apps; these two start on their own:
+
+- **`npm run dev:website`** — Astro marketing site (`:4321`). It's a standalone
+  persistent server; stop it with `cd apps/website && npx astro dev stop`.
+- **`npm run dev:pos`** — Expo point-of-sale app. Needs `pos-api` running plus
+  Expo Go on a device or an iOS/Android simulator. An Android emulator reaches the
+  host via `10.0.2.2` (already set in `apps/pos/.env.example`).
+
+### Secrets
+
+The placeholder `.env` files are enough to run the catalog, cart, dashboard, POS,
+and seed. Stripe Connect onboarding, hosted checkout, and Shippo label purchase
+need real **test-mode** credentials:
+
+- APIs (`apps/merchant-api/.env`, `apps/storefront-api/.env`): `STRIPE_SECRET_KEY`,
+  `STRIPE_ACCOUNT_WEBHOOK_SECRET` / `STRIPE_CHECKOUT_WEBHOOK_SECRET`, `SHIPPO_API_KEY`
+- web (`apps/merchant-web/.env`, `apps/storefront-web/.env`): `VITE_STRIPE_PUBLISHABLE_KEY`
+
+Forward Stripe webhooks locally with `npm run stripe:listen -w merchant-api` and
+`npm run stripe:listen -w storefront-api`.
+
+### Everyday tasks
+
+`npm run down` · `npm run reset` (wipe volumes + re-seed) · `npm run logs` ·
+`npm run build` · `npm run typecheck` · `npm run push` / `npm run migrate` ·
+`npm run seed`
 
 Each NestJS API exposes Swagger/OpenAPI at runtime and has a `generate:openapi` script that regenerates `openapi.json`, which in turn feeds the corresponding SDK package.
 
