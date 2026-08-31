@@ -8,8 +8,10 @@ const JoinSearchSchema = z.object({
 
 export const Route = createFileRoute("/join")({
   validateSearch: JoinSearchSchema,
-  component: () => {
-    const { token } = Route.useSearch();
-    return <JoinView token={token} />;
-  },
+  component: RouteComponent,
 });
+
+function RouteComponent() {
+  const { token } = Route.useSearch();
+  return <JoinView token={token} />;
+}

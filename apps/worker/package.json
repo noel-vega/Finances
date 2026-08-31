@@ -13,7 +13,7 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
-    "test": "jest",
+    "test": "jest --passWithNoTests",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
@@ -67,12 +67,30 @@
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
+      "^.+\\.(t|j)s$": [
+        "ts-jest",
+        {
+          "tsconfig": {
+            "module": "CommonJS",
+            "moduleResolution": "node10",
+            "resolvePackageJsonExports": false
+          }
+        }
+      ]
     },
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^(\\.{1,2}/.*)\\.js$": "$1",
+      "^queue$": "<rootDir>/../../../packages/queue/src/index.ts",
+      "^logging$": "<rootDir>/../../../packages/logging/src/index.ts",
+      "^db$": "<rootDir>/../../../packages/db/src/index.ts",
+      "^db/(.*)$": "<rootDir>/../../../packages/db/src/$1",
+      "^email$": "<rootDir>/../../../packages/email/src/index.ts",
+      "^email-templates$": "<rootDir>/../../../packages/email-templates/src/index.ts"
+    }
   }
 }

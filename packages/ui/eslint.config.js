@@ -19,4 +19,12 @@ export default defineConfig([globalIgnores(['dist']), {
   languageOptions: {
     globals: globals.browser,
   },
+  rules: {
+    // this is a component library consumed through its package `exports`
+    // map, not a Vite app with HMR boundaries — shadcn's primitives
+    // deliberately co-locate a component with its `cva` variants and its
+    // context hook (they share module-private state), so the
+    // "only export components" fast-refresh constraint doesn't apply here
+    'react-refresh/only-export-components': 'off',
+  },
 }, ...storybook.configs["flat/recommended"]])

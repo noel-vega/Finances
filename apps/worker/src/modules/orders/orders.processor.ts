@@ -1,4 +1,9 @@
-import { InjectQueue, OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
+import {
+  InjectQueue,
+  OnWorkerEvent,
+  Processor,
+  WorkerHost,
+} from '@nestjs/bullmq';
 import { Inject } from '@nestjs/common';
 import type { Job, Queue } from 'bullmq';
 import { QUEUE_NAMES, type EmailJobData, type OrderJobData } from 'queue';
@@ -31,7 +36,8 @@ export class OrdersProcessor extends WorkerHost {
 
   constructor(
     @Inject(DRIZZLE) private readonly db: typeof Db,
-    @InjectQueue(QUEUE_NAMES.EMAIL) private readonly emailQueue: Queue<EmailJobData>,
+    @InjectQueue(QUEUE_NAMES.EMAIL)
+    private readonly emailQueue: Queue<EmailJobData>,
   ) {
     super();
   }
@@ -57,7 +63,7 @@ export class OrdersProcessor extends WorkerHost {
           // moment a second variant is added, same pattern as
           // EmailProcessor. Until then it's a runtime guard against a
           // malformed job (Redis doesn't enforce this type).
-          const unexpected = data as OrderJobData;
+          const unexpected = data;
           throw new Error(`Unrecognized order job type: ${unexpected.type}`);
         }
       }
@@ -71,10 +77,18 @@ export class OrdersProcessor extends WorkerHost {
     // before enqueueing, but this guards against BullMQ retries or a
     // duplicate Stripe delivery racing a job that's still in flight
     const [existing] = await this.db
-      .select({ id: ordersTable.id, confirmationEmailQueuedAt: ordersTable.confirmationEmailQueuedAt })
+      .select({
+        id: ordersTable.id,
+        confirmationEmailQueuedAt: ordersTable.confirmationEmailQueuedAt,
+      })
       .from(orderPaymentsTable)
       .innerJoin(ordersTable, eq(ordersTable.id, orderPaymentsTable.orderId))
-      .where(eq(orderPaymentsTable.stripeCheckoutSessionId, data.stripeCheckoutSessionId));
+      .where(
+        eq(
+          orderPaymentsTable.stripeCheckoutSessionId,
+          data.stripeCheckoutSessionId,
+        ),
+      );
     if (existing) {
       // the order itself is done, but if the worker died between the
       // transaction below committing and the email enqueueing (BullMQ
@@ -96,9 +110,13 @@ export class OrdersProcessor extends WorkerHost {
         quantity: number,
       ) => {
         const delta = -quantity;
-        await tx
-          .insert(inventoryMovementsTable)
-          .values({ orderItemId, variantId, locationId, delta, reason: 'sold' });
+        await tx.insert(inventoryMovementsTable).values({
+          orderItemId,
+          variantId,
+          locationId,
+          delta,
+          reason: 'sold',
+        });
         await tx
           .insert(inventoryTable)
           .values({ variantId, locationId, stock: delta })
@@ -171,7 +189,10 @@ export class OrdersProcessor extends WorkerHost {
         // allowed to go negative; the payment already succeeded and can't
         // be silently undone
         const inventoryRows = await tx
-          .select({ locationId: inventoryTable.locationId, stock: inventoryTable.stock })
+          .select({
+            locationId: inventoryTable.locationId,
+            stock: inventoryTable.stock,
+          })
           .from(inventoryTable)
           .where(eq(inventoryTable.variantId, item.variantId))
           .orderBy(desc(inventoryTable.stock));
@@ -181,17 +202,32 @@ export class OrdersProcessor extends WorkerHost {
           if (remaining <= 0) break;
           const take = Math.min(Math.max(row.stock, 0), remaining);
           if (take <= 0) continue;
-          await recordSoldMovement(orderItem.id, item.variantId, row.locationId, take);
+          await recordSoldMovement(
+            orderItem.id,
+            item.variantId,
+            row.locationId,
+            take,
+          );
           remaining -= take;
         }
         if (remaining > 0 && inventoryRows.length > 0) {
-          await recordSoldMovement(orderItem.id, item.variantId, inventoryRows[0].locationId, remaining);
+          await recordSoldMovement(
+            orderItem.id,
+            item.variantId,
+            inventoryRows[0].locationId,
+            remaining,
+          );
         }
       }
 
       await tx
         .delete(cartsTable)
-        .where(and(eq(cartsTable.token, data.cartToken), eq(cartsTable.accountId, data.accountId)));
+        .where(
+          and(
+            eq(cartsTable.token, data.cartToken),
+            eq(cartsTable.accountId, data.accountId),
+          ),
+        );
     });
 
     await this.enqueueOrderConfirmationEmail(orderId, data);
@@ -261,7 +297,11 @@ export class OrdersProcessor extends WorkerHost {
   // instance already consuming jobs, never a second one constructed just
   // to query this (that would spin up a duplicate real consumer)
   getLiveness() {
-    return { isRunning: this.worker.isRunning(), isPaused: this.worker.isPaused(), lastActiveAt: this.lastActiveAt };
+    return {
+      isRunning: this.worker.isRunning(),
+      isPaused: this.worker.isPaused(),
+      lastActiveAt: this.lastActiveAt,
+    };
   }
 
   // BullMQ emits worker events outside of process()'s own async chain, so
@@ -292,8 +332,13 @@ export class OrdersProcessor extends WorkerHost {
   @OnWorkerEvent('completed')
   onCompleted(job: Job<OrderJobData>) {
     runWithCorrelationId(job.data.correlationId, () => {
-      const sessionId = job.data.type === 'checkout-completed' ? job.data.stripeCheckoutSessionId : '';
-      this.logger.log(`Job ${job.id} (${job.name}) created order for session ${sessionId}`);
+      const sessionId =
+        job.data.type === 'checkout-completed'
+          ? job.data.stripeCheckoutSessionId
+          : '';
+      this.logger.log(
+        `Job ${job.id} (${job.name}) created order for session ${sessionId}`,
+      );
     });
   }
 }

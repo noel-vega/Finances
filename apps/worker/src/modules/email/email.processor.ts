@@ -31,7 +31,9 @@ export class EmailProcessor extends WorkerHost {
   // mailerService — is traceable back to whatever enqueued it (a request, or
   // an order job forwarding its own id)
   process(job: Job<EmailJobData>): Promise<void> {
-    return runWithCorrelationId(job.data.correlationId, () => this.processJob(job));
+    return runWithCorrelationId(job.data.correlationId, () =>
+      this.processJob(job),
+    );
   }
 
   private async processJob(job: Job<EmailJobData>): Promise<void> {
@@ -42,7 +44,10 @@ export class EmailProcessor extends WorkerHost {
         await this.mailerService.sendMail({
           to: data.to,
           subject: "You've been invited to join Ordersail",
-          html: await renderStaffInviteEmail({ firstName: data.firstName, inviteUrl: data.inviteUrl }),
+          html: await renderStaffInviteEmail({
+            firstName: data.firstName,
+            inviteUrl: data.inviteUrl,
+          }),
         });
         return;
 
@@ -92,7 +97,9 @@ export class EmailProcessor extends WorkerHost {
         // union member without a case here fails the build, not just the
         // job at runtime
         const _exhaustive: never = data;
-        throw new Error(`Unrecognized email job type: ${(_exhaustive as EmailJobData).type}`);
+        throw new Error(
+          `Unrecognized email job type: ${(_exhaustive as EmailJobData).type}`,
+        );
       }
     }
   }
@@ -108,7 +115,11 @@ export class EmailProcessor extends WorkerHost {
   // instance already consuming jobs, never a second one constructed just
   // to query this (that would spin up a duplicate real consumer)
   getLiveness() {
-    return { isRunning: this.worker.isRunning(), isPaused: this.worker.isPaused(), lastActiveAt: this.lastActiveAt };
+    return {
+      isRunning: this.worker.isRunning(),
+      isPaused: this.worker.isPaused(),
+      lastActiveAt: this.lastActiveAt,
+    };
   }
 
   // BullMQ emits worker events outside of process()'s own async chain, so

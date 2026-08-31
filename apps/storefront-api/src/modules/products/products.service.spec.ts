@@ -5,14 +5,15 @@ import { DRIZZLE } from '../../database/database.constants';
 // mimics drizzle's query builder: awaitable at any point in the chain
 // (select().from().where() and select().from().where().groupBy()....offset()
 // both resolve), each await consuming the next entry in `results` in the
-// order the service issues its queries
+// order the service issues its queries. The db object itself is not
+// thenable — only the chain is — so Nest's injector doesn't unwrap the
+// `useValue` when it resolves the provider.
 function makeDb(results: unknown[][]) {
   let call = 0;
   const chain: Record<string, unknown> = {
     then: (resolve: (value: unknown) => void) => resolve(results[call++]),
   };
-  const methods = [
-    'select',
+  const chainMethods = [
     'from',
     'leftJoin',
     'innerJoin',
@@ -22,10 +23,10 @@ function makeDb(results: unknown[][]) {
     'limit',
     'offset',
   ];
-  for (const method of methods) {
+  for (const method of chainMethods) {
     chain[method] = jest.fn(() => chain);
   }
-  return chain;
+  return { select: jest.fn(() => chain) };
 }
 
 describe('ProductsService', () => {
@@ -66,6 +67,7 @@ describe('ProductsService', () => {
       [{ total: 1 }],
       [{ id: 5, name: 'Acme' }],
       [{ productId: 1, id: 9, name: 'Footwear' }],
+      [{ productId: 1, url: 'https://img/shoe.jpg' }],
     ]);
     service = await build(db);
 
@@ -79,6 +81,7 @@ describe('ProductsService', () => {
           description: 'A shoe',
           brand: { id: 5, name: 'Acme' },
           categories: [{ id: 9, name: 'Footwear' }],
+          thumbnailUrl: 'https://img/shoe.jpg',
           minPriceCents: 1000,
           maxPriceCents: 2000,
         },
@@ -103,6 +106,7 @@ describe('ProductsService', () => {
       ],
       [{ total: 1 }],
       [],
+      [],
     ]);
     service = await build(db);
 
@@ -110,6 +114,7 @@ describe('ProductsService', () => {
 
     expect(result.items[0].brand).toBeNull();
     expect(result.items[0].categories).toEqual([]);
+    expect(result.items[0].thumbnailUrl).toBeNull();
   });
 
   // covers the not-found path shared by all three cases the controller

@@ -14,8 +14,10 @@ export const Route = createFileRoute('/app/carts/$id')({
   beforeLoad: async ({ params }) => {
     await queryClient.ensureQueryData(getCartQueryOptions(params.id))
   },
-  component: () => {
-    const { id } = Route.useParams()
-    return <CartView id={id} />
-  },
+  component: RouteComponent,
 })
+
+function RouteComponent() {
+  const { id } = Route.useParams()
+  return <CartView id={id} />
+}

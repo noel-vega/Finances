@@ -18,7 +18,12 @@ export class MailerService {
       : undefined,
   });
 
-  sendMail(params: { to: string; from?: string | { name: string; address: string }; subject: string; html: string }) {
+  sendMail(params: {
+    to: string;
+    from?: string | { name: string; address: string };
+    subject: string;
+    html: string;
+  }) {
     return this.mailer.sendMail({ ...params, from: params.from ?? FROM });
   }
 }

@@ -30,7 +30,9 @@ export class HealthService {
       await this.db.execute(sql`select 1`);
       return indicator.up();
     } catch (err) {
-      return indicator.down({ message: err instanceof Error ? err.message : 'unknown error' });
+      return indicator.down({
+        message: err instanceof Error ? err.message : 'unknown error',
+      });
     }
   };
 
@@ -49,12 +51,20 @@ export class HealthService {
       await client.info();
       return indicator.up();
     } catch (err) {
-      return indicator.down({ message: err instanceof Error ? err.message : 'unknown error' });
+      return indicator.down({
+        message: err instanceof Error ? err.message : 'unknown error',
+      });
     }
   };
 
-  checkOrdersQueue = () => this.checkQueueConsumption('orders', this.ordersProcessor, this.ordersQueue);
-  checkEmailQueue = () => this.checkQueueConsumption('email', this.emailProcessor, this.emailQueue);
+  checkOrdersQueue = () =>
+    this.checkQueueConsumption(
+      'orders',
+      this.ordersProcessor,
+      this.ordersQueue,
+    );
+  checkEmailQueue = () =>
+    this.checkQueueConsumption('email', this.emailProcessor, this.emailQueue);
 
   // unhealthy only when there's a backlog in `wait` (jobs ready to run
   // right now, not delayed retries) AND nothing has gone active recently —
@@ -77,12 +87,19 @@ export class HealthService {
       const waiting = await queue.getWaitingCount();
       const idleMs = lastActiveAt ? Date.now() - lastActiveAt.getTime() : null;
       if (waiting > 0 && (idleMs === null || idleMs > STALL_THRESHOLD_MS)) {
-        const detail = idleMs === null ? 'none picked up yet' : `none picked up in the last ${Math.round(idleMs / 1000)}s`;
-        return indicator.down({ message: `${waiting} job(s) waiting, ${detail}` });
+        const detail =
+          idleMs === null
+            ? 'none picked up yet'
+            : `none picked up in the last ${Math.round(idleMs / 1000)}s`;
+        return indicator.down({
+          message: `${waiting} job(s) waiting, ${detail}`,
+        });
       }
       return indicator.up();
     } catch (err) {
-      return indicator.down({ message: err instanceof Error ? err.message : 'unknown error' });
+      return indicator.down({
+        message: err instanceof Error ? err.message : 'unknown error',
+      });
     }
   };
 }

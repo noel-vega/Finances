@@ -4,6 +4,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import { CorrelatedLogger, runWithCorrelationId } from 'logging';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 import { AppModule } from './app.module';
 import { createSwaggerConfig } from './swagger.config';
 
@@ -20,7 +21,7 @@ async function bootstrap() {
   // once there's a frontend/proxy assigning them), otherwise mints a fresh
   // one — either way it's echoed back and threaded through every log line
   // this request produces, including ones emitted from BullMQ jobs it enqueues
-  app.use((req, res, next) => {
+  app.use((req: IncomingMessage, res: ServerResponse, next: () => void) => {
     const header = req.headers['x-request-id'];
     const correlationId =
       (Array.isArray(header) ? header[0] : header) || randomUUID();

@@ -85,12 +85,31 @@
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
+      "^.+\\.(t|j)s$": [
+        "ts-jest",
+        {
+          "tsconfig": {
+            "module": "CommonJS",
+            "moduleResolution": "node10",
+            "resolvePackageJsonExports": false
+          }
+        }
+      ]
     },
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^src/(.*)$": "<rootDir>/$1",
+      "^(\\.{1,2}/.*)\\.js$": "$1",
+      "^queue$": "<rootDir>/../../../packages/queue/src/index.ts",
+      "^logging$": "<rootDir>/../../../packages/logging/src/index.ts",
+      "^db$": "<rootDir>/../../../packages/db/src/index.ts",
+      "^db/(.*)$": "<rootDir>/../../../packages/db/src/$1",
+      "^email$": "<rootDir>/../../../packages/email/src/index.ts",
+      "^email-templates$": "<rootDir>/../../../packages/email-templates/src/index.ts"
+    }
   }
 }

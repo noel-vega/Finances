@@ -7,7 +7,8 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import fastifyCookie from '@fastify/cookie';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { SwaggerModule } from '@nestjs/swagger';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 import { CorrelatedLogger, runWithCorrelationId } from 'logging';
 import { createSwaggerConfig } from './swagger.config';
 
@@ -29,7 +30,7 @@ async function bootstrap() {
   // every log line this request produces, including ones emitted from
   // BullMQ jobs it enqueues. FastifyAdapter's use() runs this as connect-style
   // middleware (raw Node req/res), same as storefront-api's Express version.
-  app.use((req, res, next) => {
+  app.use((req: IncomingMessage, res: ServerResponse, next: () => void) => {
     const header = req.headers['x-request-id'];
     const correlationId =
       (Array.isArray(header) ? header[0] : header) || randomUUID();

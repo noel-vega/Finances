@@ -9,7 +9,8 @@ import { SignUpDto } from './dto/signup.dto';
 import { AcceptInviteDto } from './dto/accept-invite.dto';
 import { UsersService } from '../users/users.service';
 import { RolesService } from '../roles/roles.service';
-import { JwtService } from '@nestjs/jwt';
+import { JwtService, type JwtSignOptions } from '@nestjs/jwt';
+import { type AuthenticatedUser } from './auth.decorators';
 import { DRIZZLE } from 'src/database/database.constants';
 import {
   accountApiKeysTable,
@@ -171,11 +172,11 @@ export class AuthService {
     accountId: number,
     firstName: string,
     lastName: string,
-    expiresIn: string,
+    expiresIn: JwtSignOptions['expiresIn'],
   ) {
     const payload = { sub, email, accountId, firstName, lastName };
     const token = await this.jwtService.signAsync(payload, {
-      expiresIn: '7Days',
+      expiresIn,
     });
     return token;
   }
@@ -217,7 +218,8 @@ export class AuthService {
   async refreshAccessToken(refreshToken: string) {
     try {
       // Returns the decoded payload if valid
-      const payload = await this.jwtService.verifyAsync(refreshToken);
+      const payload =
+        await this.jwtService.verifyAsync<AuthenticatedUser>(refreshToken);
       const token = await this.createAccessToken(
         payload.sub,
         payload.email,
@@ -226,7 +228,7 @@ export class AuthService {
         payload.lastName,
       );
       return token;
-    } catch (error) {
+    } catch {
       // Throws error if token is expired, tampered, or invalid
       throw new UnauthorizedException('Invalid or expired token');
     }

@@ -26,8 +26,10 @@ export const Route = createFileRoute('/app/products/$id')({
     ]);
     console.log(data)
   },
-  component: () => {
-    const {id} = Route.useParams()
-    return <ProductView id={id} />
-  },
+  component: RouteComponent,
 })
+
+function RouteComponent() {
+  const {id} = Route.useParams()
+  return <ProductView id={id} />
+}

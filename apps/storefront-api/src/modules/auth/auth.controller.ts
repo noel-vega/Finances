@@ -87,7 +87,7 @@ export class AuthController {
 
   @Post('logout')
   @ApiOkResponse()
-  async logout(@Res({ passthrough: true }) res: Response): Promise<void> {
+  logout(@Res({ passthrough: true }) res: Response): void {
     res.clearCookie(REFRESH_TOKEN_COOKIE, { path: '/' });
   }
 
@@ -95,7 +95,8 @@ export class AuthController {
   @ApiOkResponse({ type: AccessTokenDto })
   @ApiUnauthorizedResponse()
   async refreshToken(@Req() req: Request): Promise<AccessTokenDto> {
-    const refreshToken = req.cookies?.[REFRESH_TOKEN_COOKIE];
+    const refreshToken = req.cookies?.[REFRESH_TOKEN_COOKIE] as
+      string | undefined;
     if (!refreshToken) {
       throw new UnauthorizedException('Invalid or expired token');
     }

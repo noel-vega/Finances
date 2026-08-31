@@ -23,8 +23,10 @@ export const Route = createFileRoute("/app/roles/$id")({
       queryClient.ensureQueryData(getRoleQueryOptions(params.id)),
     ]);
   },
-  component: () => {
-    const { id } = Route.useParams();
-    return <RoleView id={id} />;
-  },
+  component: RouteComponent,
 });
+
+function RouteComponent() {
+  const { id } = Route.useParams();
+  return <RoleView id={id} />;
+}

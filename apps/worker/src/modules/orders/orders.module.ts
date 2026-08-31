@@ -13,7 +13,10 @@ import { OrdersProcessor } from './orders.processor';
     // email.module.ts) because BullMQ's defaultJobOptions live on the Queue
     // client instance, not the queue itself — EmailModule's registration
     // doesn't cover jobs added through this separate client
-    BullModule.registerQueue({ name: QUEUE_NAMES.EMAIL, defaultJobOptions: EMAIL_JOB_OPTIONS }),
+    BullModule.registerQueue({
+      name: QUEUE_NAMES.EMAIL,
+      defaultJobOptions: EMAIL_JOB_OPTIONS,
+    }),
   ],
   providers: [OrdersProcessor],
   // exported so HealthModule can query the same singleton instance's

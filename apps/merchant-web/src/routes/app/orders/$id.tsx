@@ -14,8 +14,10 @@ export const Route = createFileRoute('/app/orders/$id')({
   beforeLoad: async ({ params }) => {
     await queryClient.ensureQueryData(getOrderQueryOptions(params.id))
   },
-  component: () => {
-    const { id } = Route.useParams()
-    return <OrderView id={id} />
-  },
+  component: RouteComponent,
 })
+
+function RouteComponent() {
+  const { id } = Route.useParams()
+  return <OrderView id={id} />
+}

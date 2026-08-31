@@ -10,7 +10,7 @@ import { PermissionsService } from '../permissions/permissions.service';
 import {
   IS_PUBLIC_KEY,
   PERMISSIONS_KEY,
-  type AuthenticatedUser,
+  type AuthenticatedRequest,
 } from './auth.decorators';
 
 // authorization ("what"), separate from AuthGuard's authentication ("who").
@@ -43,8 +43,8 @@ export class PermissionsGuard implements CanActivate {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest();
-    const user = request.user as AuthenticatedUser | undefined;
+    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
+    const user = request.user;
     if (!user) {
       // AuthGuard runs first and always populates this for a non-@Public()
       // route — reaching here with no user means something upstream is

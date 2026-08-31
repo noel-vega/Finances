@@ -14,12 +14,18 @@ export interface PosDeviceContext {
   locationId: number;
 }
 
+// what PosDeviceGuard stashes on the request object
+export interface PosDeviceRequest {
+  posDevice?: PosDeviceContext;
+}
+
 // PosDeviceGuard stashes the resolved device on request.posDevice — this
 // pulls it out for handlers/services that scope a query to the device's
 // tenant + location
 export const CurrentPosDevice = createParamDecorator(
   (_: unknown, ctx: ExecutionContext): PosDeviceContext => {
-    const request = ctx.switchToHttp().getRequest();
-    return request.posDevice;
+    const request = ctx.switchToHttp().getRequest<PosDeviceRequest>();
+    // PosDeviceGuard runs first for every guarded route and always sets this
+    return request.posDevice as PosDeviceContext;
   },
 );

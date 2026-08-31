@@ -12,7 +12,9 @@ import { AppModule } from './app.module';
 // apart from one that's silently wedged (e.g. after a Redis outage)
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
-    logger: new CorrelatedLogger(undefined, { json: process.env.NODE_ENV === 'production' }),
+    logger: new CorrelatedLogger(undefined, {
+      json: process.env.NODE_ENV === 'production',
+    }),
   });
   await app.listen(process.env.PORT ?? 3003);
 }

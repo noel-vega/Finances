@@ -3,6 +3,7 @@ import { NestFactory } from "@nestjs/core";
 import { ValidationPipe } from "@nestjs/common";
 import { SwaggerModule } from "@nestjs/swagger";
 import { CorrelatedLogger, runWithCorrelationId } from "logging";
+import type { IncomingMessage, ServerResponse } from "node:http";
 import { AppModule } from "./app.module";
 import { createSwaggerConfig } from "./swagger.config";
 
@@ -14,7 +15,7 @@ async function bootstrap() {
   });
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
 
-  app.use((req, res, next) => {
+  app.use((req: IncomingMessage, res: ServerResponse, next: () => void) => {
     const header = req.headers["x-request-id"];
     const correlationId =
       (Array.isArray(header) ? header[0] : header) || randomUUID();

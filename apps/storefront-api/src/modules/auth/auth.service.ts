@@ -1,6 +1,7 @@
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService, type JwtSignOptions } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
+import { type AuthenticatedCustomer } from './auth.decorators';
 import { CustomerSignUpDto } from './dto/customer-signup.dto';
 import { CustomerSignInDto } from './dto/customer-signin.dto';
 import { CustomerService } from '../customer/customer.service';
@@ -140,7 +141,8 @@ export class AuthService {
 
   async refreshAccessToken(refreshToken: string) {
     try {
-      const payload = await this.jwtService.verifyAsync(refreshToken);
+      const payload =
+        await this.jwtService.verifyAsync<AuthenticatedCustomer>(refreshToken);
       return await this.createAccessToken(
         payload.sub,
         payload.email,
