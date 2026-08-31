@@ -56,6 +56,11 @@ jobs:
             --workspace=ui
 
       - name: Test
+        # packages/db creates its pool at import time from DATABASE_URL; the
+        # unit specs mock the connection but the string still has to parse.
+        # A real DB + integration tests are OS-42.
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/test
         run: |
           npm run test --workspace=merchant-api \
             --workspace=storefront-api \
