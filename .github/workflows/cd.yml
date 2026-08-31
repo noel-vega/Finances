@@ -24,9 +24,9 @@ jobs:
     strategy:
       matrix:
         include:
-          - app: shop-admin-api
-            dockerfile: docker/shop-admin-api.Dockerfile
-            ssm_key: shop-admin-api-uri
+          - app: merchant-api
+            dockerfile: docker/merchant-api.Dockerfile
+            ssm_key: merchant-api-uri
           - app: storefront-api
             dockerfile: docker/storefront-api.Dockerfile
             ssm_key: storefront-api-uri
@@ -106,7 +106,7 @@ jobs:
     environment: production
     strategy:
       matrix:
-        app: [shop-admin-api, storefront-api, worker]
+        app: [merchant-api, storefront-api, worker]
     steps:
       - uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -140,8 +140,8 @@ jobs:
     strategy:
       matrix:
         include:
-          - app: shop-admin-web
-            ssm_prefix: shop-admin-web
+          - app: merchant-web
+            ssm_prefix: merchant-web
           - app: storefront-web
             ssm_prefix: storefront-web
           - app: website
@@ -162,19 +162,19 @@ jobs:
       - run: npm ci
 
       - name: Build shared packages this frontend needs
-        run: npm run build --workspace=admin-sdk --workspace=storefront-sdk --if-present
+        run: npm run build --workspace=merchant-sdk --workspace=storefront-sdk --if-present
 
       - name: Resolve API base URLs
         id: api-urls
         run: |
-          ADMIN_API_DNS=$(aws ssm get-parameter --name /ordersail/production/alb/shop-admin-api-dns --query 'Parameter.Value' --output text)
+          MERCHANT_API_DNS=$(aws ssm get-parameter --name /ordersail/production/alb/merchant-api-dns --query 'Parameter.Value' --output text)
           STOREFRONT_API_DNS=$(aws ssm get-parameter --name /ordersail/production/alb/storefront-api-dns --query 'Parameter.Value' --output text)
-          echo "admin_api=http://$ADMIN_API_DNS" >> "$GITHUB_OUTPUT"
+          echo "merchant_api=http://$MERCHANT_API_DNS" >> "$GITHUB_OUTPUT"
           echo "storefront_api=http://$STOREFRONT_API_DNS" >> "$GITHUB_OUTPUT"
 
       - name: Build ${{ matrix.app }}
         env:
-          VITE_SHOP_ADMIN_API_BASE_URL: ${{ steps.api-urls.outputs.admin_api }}
+          VITE_MERCHANT_API_BASE_URL: ${{ steps.api-urls.outputs.merchant_api }}
           VITE_STOREFRONT_API_BASE_URL: ${{ steps.api-urls.outputs.storefront_api }}
           # VITE_STRIPE_PUBLISHABLE_KEY / VITE_STOREFRONT_APP_KEY are
           # non-secret publishable identifiers — set as repo variables
