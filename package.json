@@ -4,9 +4,19 @@
   "private": true,
   "packageManager": "npm@11.6.0",
   "scripts": {
+    "setup": "node scripts/copy-env-examples.mjs",
     "up": "docker compose up -d --wait",
     "down": "docker compose down",
-    "reset": "docker compose down -v",
+    "bootstrap": "npm run push -w db && npm run seed -w seed",
+    "reset": "docker compose down -v && npm run up && npm run bootstrap",
+    "seed": "npm run seed -w seed",
+    "push": "npm run push -w db",
+    "migrate": "npm run migrate -w db",
+    "dev": "nx run-many -t dev -p merchant-api,storefront-api,pos-api,worker,merchant-web,storefront-web --output-style=stream",
+    "dev:website": "npm run dev -w website",
+    "dev:pos": "npm run start -w pos",
+    "build": "nx run-many -t build",
+    "typecheck": "nx run-many -t typecheck",
     "logs": "docker compose logs -f"
   },
   "devDependencies": {

@@ -12,6 +12,7 @@
     "stripe:listen": "stripe listen --events checkout.session.completed --forward-connect-to localhost:3001/checkout/webhook",
     "start": "nest start",
     "start:dev": "nest start --watch",
+    "dev": "npm run start:dev",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
