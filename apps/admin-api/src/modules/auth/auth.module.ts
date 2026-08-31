@@ -18,9 +18,9 @@ import { PERMISSIONS_APP_GUARD } from './permissions.guard';
       global: true,
       secret: jwtConstants.secret,
       signOptions: {
-        expiresIn: '60s'
-      }
-    })
+        expiresIn: '60s',
+      },
+    }),
   ],
   // order matters: AuthGuard must populate request.user before
   // PermissionsGuard reads it

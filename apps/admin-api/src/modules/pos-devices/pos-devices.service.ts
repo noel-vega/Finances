@@ -54,7 +54,10 @@ export class PosDevicesService {
         locationName: locationsTable.name,
       })
       .from(posDevicesTable)
-      .leftJoin(locationsTable, eq(locationsTable.id, posDevicesTable.locationId))
+      .leftJoin(
+        locationsTable,
+        eq(locationsTable.id, posDevicesTable.locationId),
+      )
       .where(eq(posDevicesTable.accountId, accountId))
       .orderBy(desc(posDevicesTable.createdAt));
 
@@ -102,7 +105,10 @@ export class PosDevicesService {
       .update(posDevicesTable)
       .set({ revokedAt: new Date(), updatedAt: new Date() })
       .where(
-        and(eq(posDevicesTable.id, id), eq(posDevicesTable.accountId, accountId)),
+        and(
+          eq(posDevicesTable.id, id),
+          eq(posDevicesTable.accountId, accountId),
+        ),
       );
 
     return this.findOneOrThrow(id, accountId);
@@ -128,7 +134,10 @@ export class PosDevicesService {
         updatedAt: new Date(),
       })
       .where(
-        and(eq(posDevicesTable.id, id), eq(posDevicesTable.accountId, accountId)),
+        and(
+          eq(posDevicesTable.id, id),
+          eq(posDevicesTable.accountId, accountId),
+        ),
       )
       .returning();
 
@@ -158,7 +167,10 @@ export class PosDevicesService {
       .select()
       .from(posDevicesTable)
       .where(
-        and(eq(posDevicesTable.id, id), eq(posDevicesTable.accountId, accountId)),
+        and(
+          eq(posDevicesTable.id, id),
+          eq(posDevicesTable.accountId, accountId),
+        ),
       );
     if (!device) {
       throw new NotFoundException();
@@ -176,9 +188,15 @@ export class PosDevicesService {
         locationName: locationsTable.name,
       })
       .from(posDevicesTable)
-      .leftJoin(locationsTable, eq(locationsTable.id, posDevicesTable.locationId))
+      .leftJoin(
+        locationsTable,
+        eq(locationsTable.id, posDevicesTable.locationId),
+      )
       .where(
-        and(eq(posDevicesTable.id, id), eq(posDevicesTable.accountId, accountId)),
+        and(
+          eq(posDevicesTable.id, id),
+          eq(posDevicesTable.accountId, accountId),
+        ),
       );
     if (!row) {
       throw new NotFoundException();

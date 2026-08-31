@@ -58,14 +58,17 @@ export class ProductsController {
     return this.productsService.findOne(+id, user.accountId);
   }
 
-  @Get(":id/variants")
+  @Get(':id/variants')
   @ApiBearerAuth('JWT-auth')
   @ApiOkResponse({ type: [ProductVariant] })
-  findVariants(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+  findVariants(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.productsService.findVariants(+id, user.accountId);
   }
 
-  @Get(":id/options")
+  @Get(':id/options')
   @ApiBearerAuth('JWT-auth')
   @ApiOkResponse({ type: [ProductOption] })
   findOptions(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
@@ -117,8 +120,7 @@ export class ProductsController {
     );
   }
 
-
-  @Post(":id/variants")
+  @Post(':id/variants')
   @ApiBearerAuth('JWT-auth')
   @ApiCreatedResponse({ type: [ProductVariant] })
   createVariants(
@@ -176,7 +178,11 @@ export class ProductsController {
     @Body() dto: GetImageUploadUrlDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    const result = await this.productsService.getImageUploadUrl(+id, user.accountId, dto);
+    const result = await this.productsService.getImageUploadUrl(
+      +id,
+      user.accountId,
+      dto,
+    );
     if (!result) throw new NotFoundException();
     return result;
   }
@@ -189,7 +195,11 @@ export class ProductsController {
     @Body() dto: CreateProductImageDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    const image = await this.productsService.createImage(+id, user.accountId, dto);
+    const image = await this.productsService.createImage(
+      +id,
+      user.accountId,
+      dto,
+    );
     if (!image) throw new NotFoundException();
     return image;
   }
@@ -202,7 +212,11 @@ export class ProductsController {
     @Body() dto: ReorderProductImagesDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    const images = await this.productsService.reorderImages(+id, user.accountId, dto);
+    const images = await this.productsService.reorderImages(
+      +id,
+      user.accountId,
+      dto,
+    );
     if (!images) throw new NotFoundException();
     return images;
   }
@@ -215,7 +229,11 @@ export class ProductsController {
     @Param('imageId') imageId: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    const image = await this.productsService.removeImage(+id, user.accountId, +imageId);
+    const image = await this.productsService.removeImage(
+      +id,
+      user.accountId,
+      +imageId,
+    );
     if (!image) throw new NotFoundException();
     return image;
   }

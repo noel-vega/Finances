@@ -23,11 +23,17 @@ export class LocationsService {
       .where(eq(locationsTable.accountId, accountId));
   }
 
-  async update(id: number, updateLocationDto: UpdateLocationDto, accountId: number) {
+  async update(
+    id: number,
+    updateLocationDto: UpdateLocationDto,
+    accountId: number,
+  ) {
     const [location] = await this.db
       .update(locationsTable)
       .set({ ...updateLocationDto, updatedAt: new Date() })
-      .where(and(eq(locationsTable.id, id), eq(locationsTable.accountId, accountId)))
+      .where(
+        and(eq(locationsTable.id, id), eq(locationsTable.accountId, accountId)),
+      )
       .returning();
     return location;
   }

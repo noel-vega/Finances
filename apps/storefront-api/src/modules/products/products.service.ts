@@ -48,8 +48,12 @@ export class ProductsService {
           description: productsTable.description,
           brandId: productsTable.brandId,
           // price range across a product's variants, not a stored field
-          minPriceCents: sql<number | null>`min(${productVariantsTable.priceCents})`,
-          maxPriceCents: sql<number | null>`max(${productVariantsTable.priceCents})`,
+          minPriceCents: sql<
+            number | null
+          >`min(${productVariantsTable.priceCents})`,
+          maxPriceCents: sql<
+            number | null
+          >`max(${productVariantsTable.priceCents})`,
         })
         .from(productsTable)
         .leftJoin(
@@ -67,13 +71,14 @@ export class ProductsService {
         .where(where),
     ]);
 
-    const [brandsById, categoriesByProduct, thumbnailByProduct] = await Promise.all([
-      this.selectBrands(
-        [...new Set(rows.map((r) => r.brandId).filter((id) => id !== null))],
-      ),
-      this.selectCategories(rows.map((r) => r.id)),
-      this.selectThumbnails(rows.map((r) => r.id)),
-    ]);
+    const [brandsById, categoriesByProduct, thumbnailByProduct] =
+      await Promise.all([
+        this.selectBrands([
+          ...new Set(rows.map((r) => r.brandId).filter((id) => id !== null)),
+        ]),
+        this.selectCategories(rows.map((r) => r.id)),
+        this.selectThumbnails(rows.map((r) => r.id)),
+      ]);
 
     const items: ProductListItem[] = rows.map(({ brandId, ...row }) => ({
       ...row,
@@ -85,7 +90,10 @@ export class ProductsService {
     return { items, total, limit, offset };
   }
 
-  async findOne(id: number, accountId: number): Promise<ProductDetail | undefined> {
+  async findOne(
+    id: number,
+    accountId: number,
+  ): Promise<ProductDetail | undefined> {
     const [product] = await this.db
       .select({
         id: productsTable.id,
@@ -103,15 +111,21 @@ export class ProductsService {
       );
     if (!product) return undefined;
 
-    const [brandsById, categoriesByProduct, options, variants, images] = await Promise.all([
-      product.brandId !== null ? this.selectBrands([product.brandId]) : undefined,
-      this.selectCategories([product.id]),
-      this.selectOptions(product.id),
-      this.selectVariants(product.id),
-      this.selectImages(
-        and(eq(productImagesTable.productId, product.id), isNull(productImagesTable.variantId)),
-      ),
-    ]);
+    const [brandsById, categoriesByProduct, options, variants, images] =
+      await Promise.all([
+        product.brandId !== null
+          ? this.selectBrands([product.brandId])
+          : undefined,
+        this.selectCategories([product.id]),
+        this.selectOptions(product.id),
+        this.selectVariants(product.id),
+        this.selectImages(
+          and(
+            eq(productImagesTable.productId, product.id),
+            isNull(productImagesTable.variantId),
+          ),
+        ),
+      ]);
 
     const { brandId, ...rest } = product;
     return {
@@ -126,7 +140,9 @@ export class ProductsService {
 
   private async selectOptions(
     productId: number,
-  ): Promise<{ id: number; name: string; values: { id: number; value: string }[] }[]> {
+  ): Promise<
+    { id: number; name: string; values: { id: number; value: string }[] }[]
+  > {
     const rows = await this.db
       .select({
         optionId: productOptionsTable.id,
@@ -169,7 +185,10 @@ export class ProductsService {
         stock: sql<number>`coalesce(sum(${inventoryTable.stock}), 0)::int`,
       })
       .from(productVariantsTable)
-      .leftJoin(inventoryTable, eq(inventoryTable.variantId, productVariantsTable.id))
+      .leftJoin(
+        inventoryTable,
+        eq(inventoryTable.variantId, productVariantsTable.id),
+      )
       .where(eq(productVariantsTable.productId, productId))
       .groupBy(productVariantsTable.id);
 
@@ -239,18 +258,30 @@ export class ProductsService {
       .from(productImagesTable)
       .where(where)
       .orderBy(productImagesTable.position);
-    return rows.map((row) => ({ id: row.id, url: row.url, position: row.position }));
+    return rows.map((row) => ({
+      id: row.id,
+      url: row.url,
+      position: row.position,
+    }));
   }
 
-  private async selectThumbnails(productIds: number[]): Promise<Map<number, string>> {
+  private async selectThumbnails(
+    productIds: number[],
+  ): Promise<Map<number, string>> {
     const map = new Map<number, string>();
     if (productIds.length === 0) return map;
 
     const rows = await this.db
-      .select({ productId: productImagesTable.productId, url: productImagesTable.url })
+      .select({
+        productId: productImagesTable.productId,
+        url: productImagesTable.url,
+      })
       .from(productImagesTable)
       .where(
-        and(inArray(productImagesTable.productId, productIds), isNull(productImagesTable.variantId)),
+        and(
+          inArray(productImagesTable.productId, productIds),
+          isNull(productImagesTable.variantId),
+        ),
       )
       .orderBy(productImagesTable.position);
 

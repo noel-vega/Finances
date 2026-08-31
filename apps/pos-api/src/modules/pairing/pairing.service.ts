@@ -3,7 +3,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
-} from '@nestjs/common';
+} from "@nestjs/common";
 import {
   accountsTable,
   and,
@@ -12,11 +12,11 @@ import {
   locationsTable,
   posDevicesTable,
   type db as Db,
-} from 'db';
-import { DRIZZLE } from '../../database/database.constants';
-import { generateDeviceToken } from '../../common/token.util';
-import { PairDeviceDto } from './dto/pair-device.dto';
-import { PairingResult } from './entities/pairing-result.entity';
+} from "db";
+import { DRIZZLE } from "../../database/database.constants";
+import { generateDeviceToken } from "../../common/token.util";
+import { PairDeviceDto } from "./dto/pair-device.dto";
+import { PairingResult } from "./entities/pairing-result.entity";
 
 @Injectable()
 export class PairingService {
@@ -36,13 +36,13 @@ export class PairingService {
       );
 
     if (!device) {
-      throw new NotFoundException('Invalid pairing code');
+      throw new NotFoundException("Invalid pairing code");
     }
     if (
       !device.pairingExpiresAt ||
       device.pairingExpiresAt.getTime() < Date.now()
     ) {
-      throw new BadRequestException('Pairing code has expired');
+      throw new BadRequestException("Pairing code has expired");
     }
 
     const token = generateDeviceToken();
@@ -70,9 +70,9 @@ export class PairingService {
     return {
       token,
       accountId: device.accountId,
-      accountName: account?.name ?? '',
+      accountName: account?.name ?? "",
       locationId: device.locationId,
-      locationName: location?.name ?? '',
+      locationName: location?.name ?? "",
       deviceName: device.name,
     };
   }

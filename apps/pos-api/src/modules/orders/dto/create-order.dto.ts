@@ -1,5 +1,5 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { Type } from "class-transformer";
 import {
   ArrayMinSize,
   IsArray,
@@ -8,7 +8,7 @@ import {
   IsOptional,
   Min,
   ValidateNested,
-} from 'class-validator';
+} from "class-validator";
 
 export class CreateOrderItemDto {
   @ApiProperty({ type: Number })
@@ -23,9 +23,9 @@ export class CreateOrderItemDto {
 }
 
 export class CreateOrderPaymentDto {
-  @ApiProperty({ enum: ['cash', 'card'] })
-  @IsIn(['cash', 'card'])
-  method!: 'cash' | 'card';
+  @ApiProperty({ enum: ["cash", "card"] })
+  @IsIn(["cash", "card"])
+  method!: "cash" | "card";
 
   // required for cash — what the customer handed over; must be >= the total
   @ApiPropertyOptional({ type: Number })

@@ -19,7 +19,10 @@ export class AccountController {
   @Patch()
   @ApiBearerAuth('JWT-auth')
   @ApiOkResponse({ type: Account })
-  update(@Body() dto: UpdateAccountDto, @CurrentUser() user: AuthenticatedUser) {
+  update(
+    @Body() dto: UpdateAccountDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.accountService.update(user.accountId, dto);
   }
 }

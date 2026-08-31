@@ -1,6 +1,5 @@
-import { ApiProperty } from "@nestjs/swagger";
-import {IsEmail, IsString, MinLength} from "class-validator"
-
+import { ApiProperty } from '@nestjs/swagger';
+import { IsEmail, IsString, MinLength } from 'class-validator';
 
 export class SignInDto {
   @ApiProperty()
@@ -12,7 +11,7 @@ export class SignInDto {
   @MinLength(8)
   password: string;
   constructor(email: string, password: string) {
-    this.email = email
-    this.password = password
+    this.email = email;
+    this.password = password;
   }
 }

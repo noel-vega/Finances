@@ -33,7 +33,7 @@ export class CreateProductDto {
   @IsOptional()
   sku!: string;
 
-  @ApiProperty({ type: Number})
+  @ApiProperty({ type: Number })
   @Min(0)
   stock!: number;
 

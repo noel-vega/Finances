@@ -15,7 +15,8 @@ export class StorageService implements OnModuleInit {
     secretAccessKey: process.env.MINIO_SECRET_KEY,
     bucket: process.env.MINIO_BUCKET ?? 'shop-product-images',
     publicBaseUrl:
-      process.env.MINIO_PUBLIC_BASE_URL ?? 'http://localhost:9000/shop-product-images',
+      process.env.MINIO_PUBLIC_BASE_URL ??
+      'http://localhost:9000/shop-product-images',
     forcePathStyle: process.env.MINIO_FORCE_PATH_STYLE
       ? process.env.MINIO_FORCE_PATH_STYLE === 'true'
       : undefined,

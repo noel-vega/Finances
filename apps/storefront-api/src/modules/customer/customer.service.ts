@@ -1,4 +1,9 @@
-import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Customer } from './entities/customer.entity';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
 import { DRIZZLE } from '../../database/database.constants';
@@ -43,7 +48,12 @@ export class CustomerService {
     const [customer] = await this.db
       .select()
       .from(customersTable)
-      .where(and(eq(customersTable.accountId, accountId), eq(customersTable.email, email)));
+      .where(
+        and(
+          eq(customersTable.accountId, accountId),
+          eq(customersTable.email, email),
+        ),
+      );
 
     return customer;
   }

@@ -5,14 +5,14 @@ import {
   Injectable,
   Provider,
   UnauthorizedException,
-} from '@nestjs/common';
-import { APP_GUARD, Reflector } from '@nestjs/core';
-import type { Request } from 'express';
-import { and, eq, isNotNull, isNull, posDevicesTable, type db as Db } from 'db';
-import { DRIZZLE } from '../../database/database.constants';
-import { IS_PUBLIC_KEY, type PosDeviceContext } from './pos-auth.decorators';
+} from "@nestjs/common";
+import { APP_GUARD, Reflector } from "@nestjs/core";
+import type { Request } from "express";
+import { and, eq, isNotNull, isNull, posDevicesTable, type db as Db } from "db";
+import { DRIZZLE } from "../../database/database.constants";
+import { IS_PUBLIC_KEY, type PosDeviceContext } from "./pos-auth.decorators";
 
-const DEVICE_TOKEN_HEADER = 'x-pos-device-token';
+const DEVICE_TOKEN_HEADER = "x-pos-device-token";
 // don't write lastSeenAt on every request — once a minute is enough to tell
 // "this device is alive" without a write per catalog scroll
 const LAST_SEEN_THROTTLE_MS = 60 * 1000;
@@ -59,7 +59,8 @@ export class PosDeviceGuard implements CanActivate {
       accountId: device.accountId,
       locationId: device.locationId,
     };
-    (request as Request & { posDevice: PosDeviceContext }).posDevice = posDevice;
+    (request as Request & { posDevice: PosDeviceContext }).posDevice =
+      posDevice;
 
     const now = Date.now();
     if (

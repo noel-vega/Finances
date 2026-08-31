@@ -17,7 +17,11 @@ import {
 import { StripeConnectService } from './stripe-connect.service';
 import { StripeConnectStatus } from './entities/stripe-connect-status.entity';
 import { AccountSessionResponse } from './entities/account-session.entity';
-import { CurrentUser, Public, type AuthenticatedUser } from '../auth/auth.decorators';
+import {
+  CurrentUser,
+  Public,
+  type AuthenticatedUser,
+} from '../auth/auth.decorators';
 import { stripe } from './stripe.client';
 
 @Controller('stripe-connect')
@@ -39,7 +43,10 @@ export class StripeConnectController {
     @CurrentUser() user: AuthenticatedUser,
     @Query('refresh') refresh?: string,
   ) {
-    return this.stripeConnectService.getStatus(user.accountId, refresh === 'true');
+    return this.stripeConnectService.getStatus(
+      user.accountId,
+      refresh === 'true',
+    );
   }
 
   // subscribed in the Stripe dashboard to "events on connected accounts",

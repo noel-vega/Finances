@@ -13,9 +13,15 @@ import { Logger, getCorrelationId } from 'logging';
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
 
-  constructor(@InjectQueue(QUEUE_NAMES.EMAIL) private readonly emailQueue: Queue<EmailJobData>) {}
+  constructor(
+    @InjectQueue(QUEUE_NAMES.EMAIL)
+    private readonly emailQueue: Queue<EmailJobData>,
+  ) {}
 
-  async sendInviteEmail(to: string, params: { firstName: string; inviteUrl: string }) {
+  async sendInviteEmail(
+    to: string,
+    params: { firstName: string; inviteUrl: string },
+  ) {
     try {
       await this.emailQueue.add('staff-invite', {
         type: 'staff-invite',
@@ -24,7 +30,10 @@ export class EmailService {
         ...params,
       });
     } catch (err) {
-      this.logger.error(`Failed to enqueue invite email for ${to}`, err instanceof Error ? err.stack : err);
+      this.logger.error(
+        `Failed to enqueue invite email for ${to}`,
+        err instanceof Error ? err.stack : err,
+      );
     }
   }
 }

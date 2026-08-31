@@ -66,7 +66,10 @@ export class CartsService {
     return { items, total, limit: clampedLimit, offset: clampedOffset };
   }
 
-  async findOne(id: number, accountId: number): Promise<CartDetail | undefined> {
+  async findOne(
+    id: number,
+    accountId: number,
+  ): Promise<CartDetail | undefined> {
     const [cart] = await this.db
       .select()
       .from(cartsTable)
@@ -88,7 +91,10 @@ export class CartsService {
         productVariantsTable,
         eq(productVariantsTable.id, cartItemsTable.variantId),
       )
-      .innerJoin(productsTable, eq(productsTable.id, productVariantsTable.productId))
+      .innerJoin(
+        productsTable,
+        eq(productsTable.id, productVariantsTable.productId),
+      )
       .leftJoin(
         inventoryTable,
         eq(inventoryTable.variantId, productVariantsTable.id),
@@ -122,7 +128,9 @@ export class CartsService {
 
   private async attachOptionValues<T extends { variantId: number }>(
     rows: T[],
-  ): Promise<(T & { optionValues: { optionName: string; value: string }[] })[]> {
+  ): Promise<
+    (T & { optionValues: { optionName: string; value: string }[] })[]
+  > {
     if (rows.length === 0) return [];
 
     const optionRows = await this.db
@@ -147,7 +155,10 @@ export class CartsService {
         ),
       );
 
-    const byVariant = new Map<number, { optionName: string; value: string }[]>();
+    const byVariant = new Map<
+      number,
+      { optionName: string; value: string }[]
+    >();
     for (const row of optionRows) {
       const values = byVariant.get(row.variantId) ?? [];
       values.push({ optionName: row.optionName, value: row.value });

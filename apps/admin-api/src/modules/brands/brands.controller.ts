@@ -1,7 +1,11 @@
 import { Controller, Get, Post, Body } from '@nestjs/common';
 import { BrandsService } from './brands.service';
 import { CreateBrandDto } from './dto/create-brand.dto';
-import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiOkResponse,
+} from '@nestjs/swagger';
 import { Brand } from './entities/brand.entity';
 import { CurrentUser, type AuthenticatedUser } from '../auth/auth.decorators';
 

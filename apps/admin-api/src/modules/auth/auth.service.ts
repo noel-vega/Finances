@@ -138,7 +138,10 @@ export class AuthService {
     }
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
-    const user = await this.usersService.activate(invite.user.id, hashedPassword);
+    const user = await this.usersService.activate(
+      invite.user.id,
+      hashedPassword,
+    );
 
     if (!user) {
       throw new UnauthorizedException('Invalid or expired invite');
@@ -171,10 +174,10 @@ export class AuthService {
     expiresIn: string,
   ) {
     const payload = { sub, email, accountId, firstName, lastName };
-    const token =  await this.jwtService.signAsync(payload, {
-      expiresIn: '7Days'
+    const token = await this.jwtService.signAsync(payload, {
+      expiresIn: '7Days',
     });
-    return token
+    return token;
   }
 
   async createAccessToken(
@@ -184,9 +187,15 @@ export class AuthService {
     firstName: string,
     lastName: string,
   ) {
-    return await this.createToken(sub, email, accountId, firstName, lastName, '8h')
+    return await this.createToken(
+      sub,
+      email,
+      accountId,
+      firstName,
+      lastName,
+      '8h',
+    );
   }
-
 
   async createRefreshToken(
     sub: number,
@@ -195,7 +204,14 @@ export class AuthService {
     firstName: string,
     lastName: string,
   ) {
-    return await this.createToken(sub, email, accountId, firstName, lastName, '7d')
+    return await this.createToken(
+      sub,
+      email,
+      accountId,
+      firstName,
+      lastName,
+      '7d',
+    );
   }
 
   async refreshAccessToken(refreshToken: string) {
@@ -208,8 +224,8 @@ export class AuthService {
         payload.accountId,
         payload.firstName,
         payload.lastName,
-      )
-      return token
+      );
+      return token;
     } catch (error) {
       // Throws error if token is expired, tampered, or invalid
       throw new UnauthorizedException('Invalid or expired token');

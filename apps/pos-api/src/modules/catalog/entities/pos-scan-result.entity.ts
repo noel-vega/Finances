@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { PosCatalogProduct } from './pos-catalog-product.entity';
+import { ApiProperty } from "@nestjs/swagger";
+import { PosCatalogProduct } from "./pos-catalog-product.entity";
 
 export class PosScanResult {
   @ApiProperty({ type: () => PosCatalogProduct })

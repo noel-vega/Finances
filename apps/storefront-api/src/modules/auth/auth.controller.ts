@@ -1,5 +1,18 @@
-import { Controller, Get, Post, Body, Res, Req, UnauthorizedException } from '@nestjs/common';
-import { ApiOkResponse, ApiSecurity, ApiUnauthorizedResponse, ApiConflictResponse } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Res,
+  Req,
+  UnauthorizedException,
+} from '@nestjs/common';
+import {
+  ApiOkResponse,
+  ApiSecurity,
+  ApiUnauthorizedResponse,
+  ApiConflictResponse,
+} from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { CustomerSignUpDto } from './dto/customer-signup.dto';
@@ -87,7 +100,8 @@ export class AuthController {
       throw new UnauthorizedException('Invalid or expired token');
     }
 
-    const access_token = await this.authService.refreshAccessToken(refreshToken);
+    const access_token =
+      await this.authService.refreshAccessToken(refreshToken);
     return { access_token };
   }
 }

@@ -11,7 +11,7 @@ export class Product implements SelectProduct {
   @ApiProperty()
   name!: string;
 
-  @ApiProperty({type: "string", nullable: true})
+  @ApiProperty({ type: 'string', nullable: true })
   description!: string | null;
 
   @ApiProperty({ enum: productStatusEnum.enumValues })
@@ -23,7 +23,7 @@ export class Product implements SelectProduct {
   @ApiProperty()
   updatedAt!: Date;
 
-  @ApiProperty({type: "number", nullable: true})
+  @ApiProperty({ type: 'number', nullable: true })
   brandId!: number | null;
 
   // only populated by findOne — findAll skips the extra join for list views

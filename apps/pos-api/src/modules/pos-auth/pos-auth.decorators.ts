@@ -2,9 +2,9 @@ import {
   createParamDecorator,
   ExecutionContext,
   SetMetadata,
-} from '@nestjs/common';
+} from "@nestjs/common";
 
-export const IS_PUBLIC_KEY = 'isPublic';
+export const IS_PUBLIC_KEY = "isPublic";
 // opt a route out of PosDeviceGuard — used for pairing and health
 export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
 

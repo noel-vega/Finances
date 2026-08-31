@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from "@nestjs/common";
 import {
   and,
   eq,
@@ -15,11 +15,11 @@ import {
   sql,
   variantOptionValuesTable,
   type db as Db,
-} from 'db';
-import { DRIZZLE } from '../../database/database.constants';
-import type { PosDeviceContext } from '../pos-auth/pos-auth.decorators';
-import { CreateOrderDto } from './dto/create-order.dto';
-import { PosOrder, PosOrderItem } from './entities/pos-order.entity';
+} from "db";
+import { DRIZZLE } from "../../database/database.constants";
+import type { PosDeviceContext } from "../pos-auth/pos-auth.decorators";
+import { CreateOrderDto } from "./dto/create-order.dto";
+import { PosOrder, PosOrderItem } from "./entities/pos-order.entity";
 
 @Injectable()
 export class OrdersService {
@@ -50,14 +50,14 @@ export class OrdersService {
         and(
           inArray(productVariantsTable.id, variantIds),
           eq(productsTable.accountId, device.accountId),
-          eq(productsTable.status, 'active'),
+          eq(productsTable.status, "active"),
         ),
       );
     const byId = new Map(variantRows.map((v) => [v.id, v]));
     const missing = variantIds.filter((id) => !byId.has(id));
     if (missing.length > 0) {
       throw new BadRequestException(
-        `Unknown or unavailable variant(s): ${missing.join(', ')}`,
+        `Unknown or unavailable variant(s): ${missing.join(", ")}`,
       );
     }
 
@@ -102,7 +102,7 @@ export class OrdersService {
         sku: variant.sku,
         optionsLabel:
           options && options.length > 0
-            ? options.join(' / ')
+            ? options.join(" / ")
             : (variant.sku ?? null),
         priceCents: variant.priceCents,
         quantity,
@@ -118,11 +118,11 @@ export class OrdersService {
     const method = dto.payment.method;
     let amountTenderedCents: number | null = null;
     let changeCents: number | null = null;
-    if (method === 'cash') {
+    if (method === "cash") {
       const tendered = dto.payment.amountTenderedCents;
       if (tendered == null || tendered < totalCents) {
         throw new BadRequestException(
-          'Cash tendered must be at least the order total',
+          "Cash tendered must be at least the order total",
         );
       }
       amountTenderedCents = tendered;
@@ -141,7 +141,7 @@ export class OrdersService {
           variantId,
           locationId: device.locationId,
           delta,
-          reason: 'sold',
+          reason: "sold",
         });
         await tx
           .insert(inventoryTable)
@@ -159,7 +159,7 @@ export class OrdersService {
         .insert(ordersTable)
         .values({
           accountId: device.accountId,
-          channel: 'pos',
+          channel: "pos",
           locationId: device.locationId,
           posDeviceId: device.deviceId,
           subtotalCents,
@@ -211,7 +211,7 @@ export class OrdersService {
 
     return {
       id: order.id,
-      channel: 'pos',
+      channel: "pos",
       subtotalCents,
       taxCents,
       totalCents,

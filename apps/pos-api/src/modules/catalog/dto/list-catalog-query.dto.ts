@@ -1,9 +1,11 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { ApiPropertyOptional } from "@nestjs/swagger";
+import { Type } from "class-transformer";
+import { IsInt, IsOptional, IsString, Max, Min } from "class-validator";
 
 export class ListCatalogQueryDto {
-  @ApiPropertyOptional({ description: 'Match product name, variant SKU, or barcode' })
+  @ApiPropertyOptional({
+    description: "Match product name, variant SKU, or barcode",
+  })
   @IsOptional()
   @IsString()
   search?: string;
@@ -16,7 +18,7 @@ export class ListCatalogQueryDto {
   @Max(200)
   limit: number = 50;
 
-  @ApiPropertyOptional({ description: 'nextCursor from the previous page' })
+  @ApiPropertyOptional({ description: "nextCursor from the previous page" })
   @IsOptional()
   @Type(() => Number)
   @IsInt()

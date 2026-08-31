@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty } from "@nestjs/swagger";
 
 export class PosOrderItem {
   @ApiProperty({ type: Number })
@@ -10,10 +10,10 @@ export class PosOrderItem {
   @ApiProperty()
   productName!: string;
 
-  @ApiProperty({ type: 'string', nullable: true })
+  @ApiProperty({ type: "string", nullable: true })
   sku!: string | null;
 
-  @ApiProperty({ type: 'string', nullable: true })
+  @ApiProperty({ type: "string", nullable: true })
   optionsLabel!: string | null;
 
   @ApiProperty({ type: Number })
@@ -30,8 +30,8 @@ export class PosOrder {
   @ApiProperty({ type: Number })
   id!: number;
 
-  @ApiProperty({ enum: ['pos'] })
-  channel!: 'pos';
+  @ApiProperty({ enum: ["pos"] })
+  channel!: "pos";
 
   @ApiProperty({ type: Number })
   subtotalCents!: number;
@@ -42,8 +42,8 @@ export class PosOrder {
   @ApiProperty({ type: Number })
   totalCents!: number;
 
-  @ApiProperty({ enum: ['cash', 'card'] })
-  paymentMethod!: 'cash' | 'card';
+  @ApiProperty({ enum: ["cash", "card"] })
+  paymentMethod!: "cash" | "card";
 
   // cash sales only
   @ApiProperty({ type: Number, nullable: true })

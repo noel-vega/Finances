@@ -56,8 +56,15 @@ export class AuthService {
     };
   }
 
-  async signin(dto: CustomerSignInDto, accountId: number, cartToken: string | undefined) {
-    const customer = await this.customerService.getByEmail(accountId, dto.email);
+  async signin(
+    dto: CustomerSignInDto,
+    accountId: number,
+    cartToken: string | undefined,
+  ) {
+    const customer = await this.customerService.getByEmail(
+      accountId,
+      dto.email,
+    );
 
     if (!customer || !(await bcrypt.compare(dto.password, customer.password))) {
       throw new UnauthorizedException();
@@ -104,7 +111,14 @@ export class AuthService {
     firstName: string,
     lastName: string,
   ) {
-    return await this.createToken(sub, email, accountId, firstName, lastName, '8h');
+    return await this.createToken(
+      sub,
+      email,
+      accountId,
+      firstName,
+      lastName,
+      '8h',
+    );
   }
 
   async createRefreshToken(
@@ -114,7 +128,14 @@ export class AuthService {
     firstName: string,
     lastName: string,
   ) {
-    return await this.createToken(sub, email, accountId, firstName, lastName, '7d');
+    return await this.createToken(
+      sub,
+      email,
+      accountId,
+      firstName,
+      lastName,
+      '7d',
+    );
   }
 
   async refreshAccessToken(refreshToken: string) {

@@ -14,7 +14,10 @@ import {
   type db as Db,
   type SQL,
 } from 'db';
-import { InventoryRecord, InventoryMovementRecord } from './entities/inventory.entity';
+import {
+  InventoryRecord,
+  InventoryMovementRecord,
+} from './entities/inventory.entity';
 import { CreateInventoryMovementDto } from './dto/create-inventory-movement.dto';
 
 @Injectable()
@@ -43,7 +46,10 @@ export class InventoryService {
         productsTable,
         eq(productsTable.id, productVariantsTable.productId),
       )
-      .innerJoin(locationsTable, eq(locationsTable.id, inventoryTable.locationId))
+      .innerJoin(
+        locationsTable,
+        eq(locationsTable.id, inventoryTable.locationId),
+      )
       .where(eq(productsTable.accountId, accountId));
   }
 
@@ -57,7 +63,10 @@ export class InventoryService {
     const [variant] = await this.db
       .select({ id: productVariantsTable.id })
       .from(productVariantsTable)
-      .innerJoin(productsTable, eq(productsTable.id, productVariantsTable.productId))
+      .innerJoin(
+        productsTable,
+        eq(productsTable.id, productVariantsTable.productId),
+      )
       .where(
         and(
           eq(productVariantsTable.id, dto.variantId),
@@ -72,7 +81,10 @@ export class InventoryService {
       .select({ id: locationsTable.id })
       .from(locationsTable)
       .where(
-        and(eq(locationsTable.id, dto.locationId), eq(locationsTable.accountId, accountId)),
+        and(
+          eq(locationsTable.id, dto.locationId),
+          eq(locationsTable.accountId, accountId),
+        ),
       );
     if (!location) {
       throw new BadRequestException('Location not found');
@@ -151,7 +163,10 @@ export class InventoryService {
         locationsTable,
         eq(locationsTable.id, inventoryMovementsTable.locationId),
       )
-      .leftJoin(usersTable, eq(usersTable.id, inventoryMovementsTable.createdByUserId))
+      .leftJoin(
+        usersTable,
+        eq(usersTable.id, inventoryMovementsTable.createdByUserId),
+      )
       .where(
         extraWhere
           ? and(eq(productsTable.accountId, accountId), extraWhere)

@@ -22,7 +22,9 @@ export class HealthService {
       await this.db.execute(sql`select 1`);
       return indicator.up();
     } catch (err) {
-      return indicator.down({ message: err instanceof Error ? err.message : 'unknown error' });
+      return indicator.down({
+        message: err instanceof Error ? err.message : 'unknown error',
+      });
     }
   };
 
@@ -32,7 +34,9 @@ export class HealthService {
       await this.redis.ping();
       return indicator.up();
     } catch (err) {
-      return indicator.down({ message: err instanceof Error ? err.message : 'unknown error' });
+      return indicator.down({
+        message: err instanceof Error ? err.message : 'unknown error',
+      });
     }
   };
 }

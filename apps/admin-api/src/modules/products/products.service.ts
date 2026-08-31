@@ -38,7 +38,9 @@ import { ProductImage } from './entities/product-image.entity';
 import { StorageService } from '../storage/storage.service';
 import { generateToken } from '../../common/generate-token.util';
 
-function toProductImage(row: typeof productImagesTable.$inferSelect): ProductImage {
+function toProductImage(
+  row: typeof productImagesTable.$inferSelect,
+): ProductImage {
   return {
     id: row.id,
     url: row.url,
@@ -65,7 +67,8 @@ function normalizeBarcodes(barcodes: string[] | undefined): string[] {
 // every combination of one value per option, e.g. [[1,2],[3,4]] -> [[1,3],[1,4],[2,3],[2,4]]
 function cartesianProduct<T>(groups: T[][]): T[][] {
   return groups.reduce<T[][]>(
-    (acc, group) => acc.flatMap((combo) => group.map((value) => [...combo, value])),
+    (acc, group) =>
+      acc.flatMap((combo) => group.map((value) => [...combo, value])),
     [[]],
   );
 }
@@ -117,11 +120,14 @@ export class ProductsService {
         })
         .returning();
 
-      const [variant] = await tx.insert(productVariantsTable).values({
-        priceCents: createProductDto.priceCents,
-        productId: product.id,
-        sku: createProductDto.sku,
-      }).returning();
+      const [variant] = await tx
+        .insert(productVariantsTable)
+        .values({
+          priceCents: createProductDto.priceCents,
+          productId: product.id,
+          sku: createProductDto.sku,
+        })
+        .returning();
 
       const [location] = await tx
         .select({ id: locationsTable.id })
@@ -132,13 +138,13 @@ export class ProductsService {
         variantId: variant.id,
         locationId: location.id,
         stock: createProductDto.stock,
-      })
+      });
 
       const barcodes = normalizeBarcodes(createProductDto.barcodes);
       if (barcodes.length > 0) {
-        await tx.insert(productBarcodesTable).values(
-          barcodes.map((code) => ({ variantId: variant.id, code })),
-        );
+        await tx
+          .insert(productBarcodesTable)
+          .values(barcodes.map((code) => ({ variantId: variant.id, code })));
       }
 
       if (createProductDto.categoryIds.length > 0) {
@@ -150,7 +156,7 @@ export class ProductsService {
         );
       }
 
-      return product
+      return product;
     });
     return product;
   }
@@ -194,15 +200,23 @@ export class ProductsService {
     }));
   }
 
-  async findOne(id: number, accountId: number): Promise<ProductDetail | undefined> {
+  async findOne(
+    id: number,
+    accountId: number,
+  ): Promise<ProductDetail | undefined> {
     const [product] = await this.db
       .select()
       .from(productsTable)
-      .where(and(eq(productsTable.id, id), eq(productsTable.accountId, accountId)));
+      .where(
+        and(eq(productsTable.id, id), eq(productsTable.accountId, accountId)),
+      );
     if (!product) return undefined;
 
     const [brand] = product.brandId
-      ? await this.db.select().from(brandsTable).where(eq(brandsTable.id, product.brandId))
+      ? await this.db
+          .select()
+          .from(brandsTable)
+          .where(eq(brandsTable.id, product.brandId))
       : [];
 
     const categoryLinks = await this.db
@@ -211,7 +225,10 @@ export class ProductsService {
       .where(eq(productCategoriesTable.productId, id));
 
     const images = await this.selectImages(
-      and(eq(productImagesTable.productId, id), isNull(productImagesTable.variantId)),
+      and(
+        eq(productImagesTable.productId, id),
+        isNull(productImagesTable.variantId),
+      ),
     );
 
     const { brandId, ...rest } = product;
@@ -266,15 +283,26 @@ export class ProductsService {
 
   // every nested product resource (variants/options) is reached only via a
   // productId, so ownership is checked here once rather than on every table
-  private async productExists(productId: number, accountId: number): Promise<boolean> {
+  private async productExists(
+    productId: number,
+    accountId: number,
+  ): Promise<boolean> {
     const [row] = await this.db
       .select({ id: productsTable.id })
       .from(productsTable)
-      .where(and(eq(productsTable.id, productId), eq(productsTable.accountId, accountId)));
+      .where(
+        and(
+          eq(productsTable.id, productId),
+          eq(productsTable.accountId, accountId),
+        ),
+      );
     return !!row;
   }
 
-  async findVariants(productId: number, accountId: number): Promise<ProductVariant[]> {
+  async findVariants(
+    productId: number,
+    accountId: number,
+  ): Promise<ProductVariant[]> {
     if (!(await this.productExists(productId, accountId))) return [];
 
     const variants = await this.selectVariants(
@@ -346,7 +374,9 @@ export class ProductsService {
       }
     });
 
-    const variants = await this.selectVariants(eq(productVariantsTable.id, variantId));
+    const variants = await this.selectVariants(
+      eq(productVariantsTable.id, variantId),
+    );
     if (variants.length === 0) return undefined;
 
     const withOptions = await this.attachOptionValues(variants);
@@ -357,9 +387,11 @@ export class ProductsService {
 
   // fills in each variant's option-value combination (e.g. "Size: 9"), which
   // requires a separate query since it's a many-to-many join
-  private async attachOptionValues<
-    T extends { id: number },
-  >(variants: T[]): Promise<(T & { optionValues: { optionName: string; value: string }[] })[]> {
+  private async attachOptionValues<T extends { id: number }>(
+    variants: T[],
+  ): Promise<
+    (T & { optionValues: { optionName: string; value: string }[] })[]
+  > {
     if (variants.length === 0) return [];
 
     const rows = await this.db
@@ -434,7 +466,10 @@ export class ProductsService {
     }));
   }
 
-  async findOptions(productId: number, accountId: number): Promise<ProductOption[]> {
+  async findOptions(
+    productId: number,
+    accountId: number,
+  ): Promise<ProductOption[]> {
     if (!(await this.productExists(productId, accountId))) return [];
 
     const rows = await this.db
@@ -455,7 +490,12 @@ export class ProductsService {
     for (const row of rows) {
       let option = options.get(row.optionId);
       if (!option) {
-        option = { id: row.optionId, productId, name: row.optionName, values: [] };
+        option = {
+          id: row.optionId,
+          productId,
+          name: row.optionName,
+          values: [],
+        };
         options.set(row.optionId, option);
       }
       if (row.valueId !== null) {
@@ -544,14 +584,20 @@ export class ProductsService {
     return option;
   }
 
-  async update(id: number, updateProductDto: UpdateProductDto, accountId: number) {
+  async update(
+    id: number,
+    updateProductDto: UpdateProductDto,
+    accountId: number,
+  ) {
     const { categoryIds, ...productFields } = updateProductDto;
 
     return await this.db.transaction(async (tx) => {
       const [product] = await tx
         .update(productsTable)
         .set(productFields)
-        .where(and(eq(productsTable.id, id), eq(productsTable.accountId, accountId)))
+        .where(
+          and(eq(productsTable.id, id), eq(productsTable.accountId, accountId)),
+        )
         .returning();
 
       if (!product) return undefined;
@@ -563,9 +609,11 @@ export class ProductsService {
           .where(eq(productCategoriesTable.productId, id));
 
         if (categoryIds.length > 0) {
-          await tx.insert(productCategoriesTable).values(
-            categoryIds.map((categoryId) => ({ productId: id, categoryId })),
-          );
+          await tx
+            .insert(productCategoriesTable)
+            .values(
+              categoryIds.map((categoryId) => ({ productId: id, categoryId })),
+            );
         }
       }
 
@@ -576,11 +624,12 @@ export class ProductsService {
   async remove(id: number, accountId: number) {
     const [product] = await this.db
       .delete(productsTable)
-      .where(and(eq(productsTable.id, id), eq(productsTable.accountId, accountId)))
+      .where(
+        and(eq(productsTable.id, id), eq(productsTable.accountId, accountId)),
+      )
       .returning();
     return product;
   }
-
 
   async createVariants(
     productId: number,
@@ -741,7 +790,10 @@ export class ProductsService {
 
     const extension = dto.contentType.split('/')[1];
     const key = `products/${productId}/${generateToken(16)}.${extension}`;
-    const uploadUrl = await this.storageService.getUploadUrl(key, dto.contentType);
+    const uploadUrl = await this.storageService.getUploadUrl(
+      key,
+      dto.contentType,
+    );
     return { uploadUrl, key };
   }
 
@@ -839,7 +891,10 @@ export class ProductsService {
     const [row] = await this.db
       .delete(productImagesTable)
       .where(
-        and(eq(productImagesTable.id, imageId), eq(productImagesTable.productId, productId)),
+        and(
+          eq(productImagesTable.id, imageId),
+          eq(productImagesTable.productId, productId),
+        ),
       )
       .returning();
     if (!row) return undefined;

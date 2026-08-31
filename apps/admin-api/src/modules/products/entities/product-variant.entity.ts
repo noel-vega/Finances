@@ -20,8 +20,7 @@ export class ProductVariant implements SelectProductVariant {
   @ApiProperty({ type: Number })
   priceCents!: number;
 
-
-  @ApiProperty({type: "string", nullable: true})
+  @ApiProperty({ type: 'string', nullable: true })
   sku!: string | null;
 
   @ApiProperty({ type: Number, nullable: true })

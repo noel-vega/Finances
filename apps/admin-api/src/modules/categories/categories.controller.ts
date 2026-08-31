@@ -1,7 +1,11 @@
 import { Controller, Get, Post, Body } from '@nestjs/common';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
-import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiOkResponse,
+} from '@nestjs/swagger';
 import { Category } from './entities/category.entity';
 import { CurrentUser, type AuthenticatedUser } from '../auth/auth.decorators';
 

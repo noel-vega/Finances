@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty } from "@nestjs/swagger";
 
 export class PosCatalogImage {
   @ApiProperty({ type: Number })
@@ -23,7 +23,7 @@ export class PosCatalogVariant {
   @ApiProperty({ type: Number })
   id!: number;
 
-  @ApiProperty({ type: 'string', nullable: true })
+  @ApiProperty({ type: "string", nullable: true })
   sku!: string | null;
 
   @ApiProperty({ type: [String] })
@@ -40,7 +40,7 @@ export class PosCatalogVariant {
   optionValues!: PosCatalogOptionValue[];
 
   // this variant's first image, else the product's first image, else null
-  @ApiProperty({ type: 'string', nullable: true })
+  @ApiProperty({ type: "string", nullable: true })
   imageUrl!: string | null;
 }
 
@@ -67,7 +67,7 @@ export class PosCatalogProduct {
   @ApiProperty()
   name!: string;
 
-  @ApiProperty({ type: 'string', nullable: true })
+  @ApiProperty({ type: "string", nullable: true })
   description!: string | null;
 
   @ApiProperty({ type: () => PosCatalogBrand, nullable: true })

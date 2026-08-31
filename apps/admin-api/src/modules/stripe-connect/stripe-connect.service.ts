@@ -9,7 +9,9 @@ import { AccountSessionResponse } from './entities/account-session.entity';
 export class StripeConnectService {
   constructor(@Inject(DRIZZLE) private readonly db: typeof Db) {}
 
-  async createAccountSession(accountId: number): Promise<AccountSessionResponse> {
+  async createAccountSession(
+    accountId: number,
+  ): Promise<AccountSessionResponse> {
     const stripeAccountId = await this.ensureConnectedAccount(accountId);
 
     const session = await stripe.accountSessions.create({
@@ -25,14 +27,21 @@ export class StripeConnectService {
     return { clientSecret: session.client_secret };
   }
 
-  async getStatus(accountId: number, refresh: boolean): Promise<StripeConnectStatus> {
+  async getStatus(
+    accountId: number,
+    refresh: boolean,
+  ): Promise<StripeConnectStatus> {
     const [stripeAccount] = await this.db
       .select()
       .from(stripeAccountsTable)
       .where(eq(stripeAccountsTable.accountId, accountId));
 
     if (!stripeAccount) {
-      return { connected: false, chargesEnabled: false, detailsSubmitted: false };
+      return {
+        connected: false,
+        chargesEnabled: false,
+        detailsSubmitted: false,
+      };
     }
 
     if (!refresh) {
@@ -43,7 +52,9 @@ export class StripeConnectService {
       };
     }
 
-    const account = await stripe.accounts.retrieve(stripeAccount.stripeAccountId);
+    const account = await stripe.accounts.retrieve(
+      stripeAccount.stripeAccountId,
+    );
     await this.syncAccountStatus(stripeAccount.stripeAccountId, {
       charges_enabled: account.charges_enabled,
       details_submitted: account.details_submitted,
@@ -59,10 +70,13 @@ export class StripeConnectService {
   // handles the `account.updated` webhook event — the durable path for
   // keeping charges_enabled/details_submitted in sync; the refresh=true
   // path above is a local-dev/UI fallback for when that hasn't landed yet
-  async handleAccountUpdated(stripeAccountId: string, status: {
-    charges_enabled: boolean;
-    details_submitted: boolean;
-  }): Promise<void> {
+  async handleAccountUpdated(
+    stripeAccountId: string,
+    status: {
+      charges_enabled: boolean;
+      details_submitted: boolean;
+    },
+  ): Promise<void> {
     await this.syncAccountStatus(stripeAccountId, status);
   }
 

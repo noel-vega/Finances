@@ -1,7 +1,14 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import { InventoryService } from './inventory.service';
-import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
-import { InventoryRecord, InventoryMovementRecord } from './entities/inventory.entity';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiOkResponse,
+} from '@nestjs/swagger';
+import {
+  InventoryRecord,
+  InventoryMovementRecord,
+} from './entities/inventory.entity';
 import { CreateInventoryMovementDto } from './dto/create-inventory-movement.dto';
 import { CurrentUser, type AuthenticatedUser } from '../auth/auth.decorators';
 

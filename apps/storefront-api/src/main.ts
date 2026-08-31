@@ -10,7 +10,9 @@ import { createSwaggerConfig } from './swagger.config';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     rawBody: true,
-    logger: new CorrelatedLogger(undefined, { json: process.env.NODE_ENV === 'production' }),
+    logger: new CorrelatedLogger(undefined, {
+      json: process.env.NODE_ENV === 'production',
+    }),
   });
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
 
@@ -20,7 +22,8 @@ async function bootstrap() {
   // this request produces, including ones emitted from BullMQ jobs it enqueues
   app.use((req, res, next) => {
     const header = req.headers['x-request-id'];
-    const correlationId = (Array.isArray(header) ? header[0] : header) || randomUUID();
+    const correlationId =
+      (Array.isArray(header) ? header[0] : header) || randomUUID();
     res.setHeader('x-request-id', correlationId);
     runWithCorrelationId(correlationId, next);
   });
@@ -33,7 +36,12 @@ async function bootstrap() {
     origin: process.env.STOREFRONT_WEB_URL ?? 'http://localhost:3002',
     credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'DELETE'],
-    allowedHeaders: ['content-type', 'x-app-key', 'x-cart-token', 'authorization'],
+    allowedHeaders: [
+      'content-type',
+      'x-app-key',
+      'x-cart-token',
+      'authorization',
+    ],
   });
 
   const document = SwaggerModule.createDocument(app, createSwaggerConfig());

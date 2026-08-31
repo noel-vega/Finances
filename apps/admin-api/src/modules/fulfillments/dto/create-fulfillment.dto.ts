@@ -1,6 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { ArrayMinSize, IsArray, IsInt, IsString, ValidateNested } from 'class-validator';
+import {
+  ArrayMinSize,
+  IsArray,
+  IsInt,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
 import { FulfillmentItemInput } from './fulfillment-item-input.dto';
 
 // the client already has rateObjectId/provider/servicelevel/amountCents

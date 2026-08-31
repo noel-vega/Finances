@@ -17,7 +17,10 @@ import {
   type db as Db,
 } from 'db';
 import { PaginatedOrders } from './entities/paginated-orders.entity';
-import { OrderDetail, type FulfillmentStatus } from './entities/order-detail.entity';
+import {
+  OrderDetail,
+  type FulfillmentStatus,
+} from './entities/order-detail.entity';
 import type { Fulfillment } from '../fulfillments/entities/fulfillment.entity';
 
 const MAX_LIMIT = 100;
@@ -67,7 +70,9 @@ export class OrdersService {
         .where(eq(ordersTable.accountId, accountId)),
     ]);
 
-    const fulfilledByOrder = await this.getFulfilledQuantityByOrder(items.map((o) => o.id));
+    const fulfilledByOrder = await this.getFulfilledQuantityByOrder(
+      items.map((o) => o.id),
+    );
 
     return {
       items: items.map((order) => ({
@@ -83,7 +88,10 @@ export class OrdersService {
     };
   }
 
-  async findOne(id: number, accountId: number): Promise<OrderDetail | undefined> {
+  async findOne(
+    id: number,
+    accountId: number,
+  ): Promise<OrderDetail | undefined> {
     const [order] = await this.db
       .select()
       .from(ordersTable)
@@ -104,33 +112,38 @@ export class OrdersService {
       .where(eq(orderItemsTable.orderId, order.id));
     const itemIds = itemRows.map((i) => i.id);
 
-    const [allocationRows, fulfilledByItem, fulfillments, [shipping], payments] =
-      await Promise.all([
-        this.getAllocations(itemIds),
-        this.getFulfilledQuantityByItem(itemIds),
-        this.getFulfillments(order.id),
-        this.db
-          .select({
-            line1: orderShippingTable.line1,
-            line2: orderShippingTable.line2,
-            city: orderShippingTable.city,
-            state: orderShippingTable.state,
-            postalCode: orderShippingTable.postalCode,
-            country: orderShippingTable.country,
-            locationId: orderShippingTable.locationId,
-          })
-          .from(orderShippingTable)
-          .where(eq(orderShippingTable.orderId, order.id)),
-        this.db
-          .select({
-            method: orderPaymentsTable.method,
-            amountCents: orderPaymentsTable.amountCents,
-            amountTenderedCents: orderPaymentsTable.amountTenderedCents,
-          })
-          .from(orderPaymentsTable)
-          .where(eq(orderPaymentsTable.orderId, order.id))
-          .orderBy(orderPaymentsTable.id),
-      ]);
+    const [
+      allocationRows,
+      fulfilledByItem,
+      fulfillments,
+      [shipping],
+      payments,
+    ] = await Promise.all([
+      this.getAllocations(itemIds),
+      this.getFulfilledQuantityByItem(itemIds),
+      this.getFulfillments(order.id),
+      this.db
+        .select({
+          line1: orderShippingTable.line1,
+          line2: orderShippingTable.line2,
+          city: orderShippingTable.city,
+          state: orderShippingTable.state,
+          postalCode: orderShippingTable.postalCode,
+          country: orderShippingTable.country,
+          locationId: orderShippingTable.locationId,
+        })
+        .from(orderShippingTable)
+        .where(eq(orderShippingTable.orderId, order.id)),
+      this.db
+        .select({
+          method: orderPaymentsTable.method,
+          amountCents: orderPaymentsTable.amountCents,
+          amountTenderedCents: orderPaymentsTable.amountTenderedCents,
+        })
+        .from(orderPaymentsTable)
+        .where(eq(orderPaymentsTable.orderId, order.id))
+        .orderBy(orderPaymentsTable.id),
+    ]);
 
     const items = itemRows.map((item) => {
       const fulfilledQuantity = fulfilledByItem.get(item.id) ?? 0;
@@ -140,12 +153,19 @@ export class OrdersService {
         remainingQuantity: item.quantity - fulfilledQuantity,
         allocations: allocationRows
           .filter((a) => a.orderItemId === item.id)
-          .map(({ locationId, locationName, quantity }) => ({ locationId, locationName, quantity })),
+          .map(({ locationId, locationName, quantity }) => ({
+            locationId,
+            locationName,
+            quantity,
+          })),
       };
     });
 
     const totalQuantity = itemRows.reduce((sum, i) => sum + i.quantity, 0);
-    const totalFulfilled = items.reduce((sum, i) => sum + i.fulfilledQuantity, 0);
+    const totalFulfilled = items.reduce(
+      (sum, i) => sum + i.fulfilledQuantity,
+      0,
+    );
 
     return {
       id: order.id,
@@ -168,7 +188,9 @@ export class OrdersService {
   // a separate query rather than joining fulfillmentItemsTable into the
   // paginated query above, which would fan out and double-count itemCount
   // once an item has more than one fulfillment
-  private async getFulfilledQuantityByOrder(orderIds: number[]): Promise<Map<number, number>> {
+  private async getFulfilledQuantityByOrder(
+    orderIds: number[],
+  ): Promise<Map<number, number>> {
     if (orderIds.length === 0) return new Map();
 
     const rows = await this.db
@@ -177,7 +199,10 @@ export class OrdersService {
         fulfilled: sql<number>`coalesce(sum(${fulfillmentItemsTable.quantity}), 0)::int`,
       })
       .from(fulfillmentItemsTable)
-      .innerJoin(orderItemsTable, eq(orderItemsTable.id, fulfillmentItemsTable.orderItemId))
+      .innerJoin(
+        orderItemsTable,
+        eq(orderItemsTable.id, fulfillmentItemsTable.orderItemId),
+      )
       .where(inArray(orderItemsTable.orderId, orderIds))
       .groupBy(orderItemsTable.orderId);
 
@@ -210,9 +235,14 @@ export class OrdersService {
   // how much of an order item's stock came from which location, derived
   // from the checkout worker's inventory movements rather than a separate
   // allocation table kept in sync with them
-  private async getAllocations(
-    itemIds: number[],
-  ): Promise<{ orderItemId: number; locationId: number; locationName: string; quantity: number }[]> {
+  private async getAllocations(itemIds: number[]): Promise<
+    {
+      orderItemId: number;
+      locationId: number;
+      locationName: string;
+      quantity: number;
+    }[]
+  > {
     if (itemIds.length === 0) return [];
 
     const rows = await this.db
@@ -223,7 +253,10 @@ export class OrdersService {
         quantity: sql<number>`sum(-${inventoryMovementsTable.delta})::int`,
       })
       .from(inventoryMovementsTable)
-      .innerJoin(locationsTable, eq(locationsTable.id, inventoryMovementsTable.locationId))
+      .innerJoin(
+        locationsTable,
+        eq(locationsTable.id, inventoryMovementsTable.locationId),
+      )
       .where(
         and(
           inArray(inventoryMovementsTable.orderItemId, itemIds),
@@ -254,7 +287,10 @@ export class OrdersService {
         createdAt: fulfillmentsTable.createdAt,
       })
       .from(fulfillmentsTable)
-      .innerJoin(locationsTable, eq(locationsTable.id, fulfillmentsTable.locationId))
+      .innerJoin(
+        locationsTable,
+        eq(locationsTable.id, fulfillmentsTable.locationId),
+      )
       .where(eq(fulfillmentsTable.orderId, orderId))
       .orderBy(fulfillmentsTable.createdAt);
     if (fulfillmentRows.length === 0) return [];

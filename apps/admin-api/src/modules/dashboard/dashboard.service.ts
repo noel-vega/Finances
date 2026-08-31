@@ -25,18 +25,23 @@ export class DashboardService {
   ) {}
 
   async getSummary(accountId: number): Promise<DashboardSummary> {
-    const [recentOrders, recentCustomers, totals, outOfStockCount] = await Promise.all([
-      this.getRecentOrders(accountId),
-      this.getRecentCustomers(accountId),
-      this.getOrderTotals(accountId),
-      this.getOutOfStockCount(accountId),
-    ]);
+    const [recentOrders, recentCustomers, totals, outOfStockCount] =
+      await Promise.all([
+        this.getRecentOrders(accountId),
+        this.getRecentCustomers(accountId),
+        this.getOrderTotals(accountId),
+        this.getOutOfStockCount(accountId),
+      ]);
 
     return { ...totals, outOfStockCount, recentOrders, recentCustomers };
   }
 
   private async getRecentOrders(accountId: number) {
-    const { items } = await this.ordersService.findAll(RECENT_LIMIT, 0, accountId);
+    const { items } = await this.ordersService.findAll(
+      RECENT_LIMIT,
+      0,
+      accountId,
+    );
     return items;
   }
 
@@ -72,8 +77,14 @@ export class DashboardService {
         totalStock: sql<number>`coalesce(sum(${inventoryTable.stock}), 0)::int`,
       })
       .from(productVariantsTable)
-      .innerJoin(productsTable, eq(productsTable.id, productVariantsTable.productId))
-      .leftJoin(inventoryTable, eq(inventoryTable.variantId, productVariantsTable.id))
+      .innerJoin(
+        productsTable,
+        eq(productsTable.id, productVariantsTable.productId),
+      )
+      .leftJoin(
+        inventoryTable,
+        eq(inventoryTable.variantId, productVariantsTable.id),
+      )
       .where(eq(productsTable.accountId, accountId))
       .groupBy(productVariantsTable.id);
 

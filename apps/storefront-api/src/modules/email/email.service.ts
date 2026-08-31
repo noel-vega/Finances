@@ -13,10 +13,17 @@ import { Logger, getCorrelationId } from 'logging';
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
 
-  constructor(@InjectQueue(QUEUE_NAMES.EMAIL) private readonly emailQueue: Queue<EmailJobData>) {}
+  constructor(
+    @InjectQueue(QUEUE_NAMES.EMAIL)
+    private readonly emailQueue: Queue<EmailJobData>,
+  ) {}
 
-  async sendThankYouEmail(to: string, params: { firstName: string; accountName: string }) {
-    const storefrontUrl = process.env.STOREFRONT_WEB_URL ?? 'http://localhost:3002';
+  async sendThankYouEmail(
+    to: string,
+    params: { firstName: string; accountName: string },
+  ) {
+    const storefrontUrl =
+      process.env.STOREFRONT_WEB_URL ?? 'http://localhost:3002';
     try {
       await this.emailQueue.add('customer-thank-you', {
         type: 'customer-thank-you',
@@ -26,7 +33,10 @@ export class EmailService {
         storefrontUrl,
       });
     } catch (err) {
-      this.logger.error(`Failed to enqueue thank-you email for ${to}`, err instanceof Error ? err.stack : err);
+      this.logger.error(
+        `Failed to enqueue thank-you email for ${to}`,
+        err instanceof Error ? err.stack : err,
+      );
     }
   }
 }

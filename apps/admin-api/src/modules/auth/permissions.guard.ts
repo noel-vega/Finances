@@ -1,7 +1,17 @@
-import { CanActivate, ExecutionContext, ForbiddenException, Injectable, Provider } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  Injectable,
+  Provider,
+} from '@nestjs/common';
 import { APP_GUARD, Reflector } from '@nestjs/core';
 import { PermissionsService } from '../permissions/permissions.service';
-import { IS_PUBLIC_KEY, PERMISSIONS_KEY, type AuthenticatedUser } from './auth.decorators';
+import {
+  IS_PUBLIC_KEY,
+  PERMISSIONS_KEY,
+  type AuthenticatedUser,
+} from './auth.decorators';
 
 // authorization ("what"), separate from AuthGuard's authentication ("who").
 // A no-op for any route without @RequirePermissions() — every existing
@@ -17,10 +27,10 @@ export class PermissionsGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const required = this.reflector.getAllAndOverride<string[]>(PERMISSIONS_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const required = this.reflector.getAllAndOverride<string[]>(
+      PERMISSIONS_KEY,
+      [context.getHandler(), context.getClass()],
+    );
     if (!required?.length) {
       return true;
     }
@@ -42,7 +52,9 @@ export class PermissionsGuard implements CanActivate {
       throw new ForbiddenException('Missing required permission');
     }
 
-    const granted = await this.permissionsService.getEffectivePermissionKeys(user.sub);
+    const granted = await this.permissionsService.getEffectivePermissionKeys(
+      user.sub,
+    );
     if (!required.every((permission) => granted.has(permission))) {
       throw new ForbiddenException('Missing required permission');
     }

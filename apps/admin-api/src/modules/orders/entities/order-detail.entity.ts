@@ -1,7 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Fulfillment } from '../../fulfillments/entities/fulfillment.entity';
 
-export type FulfillmentStatus = 'unfulfilled' | 'partially_fulfilled' | 'fulfilled';
+export type FulfillmentStatus =
+  'unfulfilled' | 'partially_fulfilled' | 'fulfilled';
 
 export type OrderChannel = 'web' | 'pos';
 

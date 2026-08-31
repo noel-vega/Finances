@@ -15,7 +15,12 @@ async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter(),
-    { rawBody: true, logger: new CorrelatedLogger(undefined, { json: process.env.NODE_ENV === 'production' }) },
+    {
+      rawBody: true,
+      logger: new CorrelatedLogger(undefined, {
+        json: process.env.NODE_ENV === 'production',
+      }),
+    },
   );
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
 
@@ -26,7 +31,8 @@ async function bootstrap() {
   // middleware (raw Node req/res), same as storefront-api's Express version.
   app.use((req, res, next) => {
     const header = req.headers['x-request-id'];
-    const correlationId = (Array.isArray(header) ? header[0] : header) || randomUUID();
+    const correlationId =
+      (Array.isArray(header) ? header[0] : header) || randomUUID();
     res.setHeader('x-request-id', correlationId);
     runWithCorrelationId(correlationId, next);
   });
@@ -39,7 +45,7 @@ async function bootstrap() {
   app.enableCors({
     origin: process.env.SHOP_ADMIN_WEB_URL ?? 'http://localhost:5000',
     credentials: true,
-    methods: ["GET", "POST", "PATCH", "DELETE"]
+    methods: ['GET', 'POST', 'PATCH', 'DELETE'],
   });
   await app.register(fastifyCookie);
   // Fastify defaults to binding 'localhost' (loopback only) when no host is given — fine for

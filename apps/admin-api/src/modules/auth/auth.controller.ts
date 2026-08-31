@@ -14,7 +14,13 @@ import { AcceptInviteDto } from './dto/accept-invite.dto';
 import { AccessTokenDto } from './dto/access-token.dto';
 import { Public } from './auth.decorators';
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { ApiBearerAuth, ApiConflictResponse, ApiOkResponse, ApiResponse, ApiUnauthorizedResponse } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiConflictResponse,
+  ApiOkResponse,
+  ApiResponse,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 
 const REFRESH_TOKEN_COOKIE = 'refresh_token';
 
@@ -130,7 +136,8 @@ export class AuthController {
       throw new UnauthorizedException('Invalid or expired token');
     }
 
-    const access_token = await this.authService.refreshAccessToken(refreshToken);
+    const access_token =
+      await this.authService.refreshAccessToken(refreshToken);
     return { access_token };
   }
 }

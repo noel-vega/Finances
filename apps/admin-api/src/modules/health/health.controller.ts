@@ -14,6 +14,9 @@ export class HealthController {
   @Get()
   @HealthCheck()
   check() {
-    return this.health.check([this.healthService.checkDatabase, this.healthService.checkRedis]);
+    return this.health.check([
+      this.healthService.checkDatabase,
+      this.healthService.checkRedis,
+    ]);
   }
 }

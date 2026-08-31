@@ -126,7 +126,9 @@ export class CartService {
     const cart = await this.findCart(cartToken, accountId);
     if (!cart) return undefined;
 
-    await this.db.delete(cartItemsTable).where(eq(cartItemsTable.cartId, cart.id));
+    await this.db
+      .delete(cartItemsTable)
+      .where(eq(cartItemsTable.cartId, cart.id));
 
     return this.buildCart(cart);
   }
@@ -144,7 +146,12 @@ export class CartService {
     await this.db
       .update(cartsTable)
       .set({ customerId, updatedAt: new Date() })
-      .where(and(eq(cartsTable.token, cartToken), eq(cartsTable.accountId, accountId)));
+      .where(
+        and(
+          eq(cartsTable.token, cartToken),
+          eq(cartsTable.accountId, accountId),
+        ),
+      );
   }
 
   private async findCart(cartToken: string | undefined, accountId: number) {
@@ -154,12 +161,18 @@ export class CartService {
       .select()
       .from(cartsTable)
       .where(
-        and(eq(cartsTable.token, cartToken), eq(cartsTable.accountId, accountId)),
+        and(
+          eq(cartsTable.token, cartToken),
+          eq(cartsTable.accountId, accountId),
+        ),
       );
     return cart;
   }
 
-  private async findOrCreateCart(cartToken: string | undefined, accountId: number) {
+  private async findOrCreateCart(
+    cartToken: string | undefined,
+    accountId: number,
+  ) {
     const existing = await this.findCart(cartToken, accountId);
     if (existing) return existing;
 
@@ -186,7 +199,10 @@ export class CartService {
         productVariantsTable,
         eq(productVariantsTable.id, cartItemsTable.variantId),
       )
-      .innerJoin(productsTable, eq(productsTable.id, productVariantsTable.productId))
+      .innerJoin(
+        productsTable,
+        eq(productsTable.id, productVariantsTable.productId),
+      )
       .leftJoin(
         inventoryTable,
         eq(inventoryTable.variantId, productVariantsTable.id),
@@ -212,7 +228,9 @@ export class CartService {
 
   private async attachOptionValues<T extends { variantId: number }>(
     rows: T[],
-  ): Promise<(T & { optionValues: { optionName: string; value: string }[] })[]> {
+  ): Promise<
+    (T & { optionValues: { optionName: string; value: string }[] })[]
+  > {
     if (rows.length === 0) return [];
 
     const optionRows = await this.db
@@ -237,7 +255,10 @@ export class CartService {
         ),
       );
 
-    const byVariant = new Map<number, { optionName: string; value: string }[]>();
+    const byVariant = new Map<
+      number,
+      { optionName: string; value: string }[]
+    >();
     for (const row of optionRows) {
       const values = byVariant.get(row.variantId) ?? [];
       values.push({ optionName: row.optionName, value: row.value });

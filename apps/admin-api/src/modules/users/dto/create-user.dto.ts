@@ -1,5 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsEmail, IsInt, IsOptional, IsString, MinLength } from 'class-validator';
+import {
+  IsArray,
+  IsEmail,
+  IsInt,
+  IsOptional,
+  IsString,
+  MinLength,
+} from 'class-validator';
 
 export class CreateUserDto {
   @ApiProperty()
@@ -29,7 +36,13 @@ export class CreateUserDto {
   @IsInt({ each: true })
   roleIds?: number[];
 
-  constructor(firstName: string, lastName: string, phone: string, email: string, roleIds?: number[]) {
+  constructor(
+    firstName: string,
+    lastName: string,
+    phone: string,
+    email: string,
+    roleIds?: number[],
+  ) {
     this.firstName = firstName;
     this.lastName = lastName;
     this.phone = phone;

@@ -1,4 +1,9 @@
-import { ConflictException, ForbiddenException, Inject, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { DRIZZLE } from 'src/database/database.constants';
 import {
   and,
@@ -53,15 +58,27 @@ export class RolesService {
       return await this.db.transaction(async (tx) => {
         const [role] = await tx
           .insert(rolesTable)
-          .values({ accountId, name: dto.name, description: dto.description ?? null })
+          .values({
+            accountId,
+            name: dto.name,
+            description: dto.description ?? null,
+          })
           .returning();
 
-        const permissions = await this.resolvePermissions(tx, dto.permissionKeys);
-        await this.assertGrantable(tx, permissions, { callerUserId, callerGrantedPermissions });
+        const permissions = await this.resolvePermissions(
+          tx,
+          dto.permissionKeys,
+        );
+        await this.assertGrantable(tx, permissions, {
+          callerUserId,
+          callerGrantedPermissions,
+        });
         if (permissions.length > 0) {
           await tx
             .insert(rolePermissionsTable)
-            .values(permissions.map((p) => ({ roleId: role.id, permissionId: p.id })));
+            .values(
+              permissions.map((p) => ({ roleId: role.id, permissionId: p.id })),
+            );
         }
 
         return { ...role, permissions };
@@ -88,10 +105,16 @@ export class RolesService {
       accountId,
     );
 
-    return roles.map((role) => ({ ...role, permissions: permissionsByRole.get(role.id) ?? [] }));
+    return roles.map((role) => ({
+      ...role,
+      permissions: permissionsByRole.get(role.id) ?? [],
+    }));
   }
 
-  async findOne(id: number, accountId: number): Promise<RoleDetail | undefined> {
+  async findOne(
+    id: number,
+    accountId: number,
+  ): Promise<RoleDetail | undefined> {
     const [role] = await this.db
       .select()
       .from(rolesTable)
@@ -99,7 +122,10 @@ export class RolesService {
 
     if (!role) return undefined;
 
-    const permissionsByRole = await this.getPermissionsByRoleId([role.id], accountId);
+    const permissionsByRole = await this.getPermissionsByRoleId(
+      [role.id],
+      accountId,
+    );
     return { ...role, permissions: permissionsByRole.get(role.id) ?? [] };
   }
 
@@ -126,10 +152,14 @@ export class RolesService {
           .update(rolesTable)
           .set({
             ...(dto.name !== undefined ? { name: dto.name } : {}),
-            ...(dto.description !== undefined ? { description: dto.description } : {}),
+            ...(dto.description !== undefined
+              ? { description: dto.description }
+              : {}),
             updatedAt: new Date(),
           })
-          .where(and(eq(rolesTable.id, id), eq(rolesTable.accountId, accountId)))
+          .where(
+            and(eq(rolesTable.id, id), eq(rolesTable.accountId, accountId)),
+          )
           .returning();
 
         let permissions: Awaited<ReturnType<typeof this.resolvePermissions>>;
@@ -144,7 +174,9 @@ export class RolesService {
             this.resolvePermissions(tx, dto.permissionKeys),
           ]);
           const existingKeys = new Set(existingRows);
-          await tx.delete(rolePermissionsTable).where(eq(rolePermissionsTable.roleId, id));
+          await tx
+            .delete(rolePermissionsTable)
+            .where(eq(rolePermissionsTable.roleId, id));
           permissions = resolvedPermissions;
           await this.assertGrantable(tx, permissions, {
             callerUserId,
@@ -154,7 +186,9 @@ export class RolesService {
           if (permissions.length > 0) {
             await tx
               .insert(rolePermissionsTable)
-              .values(permissions.map((p) => ({ roleId: id, permissionId: p.id })));
+              .values(
+                permissions.map((p) => ({ roleId: id, permissionId: p.id })),
+              );
           }
         } else {
           // permissionKeys wasn't provided, so role_permissions is untouched
@@ -218,28 +252,50 @@ export class RolesService {
   // currently in the catalog, and assigns it to the newly created owner.
   // Takes the caller's transaction handle so it's atomic with account/user
   // creation in AuthService.signup().
-  async createSystemRole(tx: DbTransaction, accountId: number, ownerUserId: number) {
+  async createSystemRole(
+    tx: DbTransaction,
+    accountId: number,
+    ownerUserId: number,
+  ) {
     const [role] = await tx
       .insert(rolesTable)
-      .values({ accountId, name: 'Owner', description: 'Full access to everything', isSystem: true })
+      .values({
+        accountId,
+        name: 'Owner',
+        description: 'Full access to everything',
+        isSystem: true,
+      })
       .returning();
 
-    const allPermissions = await tx.select({ id: permissionsTable.id }).from(permissionsTable);
+    const allPermissions = await tx
+      .select({ id: permissionsTable.id })
+      .from(permissionsTable);
     if (allPermissions.length > 0) {
       await tx
         .insert(rolePermissionsTable)
-        .values(allPermissions.map((p) => ({ roleId: role.id, permissionId: p.id })));
+        .values(
+          allPermissions.map((p) => ({ roleId: role.id, permissionId: p.id })),
+        );
     }
 
-    await tx.insert(userRolesTable).values({ userId: ownerUserId, roleId: role.id });
+    await tx
+      .insert(userRolesTable)
+      .values({ userId: ownerUserId, roleId: role.id });
 
     return role;
   }
 
-  private async resolvePermissions(tx: DbTransaction, permissionKeys: string[]) {
+  private async resolvePermissions(
+    tx: DbTransaction,
+    permissionKeys: string[],
+  ) {
     return resolveOwned(
       permissionKeys,
-      (keys) => tx.select().from(permissionsTable).where(inArray(permissionsTable.key, keys)),
+      (keys) =>
+        tx
+          .select()
+          .from(permissionsTable)
+          .where(inArray(permissionsTable.key, keys)),
       'One or more permission keys are invalid',
     );
   }
@@ -261,7 +317,9 @@ export class RolesService {
   ) {
     const granted =
       options.callerGrantedPermissions ??
-      (await this.permissionsService.getEffectivePermissionKeys(options.callerUserId));
+      (await this.permissionsService.getEffectivePermissionKeys(
+        options.callerUserId,
+      ));
     const existingKeys = options.existingKeys ?? new Set<string>();
     const newlyGranted = permissions.filter((p) => !existingKeys.has(p.key));
     assertCanGrant(
@@ -269,7 +327,9 @@ export class RolesService {
       granted,
     );
 
-    const catalogSize = (await tx.select({ id: permissionsTable.id }).from(permissionsTable)).length;
+    const catalogSize = (
+      await tx.select({ id: permissionsTable.id }).from(permissionsTable)
+    ).length;
     if (permissions.length >= catalogSize) {
       throw new ForbiddenException(
         'A custom role cannot hold every permission — assign the Owner role instead',
@@ -286,14 +346,26 @@ export class RolesService {
     accountId: number,
     queryable: Queryable = this.db,
   ) {
-    if (roleIds.length === 0) return new Map<number, (typeof permissionsTable.$inferSelect)[]>();
+    if (roleIds.length === 0)
+      return new Map<number, (typeof permissionsTable.$inferSelect)[]>();
 
     const rows = await queryable
-      .select({ roleId: rolePermissionsTable.roleId, permission: permissionsTable })
+      .select({
+        roleId: rolePermissionsTable.roleId,
+        permission: permissionsTable,
+      })
       .from(rolePermissionsTable)
       .innerJoin(rolesTable, eq(rolesTable.id, rolePermissionsTable.roleId))
-      .innerJoin(permissionsTable, eq(permissionsTable.id, rolePermissionsTable.permissionId))
-      .where(and(inArray(rolePermissionsTable.roleId, roleIds), eq(rolesTable.accountId, accountId)));
+      .innerJoin(
+        permissionsTable,
+        eq(permissionsTable.id, rolePermissionsTable.permissionId),
+      )
+      .where(
+        and(
+          inArray(rolePermissionsTable.roleId, roleIds),
+          eq(rolesTable.accountId, accountId),
+        ),
+      );
 
     return groupBy(
       rows,

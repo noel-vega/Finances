@@ -1,5 +1,18 @@
-import { Body, Controller, Delete, Get, NotFoundException, Param, Patch, Post } from '@nestjs/common';
-import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  NotFoundException,
+  Param,
+  Patch,
+  Post,
+} from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiOkResponse,
+} from '@nestjs/swagger';
 import { RolesService } from './roles.service';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
@@ -25,7 +38,12 @@ export class RolesController {
     @CurrentUser() user: AuthenticatedUser,
     @GrantedPermissions() granted: Set<string> | undefined,
   ) {
-    return this.rolesService.create(createRoleDto, user.accountId, user.sub, granted);
+    return this.rolesService.create(
+      createRoleDto,
+      user.accountId,
+      user.sub,
+      granted,
+    );
   }
 
   // not gated by @RequirePermissions — anyone who can assign roles to a
@@ -43,7 +61,10 @@ export class RolesController {
   @Get(':id')
   @ApiBearerAuth('JWT-auth')
   @ApiOkResponse({ type: RoleDetail })
-  async findOne(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+  async findOne(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     const role = await this.rolesService.findOne(+id, user.accountId);
     if (!role) throw new NotFoundException();
     return role;
@@ -59,7 +80,13 @@ export class RolesController {
     @CurrentUser() user: AuthenticatedUser,
     @GrantedPermissions() granted: Set<string> | undefined,
   ) {
-    const role = await this.rolesService.update(+id, updateRoleDto, user.accountId, user.sub, granted);
+    const role = await this.rolesService.update(
+      +id,
+      updateRoleDto,
+      user.accountId,
+      user.sub,
+      granted,
+    );
     if (!role) throw new NotFoundException();
     return role;
   }
@@ -68,7 +95,10 @@ export class RolesController {
   @RequirePermissions('roles:write')
   @ApiBearerAuth('JWT-auth')
   @ApiOkResponse({ type: Role })
-  async remove(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+  async remove(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     const role = await this.rolesService.remove(+id, user.accountId);
     if (!role) throw new NotFoundException();
     return role;

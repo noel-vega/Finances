@@ -8,6 +8,6 @@ import { PermissionsModule } from '../permissions/permissions.module';
   imports: [EmailModule, PermissionsModule],
   controllers: [UsersController],
   providers: [UsersService],
-  exports: [UsersService]
+  exports: [UsersService],
 })
 export class UsersModule {}

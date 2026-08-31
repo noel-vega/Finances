@@ -31,7 +31,10 @@ import {
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days, matches the refresh token TTL
 
-function toUser(row: typeof usersTable.$inferSelect, roles: UserRoleSummary[]): User {
+function toUser(
+  row: typeof usersTable.$inferSelect,
+  roles: UserRoleSummary[],
+): User {
   return {
     id: row.id,
     accountId: row.accountId,
@@ -76,7 +79,10 @@ export class UsersService {
   // they follow the emailed link and choose one. Returns undefined if the
   // user no longer exists (e.g. deleted between the invite lookup and this
   // call) rather than assuming the update always finds a row.
-  async activate(id: number, hashedPassword: string): Promise<User | undefined> {
+  async activate(
+    id: number,
+    hashedPassword: string,
+  ): Promise<User | undefined> {
     const [user] = await this.db
       .update(usersTable)
       .set({ password: hashedPassword, updatedAt: new Date() })
@@ -85,7 +91,9 @@ export class UsersService {
 
     if (!user) return undefined;
 
-    await this.db.delete(userInvitesTable).where(eq(userInvitesTable.userId, id));
+    await this.db
+      .delete(userInvitesTable)
+      .where(eq(userInvitesTable.userId, id));
 
     const roles = await this.getRolesByUserId([user.id]);
     return toUser(user, roles.get(user.id) ?? []);
@@ -114,9 +122,13 @@ export class UsersService {
     if (dto.roleIds && dto.roleIds.length > 0) {
       granted =
         callerGrantedPermissions ??
-        (await this.permissionsService.getEffectivePermissionKeys(callerUserId));
+        (await this.permissionsService.getEffectivePermissionKeys(
+          callerUserId,
+        ));
       if (!granted.has('users:manage_roles')) {
-        throw new ForbiddenException('Missing required permission: users:manage_roles');
+        throw new ForbiddenException(
+          'Missing required permission: users:manage_roles',
+        );
       }
     }
 
@@ -140,7 +152,12 @@ export class UsersService {
               tx
                 .select({ id: rolesTable.id, isSystem: rolesTable.isSystem })
                 .from(rolesTable)
-                .where(and(inArray(rolesTable.id, ids), eq(rolesTable.accountId, accountId))),
+                .where(
+                  and(
+                    inArray(rolesTable.id, ids),
+                    eq(rolesTable.accountId, accountId),
+                  ),
+                ),
             'One or more roles are invalid',
           );
 
@@ -148,7 +165,9 @@ export class UsersService {
           // the explicit PATCH /users/:id/roles flow — never handed out as
           // a side effect of a routine invite
           if (roles.some((role) => role.isSystem)) {
-            throw new ForbiddenException('The Owner role cannot be assigned when inviting a user');
+            throw new ForbiddenException(
+              'The Owner role cannot be assigned when inviting a user',
+            );
           }
 
           // holding users:manage_roles only means "can assign roles" — it
@@ -162,7 +181,9 @@ export class UsersService {
 
           await tx
             .insert(userRolesTable)
-            .values(roles.map((role) => ({ userId: user.id, roleId: role.id })));
+            .values(
+              roles.map((role) => ({ userId: user.id, roleId: role.id })),
+            );
         }
 
         const token = generateToken(32);
@@ -222,7 +243,9 @@ export class UsersService {
     const [user] = await this.db
       .select()
       .from(usersTable)
-      .where(and(eq(usersTable.id, userId), eq(usersTable.accountId, accountId)));
+      .where(
+        and(eq(usersTable.id, userId), eq(usersTable.accountId, accountId)),
+      );
 
     if (!user) return undefined;
 
@@ -236,9 +259,18 @@ export class UsersService {
                 roleIds,
                 (ids) =>
                   tx
-                    .select({ id: rolesTable.id, name: rolesTable.name, isSystem: rolesTable.isSystem })
+                    .select({
+                      id: rolesTable.id,
+                      name: rolesTable.name,
+                      isSystem: rolesTable.isSystem,
+                    })
                     .from(rolesTable)
-                    .where(and(inArray(rolesTable.id, ids), eq(rolesTable.accountId, accountId))),
+                    .where(
+                      and(
+                        inArray(rolesTable.id, ids),
+                        eq(rolesTable.accountId, accountId),
+                      ),
+                    ),
                 'One or more roles are invalid',
               )
             : [];
@@ -261,10 +293,15 @@ export class UsersService {
           .map((role) => role.id);
 
         if (newlyGrantedRoleIds.length > 0) {
-          const grantedKeys = await getPermissionKeysForRoles(tx, newlyGrantedRoleIds);
+          const grantedKeys = await getPermissionKeysForRoles(
+            tx,
+            newlyGrantedRoleIds,
+          );
           const granted =
             callerGrantedPermissions ??
-            (await this.permissionsService.getEffectivePermissionKeys(callerUserId));
+            (await this.permissionsService.getEffectivePermissionKeys(
+              callerUserId,
+            ));
           assertCanGrant(grantedKeys, granted);
         }
 
@@ -279,7 +316,12 @@ export class UsersService {
         const [ownerRole] = await tx
           .select({ id: rolesTable.id })
           .from(rolesTable)
-          .where(and(eq(rolesTable.accountId, accountId), eq(rolesTable.isSystem, true)))
+          .where(
+            and(
+              eq(rolesTable.accountId, accountId),
+              eq(rolesTable.isSystem, true),
+            ),
+          )
           .for('update');
 
         if (!ownerRole) {
@@ -288,14 +330,21 @@ export class UsersService {
           // every Owner-role safeguard below (in practice unreachable: only
           // an Owner-role holder could ever have been granted
           // users:manage_roles in the first place)
-          throw new ConflictException('This account has no Owner role configured');
+          throw new ConflictException(
+            'This account has no Owner role configured',
+          );
         }
 
         const willHoldOwner = resolvedRoles.some((role) => role.isSystem);
         const [currentlyHoldsOwnerRow] = await tx
           .select({ userId: userRolesTable.userId })
           .from(userRolesTable)
-          .where(and(eq(userRolesTable.userId, userId), eq(userRolesTable.roleId, ownerRole.id)))
+          .where(
+            and(
+              eq(userRolesTable.userId, userId),
+              eq(userRolesTable.roleId, ownerRole.id),
+            ),
+          )
           .limit(1);
         const currentlyHoldsOwner = Boolean(currentlyHoldsOwnerRow);
 
@@ -305,11 +354,18 @@ export class UsersService {
           const [callerIsOwner] = await tx
             .select({ userId: userRolesTable.userId })
             .from(userRolesTable)
-            .where(and(eq(userRolesTable.userId, callerUserId), eq(userRolesTable.roleId, ownerRole.id)))
+            .where(
+              and(
+                eq(userRolesTable.userId, callerUserId),
+                eq(userRolesTable.roleId, ownerRole.id),
+              ),
+            )
             .limit(1);
 
           if (!callerIsOwner) {
-            throw new ForbiddenException('Only an existing Owner can change Owner-role membership');
+            throw new ForbiddenException(
+              'Only an existing Owner can change Owner-role membership',
+            );
           }
         }
 
@@ -317,22 +373,34 @@ export class UsersService {
           const [otherHolder] = await tx
             .select({ userId: userRolesTable.userId })
             .from(userRolesTable)
-            .where(and(eq(userRolesTable.roleId, ownerRole.id), ne(userRolesTable.userId, userId)))
+            .where(
+              and(
+                eq(userRolesTable.roleId, ownerRole.id),
+                ne(userRolesTable.userId, userId),
+              ),
+            )
             .limit(1);
 
           if (!otherHolder) {
-            throw new ConflictException('Cannot remove the last user holding the Owner role');
+            throw new ConflictException(
+              'Cannot remove the last user holding the Owner role',
+            );
           }
         }
 
-        await tx.delete(userRolesTable).where(eq(userRolesTable.userId, userId));
+        await tx
+          .delete(userRolesTable)
+          .where(eq(userRolesTable.userId, userId));
         if (resolvedRoles.length > 0) {
           await tx
             .insert(userRolesTable)
             .values(resolvedRoles.map((role) => ({ userId, roleId: role.id })));
         }
 
-        finalRoles = resolvedRoles.map((role) => ({ id: role.id, name: role.name }));
+        finalRoles = resolvedRoles.map((role) => ({
+          id: role.id,
+          name: role.name,
+        }));
       });
     } catch (err) {
       if (isForeignKeyViolation(err)) {
@@ -349,7 +417,11 @@ export class UsersService {
     if (userIds.length === 0) return new Map<number, UserRoleSummary[]>();
 
     const rows = await this.db
-      .select({ userId: userRolesTable.userId, id: rolesTable.id, name: rolesTable.name })
+      .select({
+        userId: userRolesTable.userId,
+        id: rolesTable.id,
+        name: rolesTable.name,
+      })
       .from(userRolesTable)
       .innerJoin(rolesTable, eq(rolesTable.id, userRolesTable.roleId))
       .where(inArray(userRolesTable.userId, userIds));

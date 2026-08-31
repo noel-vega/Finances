@@ -1,5 +1,17 @@
-import { Controller, Get, Post, Patch, Param, Body, NotFoundException } from '@nestjs/common';
-import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Param,
+  Body,
+  NotFoundException,
+} from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiOkResponse,
+} from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { AssignRolesDto } from './dto/assign-roles.dto';
@@ -24,7 +36,12 @@ export class UsersController {
     @CurrentUser() user: AuthenticatedUser,
     @GrantedPermissions() granted: Set<string> | undefined,
   ) {
-    return this.usersService.create(createUserDto, user.accountId, user.sub, granted);
+    return this.usersService.create(
+      createUserDto,
+      user.accountId,
+      user.sub,
+      granted,
+    );
   }
 
   @Get()

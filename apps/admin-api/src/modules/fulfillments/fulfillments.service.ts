@@ -1,4 +1,9 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Logger } from 'logging';
 import { DRIZZLE } from 'src/database/database.constants';
 import {
@@ -36,11 +41,12 @@ export class FulfillmentsService {
     private readonly ordersService: OrdersService,
   ) {}
 
-  async getRates(dto: GetFulfillmentRatesDto, accountId: number): Promise<ShippingRate[]> {
-    const { order, shipping, location, totalWeightOz } = await this.resolveRequest(
-      dto,
-      accountId,
-    );
+  async getRates(
+    dto: GetFulfillmentRatesDto,
+    accountId: number,
+  ): Promise<ShippingRate[]> {
+    const { order, shipping, location, totalWeightOz } =
+      await this.resolveRequest(dto, accountId);
 
     const [account] = await this.db
       .select({ phone: accountsTable.phone, email: accountsTable.email })
@@ -80,12 +86,17 @@ export class FulfillmentsService {
         async: false,
       })
       .catch((err) => {
-        this.logger.error(`Shippo shipment creation failed for order ${dto.orderId}`, err);
+        this.logger.error(
+          `Shippo shipment creation failed for order ${dto.orderId}`,
+          err,
+        );
         return null;
       });
 
     if (!shipment || shipment.rates.length === 0) {
-      throw new BadRequestException("Couldn't get shipping rates for this order");
+      throw new BadRequestException(
+        "Couldn't get shipping rates for this order",
+      );
     }
 
     return [...shipment.rates]
@@ -99,7 +110,10 @@ export class FulfillmentsService {
       }));
   }
 
-  async create(dto: CreateFulfillmentDto, accountId: number): Promise<OrderDetail> {
+  async create(
+    dto: CreateFulfillmentDto,
+    accountId: number,
+  ): Promise<OrderDetail> {
     await this.resolveRequest(dto, accountId);
 
     // commit the quantity reservation *before* the slow external call, not
@@ -110,20 +124,30 @@ export class FulfillmentsService {
     const transaction = await shippo.transactions
       .create({ rate: dto.rateObjectId, labelFileType: 'PDF', async: false })
       .catch((err) => {
-        this.logger.error(`Shippo transaction creation failed for order ${dto.orderId}`, err);
+        this.logger.error(
+          `Shippo transaction creation failed for order ${dto.orderId}`,
+          err,
+        );
         return null;
       });
 
     if (!transaction || transaction.status !== 'SUCCESS') {
-      const reason = transaction?.messages?.map((m) => m.text).filter(Boolean).join('; ');
+      const reason = transaction?.messages
+        ?.map((m) => m.text)
+        .filter(Boolean)
+        .join('; ');
       this.logger.error(
         `Shippo transaction for order ${dto.orderId} did not succeed: status=${transaction?.status ?? 'none'} ${reason ?? ''}`,
       );
       // release the reservation — nothing was actually shipped, so this
       // quantity is available for a retry or a different fulfillment
-      await this.db.delete(fulfillmentsTable).where(eq(fulfillmentsTable.id, fulfillmentId));
+      await this.db
+        .delete(fulfillmentsTable)
+        .where(eq(fulfillmentsTable.id, fulfillmentId));
       throw new BadRequestException(
-        reason ? `Couldn't purchase a label for that rate: ${reason}` : "Couldn't purchase a label for that rate",
+        reason
+          ? `Couldn't purchase a label for that rate: ${reason}`
+          : "Couldn't purchase a label for that rate",
       );
     }
 
@@ -158,7 +182,8 @@ export class FulfillmentsService {
         .where(inArray(orderItemsTable.id, requestedIds))
         .for('update');
 
-      const fulfilledByItem = await this.ordersService.getFulfilledQuantityByItem(requestedIds, tx);
+      const fulfilledByItem =
+        await this.ordersService.getFulfilledQuantityByItem(requestedIds, tx);
 
       for (const requested of dto.items) {
         const item = lockedItems.find((i) => i.id === requested.orderItemId)!;
@@ -201,13 +226,22 @@ export class FulfillmentsService {
   // informational (they tell a merchant where stock physically is), not a
   // hard constraint on which location a fulfillment can claim to ship from.
   private async resolveRequest(
-    dto: { orderId: number; locationId: number; items: { orderItemId: number; quantity: number }[] },
+    dto: {
+      orderId: number;
+      locationId: number;
+      items: { orderItemId: number; quantity: number }[];
+    },
     accountId: number,
   ) {
     const [order] = await this.db
       .select()
       .from(ordersTable)
-      .where(and(eq(ordersTable.id, dto.orderId), eq(ordersTable.accountId, accountId)));
+      .where(
+        and(
+          eq(ordersTable.id, dto.orderId),
+          eq(ordersTable.accountId, accountId),
+        ),
+      );
     if (!order) throw new NotFoundException('Order not found');
 
     const [shipping] = await this.db
@@ -215,15 +249,24 @@ export class FulfillmentsService {
       .from(orderShippingTable)
       .where(eq(orderShippingTable.orderId, order.id));
     if (!shipping) {
-      throw new BadRequestException('This order has no shipping address to fulfill');
+      throw new BadRequestException(
+        'This order has no shipping address to fulfill',
+      );
     }
 
     const [location] = await this.db
       .select()
       .from(locationsTable)
-      .where(and(eq(locationsTable.id, dto.locationId), eq(locationsTable.accountId, accountId)));
+      .where(
+        and(
+          eq(locationsTable.id, dto.locationId),
+          eq(locationsTable.accountId, accountId),
+        ),
+      );
     if (!location?.addressLine1) {
-      throw new BadRequestException('That location has no shipping address on file');
+      throw new BadRequestException(
+        'That location has no shipping address on file',
+      );
     }
 
     const requestedIds = dto.items.map((i) => i.orderItemId);
@@ -234,15 +277,23 @@ export class FulfillmentsService {
         weightOz: orderItemsTable.weightOz,
       })
       .from(orderItemsTable)
-      .where(and(eq(orderItemsTable.orderId, dto.orderId), inArray(orderItemsTable.id, requestedIds)));
+      .where(
+        and(
+          eq(orderItemsTable.orderId, dto.orderId),
+          inArray(orderItemsTable.id, requestedIds),
+        ),
+      );
     if (items.length !== requestedIds.length) {
-      throw new BadRequestException("One or more items don't belong to this order");
+      throw new BadRequestException(
+        "One or more items don't belong to this order",
+      );
     }
 
     // upfront fail-fast check — avoids a pointless Shippo call in the
     // common case. The authoritative check that actually prevents a race
     // is the locked recheck in reserve(), not this one.
-    const fulfilledByItem = await this.ordersService.getFulfilledQuantityByItem(requestedIds);
+    const fulfilledByItem =
+      await this.ordersService.getFulfilledQuantityByItem(requestedIds);
 
     let totalWeightOz = 0;
     for (const requested of dto.items) {
@@ -254,7 +305,8 @@ export class FulfillmentsService {
           `Requested quantity for order item ${item.id} (${requested.quantity}) exceeds what's still unfulfilled (${remaining})`,
         );
       }
-      totalWeightOz += (item.weightOz ?? DEFAULT_ITEM_WEIGHT_OZ) * requested.quantity;
+      totalWeightOz +=
+        (item.weightOz ?? DEFAULT_ITEM_WEIGHT_OZ) * requested.quantity;
     }
 
     return { order, shipping, location, totalWeightOz };

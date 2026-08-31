@@ -1,5 +1,10 @@
 import { randomUUID } from 'node:crypto';
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import type { Queue } from 'bullmq';
 import { QUEUE_NAMES, type OrderJobData } from 'queue';
@@ -39,7 +44,8 @@ export class CheckoutService {
   constructor(
     @Inject(DRIZZLE) private readonly db: typeof Db,
     private readonly cartService: CartService,
-    @InjectQueue(QUEUE_NAMES.ORDERS) private readonly ordersQueue: Queue<OrderJobData>,
+    @InjectQueue(QUEUE_NAMES.ORDERS)
+    private readonly ordersQueue: Queue<OrderJobData>,
   ) {}
 
   async getConfig(accountId: number): Promise<CheckoutConfig> {
@@ -65,7 +71,9 @@ export class CheckoutService {
       .where(eq(stripeAccountsTable.accountId, accountId));
 
     if (!stripeAccount || !stripeAccount.chargesEnabled) {
-      throw new BadRequestException("This store isn't ready to accept payments yet");
+      throw new BadRequestException(
+        "This store isn't ready to accept payments yet",
+      );
     }
 
     const cart = await this.cartService.getCart(cartToken, accountId);
@@ -74,7 +82,9 @@ export class CheckoutService {
     }
     for (const item of cart.items) {
       if (item.quantity > item.stock) {
-        throw new BadRequestException(`Not enough stock for ${item.productName}`);
+        throw new BadRequestException(
+          `Not enough stock for ${item.productName}`,
+        );
       }
     }
 
@@ -129,7 +139,10 @@ export class CheckoutService {
       .from(stripeAccountsTable)
       .where(eq(stripeAccountsTable.accountId, accountId));
     if (!stripeAccount) {
-      return { ok: false, errorMessage: "This store isn't ready to accept payments yet" };
+      return {
+        ok: false,
+        errorMessage: "This store isn't ready to accept payments yet",
+      };
     }
 
     const session = await stripe.checkout.sessions
@@ -148,11 +161,19 @@ export class CheckoutService {
     const [location] = await this.db
       .select()
       .from(locationsTable)
-      .where(and(eq(locationsTable.accountId, accountId), isNotNull(locationsTable.addressLine1)))
+      .where(
+        and(
+          eq(locationsTable.accountId, accountId),
+          isNotNull(locationsTable.addressLine1),
+        ),
+      )
       .orderBy(locationsTable.id)
       .limit(1);
     if (!location) {
-      return { ok: false, errorMessage: "This store hasn't set up a shipping origin yet" };
+      return {
+        ok: false,
+        errorMessage: "This store hasn't set up a shipping origin yet",
+      };
     }
 
     const totalWeightOz = await this.totalCartWeightOz(cartToken, accountId);
@@ -190,7 +211,10 @@ export class CheckoutService {
       .catch(() => null);
 
     if (!shipment || shipment.rates.length === 0) {
-      return { ok: false, errorMessage: "We can't calculate shipping to that address" };
+      return {
+        ok: false,
+        errorMessage: "We can't calculate shipping to that address",
+      };
     }
 
     const cheapestRates = [...shipment.rates]
@@ -220,10 +244,14 @@ export class CheckoutService {
               amount: Math.round(parseFloat(rate.amount) * 100),
               currency: 'usd',
             },
-            display_name: `${rate.provider} ${rate.servicelevel.name ?? ''}`.trim(),
+            display_name:
+              `${rate.provider} ${rate.servicelevel.name ?? ''}`.trim(),
           },
         })),
-        metadata: { ...session.metadata, shippingLocationId: String(location.id) },
+        metadata: {
+          ...session.metadata,
+          shippingLocationId: String(location.id),
+        },
       },
       { stripeAccount: stripeAccount.stripeAccountId },
     );
@@ -231,7 +259,10 @@ export class CheckoutService {
     return { ok: true };
   }
 
-  private async totalCartWeightOz(cartToken: string, accountId: number): Promise<number> {
+  private async totalCartWeightOz(
+    cartToken: string,
+    accountId: number,
+  ): Promise<number> {
     // a separate query rather than extending CartService.getCart on purpose
     // — weight is an internal shipping concern, not part of the public Cart
     // API surface shown to the customer
@@ -246,10 +277,16 @@ export class CheckoutService {
         productVariantsTable,
         eq(productVariantsTable.id, cartItemsTable.variantId),
       )
-      .where(and(eq(cartsTable.token, cartToken), eq(cartsTable.accountId, accountId)));
+      .where(
+        and(
+          eq(cartsTable.token, cartToken),
+          eq(cartsTable.accountId, accountId),
+        ),
+      );
 
     return rows.reduce(
-      (sum, row) => sum + (row.weightOz ?? DEFAULT_ITEM_WEIGHT_OZ) * row.quantity,
+      (sum, row) =>
+        sum + (row.weightOz ?? DEFAULT_ITEM_WEIGHT_OZ) * row.quantity,
       0,
     );
   }
@@ -267,7 +304,9 @@ export class CheckoutService {
     // scoping the retrieve to this account's connected Stripe account is
     // what prevents one tenant from looking up another tenant's session id
     const session = await stripe.checkout.sessions
-      .retrieve(sessionId, undefined, { stripeAccount: stripeAccount.stripeAccountId })
+      .retrieve(sessionId, undefined, {
+        stripeAccount: stripeAccount.stripeAccountId,
+      })
       .catch(() => null);
     if (!session) throw new NotFoundException();
 
@@ -327,7 +366,9 @@ export class CheckoutService {
       cartToken,
       stripeCheckoutSessionId: session.id,
       stripePaymentIntentId:
-        typeof session.payment_intent === 'string' ? session.payment_intent : null,
+        typeof session.payment_intent === 'string'
+          ? session.payment_intent
+          : null,
       customerEmail: customer?.email ?? '',
       customerName: customer?.name ?? shipping?.name ?? '',
       shippingLine1: shipping?.address.line1 ?? '',
@@ -359,5 +400,7 @@ function lineItemName(item: Cart['items'][number]): string {
 }
 
 function optionsLabel(item: Cart['items'][number]): string {
-  return item.optionValues.map((ov) => `${ov.optionName}: ${ov.value}`).join(', ');
+  return item.optionValues
+    .map((ov) => `${ov.optionName}: ${ov.value}`)
+    .join(', ');
 }

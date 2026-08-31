@@ -14,14 +14,20 @@ export class FulfillmentsController {
   @Post('rates')
   @ApiBearerAuth('JWT-auth')
   @ApiOkResponse({ type: [ShippingRate] })
-  getRates(@Body() dto: GetFulfillmentRatesDto, @CurrentUser() user: AuthenticatedUser) {
+  getRates(
+    @Body() dto: GetFulfillmentRatesDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.fulfillmentsService.getRates(dto, user.accountId);
   }
 
   @Post()
   @ApiBearerAuth('JWT-auth')
   @ApiOkResponse({ type: OrderDetail })
-  create(@Body() dto: CreateFulfillmentDto, @CurrentUser() user: AuthenticatedUser) {
+  create(
+    @Body() dto: CreateFulfillmentDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.fulfillmentsService.create(dto, user.accountId);
   }
 }

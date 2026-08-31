@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import {
   accountsTable,
   and,
@@ -25,18 +25,18 @@ import {
   variantOptionValuesTable,
   type db as Db,
   type SQL,
-} from 'db';
-import { DRIZZLE } from '../../database/database.constants';
-import type { PosDeviceContext } from '../pos-auth/pos-auth.decorators';
-import { ListCatalogQueryDto } from './dto/list-catalog-query.dto';
+} from "db";
+import { DRIZZLE } from "../../database/database.constants";
+import type { PosDeviceContext } from "../pos-auth/pos-auth.decorators";
+import { ListCatalogQueryDto } from "./dto/list-catalog-query.dto";
 import {
   PosCatalogImage,
   PosCatalogProduct,
   PosCatalogVariant,
-} from './entities/pos-catalog-product.entity';
-import { PosCatalogPage } from './entities/pos-catalog-page.entity';
-import { PosScanResult } from './entities/pos-scan-result.entity';
-import { PosSession } from './entities/pos-session.entity';
+} from "./entities/pos-catalog-product.entity";
+import { PosCatalogPage } from "./entities/pos-catalog-page.entity";
+import { PosScanResult } from "./entities/pos-scan-result.entity";
+import { PosSession } from "./entities/pos-session.entity";
 
 @Injectable()
 export class CatalogService {
@@ -49,7 +49,7 @@ export class CatalogService {
     const filters: (SQL | undefined)[] = [
       eq(productsTable.accountId, device.accountId),
       // the POS only sells live products, same rule as the storefront
-      eq(productsTable.status, 'active'),
+      eq(productsTable.status, "active"),
     ];
 
     if (query.cursor !== undefined) {
@@ -67,7 +67,10 @@ export class CatalogService {
           eq(productBarcodesTable.variantId, productVariantsTable.id),
         )
         .where(
-          or(ilike(productVariantsTable.sku, term), ilike(productBarcodesTable.code, term)),
+          or(
+            ilike(productVariantsTable.sku, term),
+            ilike(productBarcodesTable.code, term),
+          ),
         );
       filters.push(
         or(
@@ -118,7 +121,7 @@ export class CatalogService {
         and(
           eq(productsTable.id, id),
           eq(productsTable.accountId, device.accountId),
-          eq(productsTable.status, 'active'),
+          eq(productsTable.status, "active"),
         ),
       );
 
@@ -130,10 +133,7 @@ export class CatalogService {
     return product;
   }
 
-  async scan(
-    code: string,
-    device: PosDeviceContext,
-  ): Promise<PosScanResult> {
+  async scan(code: string, device: PosDeviceContext): Promise<PosScanResult> {
     const trimmed = code.trim();
 
     // barcode first, then fall back to SKU — both scoped to the device's
@@ -155,7 +155,7 @@ export class CatalogService {
       .where(
         and(
           eq(productsTable.accountId, device.accountId),
-          eq(productsTable.status, 'active'),
+          eq(productsTable.status, "active"),
           or(
             eq(productBarcodesTable.code, trimmed),
             eq(productVariantsTable.sku, trimmed),
@@ -165,7 +165,7 @@ export class CatalogService {
       .limit(1);
 
     if (!match) {
-      throw new NotFoundException('No product matches that code');
+      throw new NotFoundException("No product matches that code");
     }
 
     const [baseRow] = await this.db
@@ -193,30 +193,46 @@ export class CatalogService {
       })
       .from(posDevicesTable)
       .innerJoin(accountsTable, eq(accountsTable.id, posDevicesTable.accountId))
-      .innerJoin(locationsTable, eq(locationsTable.id, posDevicesTable.locationId))
+      .innerJoin(
+        locationsTable,
+        eq(locationsTable.id, posDevicesTable.locationId),
+      )
       .where(eq(posDevicesTable.id, device.deviceId));
 
     return row;
   }
 
   private async assembleProducts(
-    baseRows: { id: number; name: string; description: string | null; brandId: number | null }[],
+    baseRows: {
+      id: number;
+      name: string;
+      description: string | null;
+      brandId: number | null;
+    }[],
     locationId: number,
   ): Promise<PosCatalogProduct[]> {
     if (baseRows.length === 0) return [];
 
     const productIds = baseRows.map((r) => r.id);
     const brandIds = [
-      ...new Set(baseRows.map((r) => r.brandId).filter((id): id is number => id !== null)),
+      ...new Set(
+        baseRows
+          .map((r) => r.brandId)
+          .filter((id): id is number => id !== null),
+      ),
     ];
 
-    const [brandsById, categoriesByProduct, imagesByProduct, variantsByProduct] =
-      await Promise.all([
-        this.selectBrands(brandIds),
-        this.selectCategories(productIds),
-        this.selectProductImages(productIds),
-        this.selectVariants(productIds, locationId),
-      ]);
+    const [
+      brandsById,
+      categoriesByProduct,
+      imagesByProduct,
+      variantsByProduct,
+    ] = await Promise.all([
+      this.selectBrands(brandIds),
+      this.selectCategories(productIds),
+      this.selectProductImages(productIds),
+      this.selectVariants(productIds, locationId),
+    ]);
 
     return baseRows.map((row) => {
       const images = imagesByProduct.get(row.id) ?? [];
@@ -230,7 +246,8 @@ export class CatalogService {
         id: row.id,
         name: row.name,
         description: row.description,
-        brand: row.brandId !== null ? (brandsById.get(row.brandId) ?? null) : null,
+        brand:
+          row.brandId !== null ? (brandsById.get(row.brandId) ?? null) : null,
         categories: categoriesByProduct.get(row.id) ?? [],
         images,
         variants,
@@ -336,7 +353,10 @@ export class CatalogService {
         this.selectVariantImageUrls(variantIds),
       ]);
 
-    const map = new Map<number, (PosCatalogVariant & { productId: number })[]>();
+    const map = new Map<
+      number,
+      (PosCatalogVariant & { productId: number })[]
+    >();
     for (const row of variantRows) {
       const list = map.get(row.productId) ?? [];
       list.push({

@@ -1,4 +1,10 @@
-import { eq, inArray, permissionsTable, rolePermissionsTable, type db as Db } from 'db';
+import {
+  eq,
+  inArray,
+  permissionsTable,
+  rolePermissionsTable,
+  type db as Db,
+} from 'db';
 
 type Queryable = Pick<typeof Db, 'select' | 'selectDistinct'>;
 
@@ -11,7 +17,10 @@ export async function getPermissionKeysForRoles(
   const rows = await tx
     .selectDistinct({ key: permissionsTable.key })
     .from(rolePermissionsTable)
-    .innerJoin(permissionsTable, eq(permissionsTable.id, rolePermissionsTable.permissionId))
+    .innerJoin(
+      permissionsTable,
+      eq(permissionsTable.id, rolePermissionsTable.permissionId),
+    )
     .where(inArray(rolePermissionsTable.roleId, roleIds));
 
   return rows.map((row) => row.key);
