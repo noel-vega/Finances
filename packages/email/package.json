@@ -13,9 +13,6 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "up": "docker compose up -d",
-    "down": "docker compose down",
-    "logs": "docker compose logs -f mailpit",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [],

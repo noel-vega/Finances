@@ -1,0 +1,82 @@
+# Local development infrastructure — one command for the whole stack:
+#
+#   npm run up      # start all four, wait until healthy
+#   npm run down    # stop (keeps data)
+#   npm run reset   # stop and delete volumes (Postgres data + MinIO objects)
+#   npm run logs    # tail all four
+#
+# The `ordersail-product-images` bucket is created automatically the first time
+# merchant-api (or `npm run seed -w seed`) starts — see
+# packages/storage/src/index.ts `ensureBucket()`. No init sidecar needed.
+#
+# Overrides (ports, credentials) come from a repo-root `.env` — copy
+# `.env.example`. This file is compose-only; the apps read their own
+# `apps/*/.env`.
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: ordersail-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-ordersail}
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - ordersail-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-ordersail}']
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+  redis:
+    image: redis:7-alpine
+    container_name: ordersail-redis
+    restart: unless-stopped
+    ports:
+      - '${REDIS_PORT:-6379}:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+  minio:
+    image: minio/minio:latest
+    container_name: ordersail-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    ports:
+      - '${MINIO_API_PORT:-9000}:9000'
+      - '${MINIO_CONSOLE_PORT:-9001}:9001'
+    volumes:
+      - ordersail-minio-data:/data
+    healthcheck:
+      test: ['CMD', 'mc', 'ready', 'local']
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: ordersail-mailpit
+    restart: unless-stopped
+    ports:
+      - '${MAILPIT_SMTP_PORT:-1025}:1025'
+      - '${MAILPIT_UI_PORT:-8025}:8025'
+    healthcheck:
+      test: ['CMD', 'wget', '--spider', '-q', 'http://127.0.0.1:8025/readyz']
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+volumes:
+  ordersail-db-data:
+    name: ordersail-db-data
+  ordersail-minio-data:
+    name: ordersail-minio-data
