@@ -178,7 +178,7 @@ module "ecs_service_merchant_api" {
     # references the module directly, not local.frontends["merchant-web"] — that local
     # aggregates all 3 frontend modules as one map expression, so going through it would make a
     # -target apply of just this service also pull in storefront-web's (unrelated) frontend.
-    { name = "SHOP_ADMIN_WEB_URL", value = "https://${module.frontend_merchant_web.distribution_domain_name}" },
+    { name = "MERCHANT_WEB_URL", value = "https://${module.frontend_merchant_web.distribution_domain_name}" },
     { name = "MINIO_ENDPOINT", value = "https://s3.${var.region}.amazonaws.com" },
     { name = "MINIO_BUCKET", value = module.secrets.product_images_bucket_name },
     { name = "MINIO_PUBLIC_BASE_URL", value = "https://${module.secrets.product_images_bucket_name}.s3.${var.region}.amazonaws.com" },
@@ -215,7 +215,7 @@ module "ecs_service_storefront_api" {
     { name = "PORT", value = "3001" },
     { name = "REDIS_HOST", value = module.elasticache.primary_endpoint_address },
     { name = "REDIS_PORT", value = tostring(module.elasticache.port) },
-    # see the merchant-api service's SHOP_ADMIN_WEB_URL comment above — same reason to
+    # see the merchant-api service's MERCHANT_WEB_URL comment above — same reason to
     # reference the module directly instead of going through local.frontends.
     { name = "STOREFRONT_WEB_URL", value = "https://${module.frontend_storefront_web.distribution_domain_name}" },
   ]
