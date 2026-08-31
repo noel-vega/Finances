@@ -4,7 +4,7 @@ variable "name_prefix" {
 }
 
 variable "name" {
-  description = "App name this ALB fronts, e.g. \"shop-admin-api\"."
+  description = "App name this ALB fronts, e.g. \"merchant-api\"."
   type        = string
 }
 

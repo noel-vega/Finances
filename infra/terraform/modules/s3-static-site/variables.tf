@@ -4,7 +4,7 @@ variable "name_prefix" {
 }
 
 variable "name" {
-  description = "Frontend app name, e.g. \"shop-admin-web\"."
+  description = "Frontend app name, e.g. \"merchant-web\"."
   type        = string
 }
 

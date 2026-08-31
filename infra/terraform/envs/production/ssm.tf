@@ -13,9 +13,9 @@ locals {
     "frontend/website-distribution" = module.frontend_website.distribution_id
   }
 
-  ssm_frontend_shop_admin_web = {
-    "frontend/shop-admin-web-bucket"       = module.frontend_shop_admin_web.bucket_name
-    "frontend/shop-admin-web-distribution" = module.frontend_shop_admin_web.distribution_id
+  ssm_frontend_merchant_web = {
+    "frontend/merchant-web-bucket"       = module.frontend_merchant_web.bucket_name
+    "frontend/merchant-web-distribution" = module.frontend_merchant_web.distribution_id
   }
 
   ssm_frontend_storefront_web = {
@@ -24,7 +24,7 @@ locals {
   }
 
   ssm_ecr = {
-    "ecr/shop-admin-api-uri" = module.ecr.repository_urls["shop-admin-api"]
+    "ecr/merchant-api-uri"   = module.ecr.repository_urls["merchant-api"]
     "ecr/storefront-api-uri" = module.ecr.repository_urls["storefront-api"]
     "ecr/worker-uri"         = module.ecr.repository_urls["worker"]
     "ecr/migrator-uri"       = module.ecr.repository_urls["migrator"]
@@ -32,7 +32,7 @@ locals {
 
   ssm_ecs = {
     "ecs/cluster-name"           = module.ecs_cluster.cluster_name
-    "ecs/shop-admin-api-service" = module.ecs_service_shop_admin_api.service_name
+    "ecs/merchant-api-service"   = module.ecs_service_merchant_api.service_name
     "ecs/storefront-api-service" = module.ecs_service_storefront_api.service_name
     "ecs/worker-service"         = module.ecs_service_worker.service_name
     "ecs/migrator-task-family"   = aws_ecs_task_definition.migrator.family
@@ -44,7 +44,7 @@ locals {
   }
 
   ssm_alb = {
-    "alb/shop-admin-api-dns" = module.alb_shop_admin_api.dns_name
+    "alb/merchant-api-dns"   = module.alb_merchant_api.dns_name
     "alb/storefront-api-dns" = module.alb_storefront_api.dns_name
   }
 }
@@ -56,8 +56,8 @@ resource "aws_ssm_parameter" "frontend_website" {
   value    = each.value
 }
 
-resource "aws_ssm_parameter" "frontend_shop_admin_web" {
-  for_each = local.ssm_frontend_shop_admin_web
+resource "aws_ssm_parameter" "frontend_merchant_web" {
+  for_each = local.ssm_frontend_merchant_web
   name     = "/${var.name_prefix}/production/${each.key}"
   type     = "String"
   value    = each.value

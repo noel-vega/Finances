@@ -18,12 +18,12 @@ module "ecr" {
 # repeating each app's name three times.
 locals {
   ecs_services = {
-    shop-admin-api = module.ecs_service_shop_admin_api
+    merchant-api   = module.ecs_service_merchant_api
     storefront-api = module.ecs_service_storefront_api
     worker         = module.ecs_service_worker
   }
   frontends = {
-    shop-admin-web = module.frontend_shop_admin_web
+    merchant-web   = module.frontend_merchant_web
     storefront-web = module.frontend_storefront_web
     website        = module.frontend_website
   }
@@ -120,10 +120,10 @@ module "ecs_cluster" {
   vpc_id      = module.network.vpc_id
 }
 
-module "alb_shop_admin_api" {
+module "alb_merchant_api" {
   source                      = "../../modules/alb"
   name_prefix                 = var.name_prefix
-  name                        = "shop-admin-api"
+  name                        = "merchant-api"
   vpc_id                      = module.network.vpc_id
   public_subnet_ids           = module.network.public_subnet_ids
   container_port              = 3000
@@ -142,10 +142,10 @@ module "alb_storefront_api" {
   acm_certificate_arn         = aws_acm_certificate_validation.frontends.certificate_arn
 }
 
-# shop-admin-api's task role: direct S3 access to the product-images
+# merchant-api's task role: direct S3 access to the product-images
 # bucket. This is what the packages/storage credential fix (Phase 2) makes
 # possible — no static IAM user key needed in Secrets Manager.
-data "aws_iam_policy_document" "shop_admin_api_task" {
+data "aws_iam_policy_document" "merchant_api_task" {
   statement {
     effect    = "Allow"
     actions   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
@@ -158,27 +158,27 @@ data "aws_iam_policy_document" "shop_admin_api_task" {
   }
 }
 
-module "ecs_service_shop_admin_api" {
+module "ecs_service_merchant_api" {
   source                      = "../../modules/ecs-service"
   name_prefix                 = var.name_prefix
-  name                        = "shop-admin-api"
+  name                        = "merchant-api"
   cluster_id                  = module.ecs_cluster.cluster_id
   private_subnet_ids          = module.network.private_subnet_ids
   ecs_tasks_security_group_id = module.ecs_cluster.ecs_tasks_security_group_id
   container_port              = 3000
-  image                       = "${module.ecr.repository_urls["shop-admin-api"]}:latest"
-  target_group_arn            = module.alb_shop_admin_api.target_group_arn
-  task_role_policy_json       = data.aws_iam_policy_document.shop_admin_api_task.json
+  image                       = "${module.ecr.repository_urls["merchant-api"]}:latest"
+  target_group_arn            = module.alb_merchant_api.target_group_arn
+  task_role_policy_json       = data.aws_iam_policy_document.merchant_api_task.json
 
   environment = [
     { name = "NODE_ENV", value = "production" },
     { name = "PORT", value = "3000" },
     { name = "REDIS_HOST", value = module.elasticache.primary_endpoint_address },
     { name = "REDIS_PORT", value = tostring(module.elasticache.port) },
-    # references the module directly, not local.frontends["shop-admin-web"] — that local
+    # references the module directly, not local.frontends["merchant-web"] — that local
     # aggregates all 3 frontend modules as one map expression, so going through it would make a
     # -target apply of just this service also pull in storefront-web's (unrelated) frontend.
-    { name = "SHOP_ADMIN_WEB_URL", value = "https://${module.frontend_shop_admin_web.distribution_domain_name}" },
+    { name = "SHOP_ADMIN_WEB_URL", value = "https://${module.frontend_merchant_web.distribution_domain_name}" },
     { name = "MINIO_ENDPOINT", value = "https://s3.${var.region}.amazonaws.com" },
     { name = "MINIO_BUCKET", value = module.secrets.product_images_bucket_name },
     { name = "MINIO_PUBLIC_BASE_URL", value = "https://${module.secrets.product_images_bucket_name}.s3.${var.region}.amazonaws.com" },
@@ -187,15 +187,15 @@ module "ecs_service_shop_admin_api" {
 
   secrets = [
     { name = "DATABASE_URL", valueFrom = module.secrets.database_url_secret_arn },
-    { name = "STAFF_JWT_SECRET", valueFrom = "${module.secrets.app_secret_arns["shop-admin-api"]}:STAFF_JWT_SECRET::" },
-    { name = "STRIPE_SECRET_KEY", valueFrom = "${module.secrets.app_secret_arns["shop-admin-api"]}:STRIPE_SECRET_KEY::" },
-    { name = "STRIPE_ACCOUNT_WEBHOOK_SECRET", valueFrom = "${module.secrets.app_secret_arns["shop-admin-api"]}:STRIPE_ACCOUNT_WEBHOOK_SECRET::" },
-    { name = "SHIPPO_API_KEY", valueFrom = "${module.secrets.app_secret_arns["shop-admin-api"]}:SHIPPO_API_KEY::" },
+    { name = "STAFF_JWT_SECRET", valueFrom = "${module.secrets.app_secret_arns["merchant-api"]}:STAFF_JWT_SECRET::" },
+    { name = "STRIPE_SECRET_KEY", valueFrom = "${module.secrets.app_secret_arns["merchant-api"]}:STRIPE_SECRET_KEY::" },
+    { name = "STRIPE_ACCOUNT_WEBHOOK_SECRET", valueFrom = "${module.secrets.app_secret_arns["merchant-api"]}:STRIPE_ACCOUNT_WEBHOOK_SECRET::" },
+    { name = "SHIPPO_API_KEY", valueFrom = "${module.secrets.app_secret_arns["merchant-api"]}:SHIPPO_API_KEY::" },
   ]
 
   secrets_manager_secret_arns = [
     module.secrets.database_url_secret_arn,
-    module.secrets.app_secret_arns["shop-admin-api"],
+    module.secrets.app_secret_arns["merchant-api"],
   ]
 }
 
@@ -215,7 +215,7 @@ module "ecs_service_storefront_api" {
     { name = "PORT", value = "3001" },
     { name = "REDIS_HOST", value = module.elasticache.primary_endpoint_address },
     { name = "REDIS_PORT", value = tostring(module.elasticache.port) },
-    # see the shop-admin-api service's SHOP_ADMIN_WEB_URL comment above — same reason to
+    # see the merchant-api service's SHOP_ADMIN_WEB_URL comment above — same reason to
     # reference the module directly instead of going through local.frontends.
     { name = "STOREFRONT_WEB_URL", value = "https://${module.frontend_storefront_web.distribution_domain_name}" },
   ]
@@ -270,14 +270,14 @@ module "ecs_service_worker" {
   ]
 }
 
-module "frontend_shop_admin_web" {
+module "frontend_merchant_web" {
   source                 = "../../modules/s3-static-site"
   name_prefix            = var.name_prefix
-  name                   = "shop-admin-web"
-  aliases                = ["admin.${var.domain_name}"]
+  name                   = "merchant-web"
+  aliases                = ["merchant.${var.domain_name}"]
   acm_certificate_arn    = aws_acm_certificate_validation.frontends.certificate_arn
   enable_api_routing     = true
-  api_origin_domain_name = module.alb_shop_admin_api.dns_name
+  api_origin_domain_name = module.alb_merchant_api.dns_name
 }
 
 module "frontend_storefront_web" {
