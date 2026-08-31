@@ -1,8 +1,14 @@
 {
-  "name": "shop",
+  "name": "ordersail",
   "version": "0.0.0",
   "private": true,
   "packageManager": "npm@11.6.0",
+  "scripts": {
+    "up": "docker compose up -d --wait",
+    "down": "docker compose down",
+    "reset": "docker compose down -v",
+    "logs": "docker compose logs -f"
+  },
   "devDependencies": {
     "nx": "23.0.1"
   },

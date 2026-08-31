@@ -34,7 +34,7 @@ resource "aws_db_instance" "this" {
   allocated_storage = 20
   storage_type      = "gp3"
 
-  db_name  = "shop"
+  db_name  = "ordersail"
   username = "postgres"
 
   # RDS creates/rotates the master credential in Secrets Manager directly —

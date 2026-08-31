@@ -141,7 +141,7 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton className="data-[slot=sidebar-menu-button]:p-1.5!">
-              <span className="text-base font-semibold">Shop</span>
+              <span className="text-base font-semibold">Ordersail</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

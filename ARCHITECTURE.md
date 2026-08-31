@@ -37,7 +37,7 @@ flowchart TB
         ui["ui<br/><i>shared React components</i>"]
     end
 
-    subgraph INFRA["Local infra (docker-compose)"]
+    subgraph INFRA["Local infra (root docker-compose.yml)"]
         postgres[("Postgres 17")]
         redis[("Redis 7")]
         minio[("MinIO")]

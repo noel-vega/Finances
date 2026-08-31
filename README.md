@@ -86,16 +86,19 @@ An Nx-managed npm workspace monorepo.
 ## Getting started
 
 ```bash
-# 1. start Postgres
-cd packages/db && npm run up
+# 1. start local infra — Postgres, Redis, MinIO, Mailpit (from repo root)
+npm run up
 
 # 2. push the schema (dev workflow — no migration files needed)
-npm run push
+npm run push -w db
 
-# 3. run an app (from its own directory)
-cd apps/merchant-api && npm run start:dev   # admin API — :3000
+# 3. seed demo data (one-time; prints a storefront API key for storefront-web)
+npm run seed -w seed
+
+# 4. run an app (from its own directory)
+cd apps/merchant-api && npm run start:dev   # merchant API — :3000
 cd apps/storefront-api && npm run start:dev   # storefront API — :3001
-cd apps/merchant-web && npm run dev         # admin dashboard — :5000
+cd apps/merchant-web && npm run dev         # merchant dashboard — :5000
 cd apps/storefront-web && npm run dev         # storefront app
 cd apps/website && npm run dev                # marketing site
 ```
