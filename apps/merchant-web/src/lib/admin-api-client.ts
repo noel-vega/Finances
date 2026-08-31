@@ -1,7 +1,7 @@
 import { AdminClient } from "merchant-sdk";
 
 export const adminApi = new AdminClient(
-  import.meta.env.VITE_SHOP_ADMIN_API_BASE_URL,
+  import.meta.env.VITE_MERCHANT_API_BASE_URL,
 );
 
 // type Path = URL | string;
@@ -105,5 +105,5 @@ export const adminApi = new AdminClient(
 // }
 
 // export const adminApi = new AdminApiClient(
-//   import.meta.env.VITE_SHOP_ADMIN_API_BASE_URL,
+//   import.meta.env.VITE_MERCHANT_API_BASE_URL,
 // );
