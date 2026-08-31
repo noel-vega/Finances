@@ -44,7 +44,7 @@ async function bootstrap() {
   });
 
   app.enableCors({
-    origin: process.env.SHOP_ADMIN_WEB_URL ?? 'http://localhost:5000',
+    origin: process.env.MERCHANT_WEB_URL ?? 'http://localhost:5000',
     credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'DELETE'],
   });

@@ -4,7 +4,7 @@ variable "name_prefix" {
 }
 
 variable "name" {
-  description = "App short name, e.g. \"shop-admin-api\" — used in resource names/tags."
+  description = "App short name, e.g. \"merchant-api\" — used in resource names/tags."
   type        = string
 }
 
@@ -69,7 +69,7 @@ variable "target_group_arn" {
 }
 
 variable "task_role_policy_json" {
-  description = "Optional extra IAM policy JSON attached to the task role (e.g. shop-admin-api's S3 access to the product-images bucket)."
+  description = "Optional extra IAM policy JSON attached to the task role (e.g. merchant-api's S3 access to the product-images bucket)."
   type        = string
   default     = null
 }

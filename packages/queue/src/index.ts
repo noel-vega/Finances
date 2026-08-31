@@ -8,7 +8,7 @@ export const QUEUE_NAMES = {
 
 // URLs are built by the producer (it already knows which frontend's env var
 // applies) and carried fully-formed in the payload — the worker never needs
-// to know about SHOP_ADMIN_WEB_URL/STOREFRONT_WEB_URL itself
+// to know about MERCHANT_WEB_URL/STOREFRONT_WEB_URL itself
 //
 // correlationId rides along on every job so a worker log line can be traced
 // back to the request (or the upstream job) that produced it — see

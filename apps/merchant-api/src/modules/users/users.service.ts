@@ -196,7 +196,7 @@ export class UsersService {
         return { user, token };
       });
 
-      const inviteUrl = `${process.env.SHOP_ADMIN_WEB_URL ?? 'http://localhost:5000'}/join?token=${token}`;
+      const inviteUrl = `${process.env.MERCHANT_WEB_URL ?? 'http://localhost:5000'}/join?token=${token}`;
       await this.emailService.sendInviteEmail(user.email, {
         firstName: user.firstname,
         inviteUrl,

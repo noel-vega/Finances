@@ -8,9 +8,9 @@ data "aws_route53_zone" "this" {
   name = var.domain_name
 }
 
-# Wildcard SAN covers admin.${domain}/shop.${domain} in advance, even
+# Wildcard SAN covers merchant.${domain}/shop.${domain} in advance, even
 # though only the apex (-> website) is wired up below. When
-# shop-admin-web/storefront-web's own milestones land, pointing their
+# merchant-web/storefront-web's own milestones land, pointing their
 # subdomains at this same cert is a two-line change with no re-validation.
 resource "aws_acm_certificate" "frontends" {
   domain_name               = var.domain_name
@@ -58,14 +58,14 @@ resource "aws_route53_record" "website_apex" {
   }
 }
 
-resource "aws_route53_record" "admin_web_alias" {
+resource "aws_route53_record" "merchant_web_alias" {
   zone_id = data.aws_route53_zone.this.zone_id
-  name    = "admin.${var.domain_name}"
+  name    = "merchant.${var.domain_name}"
   type    = "A"
 
   alias {
-    name                   = module.frontend_shop_admin_web.distribution_domain_name
-    zone_id                = module.frontend_shop_admin_web.distribution_hosted_zone_id
+    name                   = module.frontend_merchant_web.distribution_domain_name
+    zone_id                = module.frontend_merchant_web.distribution_hosted_zone_id
     evaluate_target_health = false
   }
 }

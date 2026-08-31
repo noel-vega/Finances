@@ -7,7 +7,7 @@ data "aws_caller_identity" "current" {}
 #   aws secretsmanager put-secret-value --secret-id <name> --secret-string '{...}'
 
 locals {
-  app_secret_names = ["shop-admin-api", "storefront-api", "worker"]
+  app_secret_names = ["merchant-api", "storefront-api", "worker"]
 }
 
 resource "aws_secretsmanager_secret" "app" {
@@ -47,7 +47,7 @@ resource "aws_secretsmanager_secret_version" "database_url" {
 # distinct from the 3 private, CloudFront-fronted frontend buckets.
 # With the packages/storage credential fix (optional accessKeyId/
 # secretAccessKey), no static IAM user key is needed here — the
-# shop-admin-api ECS task role gets direct bucket permissions instead
+# merchant-api ECS task role gets direct bucket permissions instead
 # (wired in the ecs-service module instantiation).
 
 resource "aws_s3_bucket" "product_images" {
