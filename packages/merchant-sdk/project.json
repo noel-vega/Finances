@@ -1,0 +1,6 @@
+{
+  "name": "merchant-sdk",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "packages/merchant-sdk/src"
+}

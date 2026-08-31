@@ -13,7 +13,7 @@ const POSTGRES_UNIQUE_VIOLATION = '23505';
 
 // node-postgres errors carry `.code`, but drizzle-orm wraps them in a
 // DrizzleQueryError, so the pg error ends up at `.cause` instead — same
-// unwrap shop-admin-api's auth/users services use for the same kind of
+// unwrap merchant-api's auth/users services use for the same kind of
 // unique constraint
 function isUniqueViolation(err: unknown): boolean {
   const pgError =

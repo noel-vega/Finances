@@ -70,7 +70,7 @@ export class CheckoutController {
   }
 
   // subscribed in the Stripe dashboard to "events on connected accounts",
-  // separate endpoint/secret from shop-admin-api's account webhook
+  // separate endpoint/secret from merchant-api's account webhook
   @Public()
   @Post('webhook')
   @ApiExcludeEndpoint()

@@ -225,7 +225,7 @@ async function ensureAccount() {
   });
 }
 
-// mirrors PermissionsService.onModuleInit() in shop-admin-api — seed.ts
+// mirrors PermissionsService.onModuleInit() in merchant-api — seed.ts
 // runs standalone, so it can't rely on the API ever having booted
 async function ensurePermissionsCatalog() {
   await db
@@ -241,7 +241,7 @@ async function ensurePermissionsCatalog() {
     });
 }
 
-// mirrors RolesService.createSystemRole() in shop-admin-api
+// mirrors RolesService.createSystemRole() in merchant-api
 async function ensureOwnerRole(accountId: number, userId: number) {
   const findExisting = () =>
     db
@@ -512,7 +512,7 @@ async function main() {
 
   console.log(`Done. ${created} product(s) created, ${skipped} already existed.`);
   console.log(`${imagesAdded} product image(s) added.`);
-  console.log(`Sign in at shop-admin-web with ${OWNER_EMAIL} / ${OWNER_PASSWORD}`);
+  console.log(`Sign in at merchant-web with ${OWNER_EMAIL} / ${OWNER_PASSWORD}`);
   process.exit(0);
 }
 

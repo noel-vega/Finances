@@ -28,7 +28,7 @@ export class StorefrontClient {
   // set automatically the first time cart.addItem() creates a cart — or
   // pass one in up front (e.g. restored from localStorage) to resume a cart
   cartToken: string | undefined;
-  // in-memory only, like admin-sdk — a page refresh re-derives it from the
+  // in-memory only, like merchant-sdk — a page refresh re-derives it from the
   // httpOnly customer_refresh_token cookie via refreshAccessToken()
   accessToken: string | undefined;
   client: Client<paths>;
@@ -40,7 +40,7 @@ export class StorefrontClient {
 
   // every authenticated request needs the bearer token and the cross-origin
   // cookie (for customer_refresh_token) — centralized here instead of at
-  // each call site, same pattern as admin-sdk's AdminClient
+  // each call site, same pattern as merchant-sdk's AdminClient
   private authMiddleware: Middleware = {
     onRequest: ({ request }) => {
       request.headers.set("Authorization", `Bearer ${this.accessToken}`);

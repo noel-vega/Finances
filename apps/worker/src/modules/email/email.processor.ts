@@ -10,7 +10,7 @@ import {
 import { MailerService } from './mailer.service';
 
 // this is the only place email HTML gets built now — moved here verbatim
-// from shop-admin-api's/storefront-api's EmailService. The HTML itself is
+// from merchant-api's/storefront-api's EmailService. The HTML itself is
 // built by the `email-templates` package (React components rendered to a
 // string via react-email) — this file just maps a job's data onto template
 // props and sends the result

@@ -9,7 +9,7 @@ read models against `packages/db`, no backend-to-backend HTTP.
 
 Every route except `POST /pos/pair` and `GET /health` requires an
 `x-pos-device-token` header (global `PosDeviceGuard`). A device is minted and
-given a pairing code from the admin dashboard (`shop-admin-api`
+given a pairing code from the admin dashboard (`merchant-api`
 `POST /pos-devices`); the device redeems that code once via `POST /pos/pair`
 for its long-lived token. The token resolves to an account **and** a location —
 catalog stock is reported for that location only.

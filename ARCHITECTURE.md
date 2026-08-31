@@ -12,17 +12,17 @@ table yet.
 flowchart TB
     subgraph FE["Frontends"]
         website["website<br/>Astro · :4321<br/><i>marketing, standalone</i>"]
-        adminweb["shop-admin-web<br/>React 19 + Vite · :5000<br/><i>merchant dashboard</i>"]
+        adminweb["merchant-web<br/>React 19 + Vite · :5000<br/><i>merchant dashboard</i>"]
         storeweb["storefront-web<br/>React 19 + Vite · :3002<br/><i>customer storefront</i>"]
     end
 
     subgraph SDK["Generated SDKs"]
-        adminsdk["admin-sdk<br/><i>openapi-fetch, typed</i>"]
+        adminsdk["merchant-sdk<br/><i>openapi-fetch, typed</i>"]
         storesdk["storefront-sdk<br/><i>openapi-fetch, typed</i>"]
     end
 
     subgraph API["APIs"]
-        adminapi["shop-admin-api<br/>NestJS/Fastify · :3000<br/><i>products, inventory, orders,<br/>staff, Stripe Connect</i>"]
+        adminapi["merchant-api<br/>NestJS/Fastify · :3000<br/><i>products, inventory, orders,<br/>staff, Stripe Connect</i>"]
         storeapi["storefront-api<br/>NestJS/Express · :3001<br/><i>cart, checkout, customers</i>"]
     end
 
@@ -78,18 +78,18 @@ flowchart TB
 
 **Notes**
 
-- No backend-to-backend HTTP traffic — `shop-admin-api` and `storefront-api` never call each
+- No backend-to-backend HTTP traffic — `merchant-api` and `storefront-api` never call each
   other. The only inter-service calls are frontend → its own API, via a generated SDK.
-- All three backend services (`shop-admin-api`, `storefront-api`, `worker`) expose an unauthenticated
+- All three backend services (`merchant-api`, `storefront-api`, `worker`) expose an unauthenticated
   `GET /health` (database + Redis checks, via `@nestjs/terminus`). It's why `worker` listens on
   `:3003` at all now — it has no user-facing API, just this liveness signal for whatever orchestrator
   ends up running it. `worker`'s check also verifies each queue's consumption loop is actually
   draining a backlog, not just that Redis is reachable — a plain Redis ping can't tell the two apart
   (see the worker-reconnect-stall note in memory).
-- `shop-admin-web`'s `vite.config.ts` says port 3001, but its `dev` script passes `--port 5000`,
+- `merchant-web`'s `vite.config.ts` says port 3001, but its `dev` script passes `--port 5000`,
   which wins — 5000 is what's actually served (matches the README).
 - `website` is fully standalone: no workspace deps, no outbound calls, static marketing content.
-- Every account is a tenant with its own Stripe Connect account — `shop-admin-api` and
+- Every account is a tenant with its own Stripe Connect account — `merchant-api` and
   `storefront-api` both call Stripe directly (Connect onboarding vs. Checkout Sessions
   respectively), and both browser apps also load Stripe's JS SDK directly for card entry —
   that's the one place a frontend talks to a third party without going through its own backend.
@@ -128,5 +128,5 @@ re-creating the order but still retries the email (via the `confirmationEmailQue
 rather than losing it silently.
 
 The same `email` queue also takes two simpler, single-step jobs enqueued directly by the APIs
-(no `orders` queue involved): `staff-invite` from `shop-admin-api` and `customer-thank-you`
+(no `orders` queue involved): `staff-invite` from `merchant-api` and `customer-thank-you`
 from `storefront-api`, both consumed by the same `worker` email processor.

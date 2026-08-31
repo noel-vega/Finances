@@ -8,7 +8,7 @@ import { JwtService } from '@nestjs/jwt';
 import type { Request } from 'express';
 import type { AuthenticatedCustomer } from './auth.decorators';
 
-// unlike shop-admin-api's AuthGuard (and this app's own AppKeyGuard), this is
+// unlike merchant-api's AuthGuard (and this app's own AppKeyGuard), this is
 // NOT a global APP_GUARD — storefront routes are public by default (guests
 // must keep browsing/carting/checking out), so this is opted into per-route
 // via @UseGuards() only where a signed-in customer is actually required

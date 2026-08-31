@@ -1,5 +1,9 @@
 node_modules
 
+# npm workspaces uses the single root lockfile — no per-workspace locks
+apps/*/package-lock.json
+packages/*/package-lock.json
+
 .nx/cache
 .nx/workspace-data
 .nx/installation

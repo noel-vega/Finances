@@ -1,7 +1,7 @@
 # seed
 
 Seeds local dev with a demo sneaker-store catalog ("Sneaker Depot") — brands, categories,
-13 real shoe products, and a real matching photo for each — so `shop-admin-web` never
+13 real shoe products, and a real matching photo for each — so `merchant-web` never
 starts from an empty catalog.
 
 ## Demo login

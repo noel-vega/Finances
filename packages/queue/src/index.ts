@@ -124,7 +124,7 @@ export const ORDER_JOB_OPTIONS: JobsOptions = {
 // and never rejects, so a caller's try/catch (EmailService) or an unguarded
 // await (CheckoutService, deliberately left to throw) would just hang
 // instead of failing. `commandTimeout` bounds that: it's opt-in and only
-// producer apps (shop-admin-api, storefront-api) pass it — apps/worker
+// producer apps (merchant-api, storefront-api) pass it — apps/worker
 // calls this with no options, since its Worker duplicates this connection
 // for BullMQ's own blocking job-wait reads, which are supposed to sit idle
 // for a long time and must not be cut off by a command timeout.
