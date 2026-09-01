@@ -169,6 +169,13 @@ Forward Stripe webhooks locally with `npm run stripe:listen -w merchant-api` and
 
 Each NestJS API exposes Swagger/OpenAPI at runtime and has a `generate:openapi` script that regenerates `openapi.json`, which in turn feeds the corresponding SDK package.
 
+## Deployment
+
+AWS (ECS Fargate + CloudFront), provisioned with Terraform and shipped by GitHub
+Actions (`.github/workflows/cd.yml`, `deploy-website.yml`). See
+[infra/terraform/README.md](./infra/terraform/README.md) for the layer layout,
+the required repo/environment configuration, and the RDS / CloudFront runbooks.
+
 ## Roadmap
 
 - Customer accounts for the storefront (currently guest-checkout only)
