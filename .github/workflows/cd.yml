@@ -13,6 +13,9 @@ on:
 #   migrate / deploy-services / deploy-frontends pause for manual approval
 #   before touching live resources — there's no staging to catch mistakes
 #   first (that's M4 / OS-38).
+#
+# The migrate step lives in its own workflow (migrate.yml) so it can also be
+# run on its own; this workflow calls it between build-and-push and deploy.
 
 permissions:
   id-token: write
@@ -66,39 +69,9 @@ jobs:
 
   migrate:
     needs: build-and-push
-    runs-on: ubuntu-latest
-    environment: production
-    steps:
-      - uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
-          aws-region: ${{ vars.AWS_REGION }}
-
-      - name: Run migration task
-        run: |
-          set -euo pipefail
-
-          CLUSTER=$(aws ssm get-parameter --name /ordersail/production/ecs/cluster-name --query 'Parameter.Value' --output text)
-          FAMILY=$(aws ssm get-parameter --name /ordersail/production/ecs/migrator-task-family --query 'Parameter.Value' --output text)
-          SUBNETS=$(aws ssm get-parameter --name /ordersail/production/network/private-subnet-ids --query 'Parameter.Value' --output text)
-          SG=$(aws ssm get-parameter --name /ordersail/production/network/ecs-tasks-security-group --query 'Parameter.Value' --output text)
-          MIGRATOR_URI=$(aws ssm get-parameter --name /ordersail/production/ecr/migrator-uri --query 'Parameter.Value' --output text)
-
-          TASK_ARN=$(aws ecs run-task --cluster "$CLUSTER" --task-definition "$FAMILY" \
-            --launch-type FARGATE \
-            --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$SG],assignPublicIp=DISABLED}" \
-            --overrides "{\"containerOverrides\":[{\"name\":\"migrator\",\"image\":\"$MIGRATOR_URI:${{ github.sha }}\"}]}" \
-            --query 'tasks[0].taskArn' --output text)
-
-          aws ecs wait tasks-stopped --cluster "$CLUSTER" --tasks "$TASK_ARN"
-
-          EXIT_CODE=$(aws ecs describe-tasks --cluster "$CLUSTER" --tasks "$TASK_ARN" \
-            --query 'tasks[0].containers[0].exitCode' --output text)
-
-          if [ "$EXIT_CODE" != "0" ]; then
-            echo "migration task exited with code $EXIT_CODE"
-            exit 1
-          fi
+    uses: ./.github/workflows/migrate.yml
+    with:
+      image_tag: ${{ github.sha }}
 
   deploy-services:
     needs: migrate
