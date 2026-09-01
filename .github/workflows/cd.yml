@@ -144,18 +144,14 @@ jobs:
       - name: Build shared packages this frontend needs
         run: npm run build --workspace=merchant-sdk --workspace=storefront-sdk --if-present
 
-      - name: Resolve API base URLs
-        id: api-urls
-        run: |
-          MERCHANT_API_DNS=$(aws ssm get-parameter --name /ordersail/production/alb/merchant-api-dns --query 'Parameter.Value' --output text)
-          STOREFRONT_API_DNS=$(aws ssm get-parameter --name /ordersail/production/alb/storefront-api-dns --query 'Parameter.Value' --output text)
-          echo "merchant_api=http://$MERCHANT_API_DNS" >> "$GITHUB_OUTPUT"
-          echo "storefront_api=http://$STOREFRONT_API_DNS" >> "$GITHUB_OUTPUT"
-
       - name: Build ${{ matrix.app }}
         env:
-          VITE_MERCHANT_API_BASE_URL: ${{ steps.api-urls.outputs.merchant_api }}
-          VITE_STOREFRONT_API_BASE_URL: ${{ steps.api-urls.outputs.storefront_api }}
+          # each frontend's CloudFront distribution routes /api/* to its own
+          # API's ALB (module.frontend_*, enable_api_routing), so the browser
+          # sees a same-origin relative path — no CORS, no mixed content, no
+          # API subdomain. storefront-web's api routing lands in OS-32.
+          VITE_MERCHANT_API_BASE_URL: /api
+          VITE_STOREFRONT_API_BASE_URL: /api
           # VITE_STRIPE_PUBLISHABLE_KEY / VITE_STOREFRONT_APP_KEY are
           # non-secret publishable identifiers — set as repo variables
           # once known, not secrets
