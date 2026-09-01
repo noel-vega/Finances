@@ -36,6 +36,9 @@ jobs:
           - app: worker
             dockerfile: docker/worker.Dockerfile
             ssm_key: worker-uri
+          - app: pos-api
+            dockerfile: docker/pos-api.Dockerfile
+            ssm_key: pos-api-uri
           - app: migrator
             dockerfile: docker/migrate.Dockerfile
             ssm_key: migrator-uri
@@ -79,7 +82,7 @@ jobs:
     environment: production
     strategy:
       matrix:
-        app: [merchant-api, storefront-api, worker]
+        app: [merchant-api, storefront-api, worker, pos-api]
     steps:
       - uses: aws-actions/configure-aws-credentials@v4
         with:
