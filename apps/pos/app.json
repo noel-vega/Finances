@@ -44,7 +44,9 @@
         {
           "cameraPermission": "Allow POS to scan product barcodes."
         }
-      ]
+      ],
+      "expo-image",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,
