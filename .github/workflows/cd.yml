@@ -107,7 +107,10 @@ jobs:
           aws ecs wait services-stable --cluster "$CLUSTER" --services "$SERVICE"
 
   deploy-frontends:
-    needs: build-and-push
+    # after the APIs — a frontend built against an API with 0 running tasks,
+    # or before its schema migration, is pointless (and it bakes the API URL
+    # in at build time, so it can't self-heal later)
+    needs: deploy-services
     runs-on: ubuntu-latest
     environment: production
     strategy:
