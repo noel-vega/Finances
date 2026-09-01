@@ -65,7 +65,16 @@ approval-sensitive jobs in `cd.yml` (`migrate`, `deploy-services`,
 | `VITE_STRIPE_PUBLISHABLE_KEY` | *(not set yet)* | platform Stripe publishable key — set before `merchant-web` deploys (OS-31) |
 | `VITE_STOREFRONT_APP_KEY` | *(not set yet)* | a prod storefront API key — set once a prod account is seeded (OS-32) |
 
-The OIDC trust on both roles is scoped to `repo:noel-vega/ordersail` (OS-10).
+### OIDC trust
+
+Both deploy roles trust GitHub Actions OIDC tokens for this repo. GitHub issues
+the token `sub` claim with an **immutable ID-suffixed prefix**
+(`repo:noel-vega@179352624/ordersail@1292329338:…`, the default since 2025) — the
+trust policies list both that and the legacy `repo:noel-vega/ordersail:…` form.
+The two numeric ids live in `terraform.tfvars` as `github_owner_id` /
+`github_repo_id` (`gh api repos/noel-vega/ordersail --jq '.owner.id, .id'`); they
+change only on a GitHub owner/repo **transfer** — update the tfvars and re-apply
+`module.deploy_role_*` if that ever happens.
 
 ## Runbooks
 

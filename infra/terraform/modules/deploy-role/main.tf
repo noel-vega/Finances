@@ -10,6 +10,32 @@
 
 data "aws_caller_identity" "current" {}
 
+locals {
+  gh_owner = split("/", var.github_repo)[0]
+  gh_repo  = split("/", var.github_repo)[1]
+
+  # GitHub OIDC subject prefixes to trust. The legacy `repo:OWNER/REPO` form
+  # plus GitHub's immutable `repo:OWNER@OWNER_ID/REPO@REPO_ID` form, which
+  # became the default token `sub` in 2025. Trusting both means a token in
+  # either shape is accepted; all values stay exact-match (no wildcards), so
+  # a same-prefix repo can't be impersonated.
+  sub_prefixes = compact([
+    "repo:${var.github_repo}",
+    var.github_owner_id != null && var.github_repo_id != null
+    ? "repo:${local.gh_owner}@${var.github_owner_id}/${local.gh_repo}@${var.github_repo_id}"
+    : null,
+  ])
+
+  # each prefix × (branch-ref form for ungated jobs, environment form for
+  # environment-gated jobs) — see the note on the sub condition below
+  trusted_subs = flatten([
+    for p in local.sub_prefixes : concat(
+      var.github_ref != null ? ["${p}:ref:${var.github_ref}"] : [],
+      [for env in var.github_environments : "${p}:environment:${env}"],
+    )
+  ])
+}
+
 data "aws_iam_policy_document" "trust" {
   statement {
     effect  = "Allow"
@@ -28,17 +54,15 @@ data "aws_iam_policy_document" "trust" {
 
     # GitHub's OIDC token `sub` claim format depends on whether the job
     # that requests it specifies `environment:` — with one, it's
-    # "repo:OWNER/REPO:environment:NAME" instead of the branch-ref form
-    # "repo:OWNER/REPO:ref:refs/heads/BRANCH". A role used by both
-    # environment-gated and ungated jobs needs both patterns listed; one
-    # used only behind an environment gate only needs that pattern.
+    # "<prefix>:environment:NAME" instead of the branch-ref form
+    # "<prefix>:ref:refs/heads/BRANCH". A role used by both environment-gated
+    # and ungated jobs needs both patterns listed; one used only behind an
+    # environment gate only needs that pattern. `<prefix>` is either the
+    # legacy or the immutable ID-suffixed form — see local.sub_prefixes.
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values = concat(
-        var.github_ref != null ? ["repo:${var.github_repo}:ref:${var.github_ref}"] : [],
-        [for env in var.github_environments : "repo:${var.github_repo}:environment:${env}"],
-      )
+      values   = local.trusted_subs
     }
   }
 }

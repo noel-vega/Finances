@@ -46,6 +46,8 @@ module "deploy_role_website" {
   role_name         = "${var.name_prefix}-github-actions-deploy-website"
   oidc_provider_arn = module.oidc_provider.arn
   github_repo       = var.github_repo
+  github_owner_id   = var.github_owner_id
+  github_repo_id    = var.github_repo_id
 
   # deploy-website.yml's single job always runs behind the "production"
   # environment gate — no ungated (ref-based) job ever needs this role, so
@@ -70,6 +72,8 @@ module "deploy_role_platform" {
   role_name          = "${var.name_prefix}-github-actions-deploy-platform"
   oidc_provider_arn  = module.oidc_provider.arn
   github_repo        = var.github_repo
+  github_owner_id    = var.github_owner_id
+  github_repo_id     = var.github_repo_id
   include_ecr_push   = true
   include_ecs_deploy = true
 

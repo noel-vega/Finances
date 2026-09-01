@@ -13,6 +13,16 @@ variable "github_repo" {
   type        = string
 }
 
+variable "github_owner_id" {
+  description = "Numeric GitHub account id of the repo owner — the immutable half of the OIDC subject prefix (see modules/deploy-role). `gh api repos/<owner>/<repo> --jq .owner.id`."
+  type        = number
+}
+
+variable "github_repo_id" {
+  description = "Numeric GitHub repository id — the other immutable half of the OIDC subject prefix. `gh api repos/<owner>/<repo> --jq .id`."
+  type        = number
+}
+
 variable "db_instance_class" {
   type    = string
   default = "db.t4g.micro"
