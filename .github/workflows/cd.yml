@@ -113,13 +113,15 @@ jobs:
     needs: deploy-services
     runs-on: ubuntu-latest
     environment: production
+    # storefront-web is not here: it's Ordersail's reference client for the
+    # public storefront-api — a merchant forks it and hosts their own shop, so
+    # it moves to its own public repo (see the "Extract storefront-web" Linear
+    # project), not a first-party deploy target.
     strategy:
       matrix:
         include:
           - app: merchant-web
             ssm_prefix: merchant-web
-          - app: storefront-web
-            ssm_prefix: storefront-web
           - app: website
             ssm_prefix: website
     steps:
@@ -142,21 +144,19 @@ jobs:
       - run: npm ci
 
       - name: Build shared packages this frontend needs
-        run: npm run build --workspace=merchant-sdk --workspace=storefront-sdk --if-present
+        run: npm run build --workspace=merchant-sdk --if-present
 
       - name: Build ${{ matrix.app }}
         env:
-          # each frontend's CloudFront distribution routes /api/* to its own
-          # API's ALB (module.frontend_*, enable_api_routing), so the browser
-          # sees a same-origin relative path — no CORS, no mixed content, no
-          # API subdomain. storefront-web's api routing lands in OS-32.
+          # merchant-web's CloudFront distribution routes /api/* to the
+          # merchant-api ALB (module.frontend_merchant_web, enable_api_routing),
+          # so the browser sees a same-origin relative path — no CORS, no mixed
+          # content, no API subdomain.
           VITE_MERCHANT_API_BASE_URL: /api
-          VITE_STOREFRONT_API_BASE_URL: /api
-          # VITE_STRIPE_PUBLISHABLE_KEY / VITE_STOREFRONT_APP_KEY are
-          # non-secret publishable identifiers — set as repo variables
-          # once known, not secrets
+          # VITE_STRIPE_PUBLISHABLE_KEY is a non-secret publishable identifier
+          # (merchant-web's Stripe Connect view) — set as a repo variable, not a
+          # secret.
           VITE_STRIPE_PUBLISHABLE_KEY: ${{ vars.VITE_STRIPE_PUBLISHABLE_KEY }}
-          VITE_STOREFRONT_APP_KEY: ${{ vars.VITE_STOREFRONT_APP_KEY }}
         run: npm run build --workspace=${{ matrix.app }}
 
       - name: Sync to S3 and invalidate CloudFront

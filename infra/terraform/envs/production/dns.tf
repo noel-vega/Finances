@@ -8,11 +8,10 @@ data "aws_route53_zone" "this" {
   name = var.domain_name
 }
 
-# Wildcard SAN covers every future subdomain (merchant.${domain}, the
-# storefront, etc.) in advance, even though only the apex (-> website) is
-# wired up below. When merchant-web/storefront-web's own milestones land,
-# pointing their subdomains at this same cert is a two-line change with no
-# re-validation.
+# Wildcard SAN covers every future subdomain (merchant.${domain}, etc.) in
+# advance, even though only the apex (-> website) and merchant.${domain} are
+# wired up below. Pointing another subdomain at this same cert later is a
+# two-line change with no re-validation.
 resource "aws_acm_certificate" "frontends" {
   domain_name               = var.domain_name
   subject_alternative_names = ["*.${var.domain_name}"]

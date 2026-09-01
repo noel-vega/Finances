@@ -20,10 +20,6 @@ output "merchant_web_url" {
   value = "https://${module.frontend_merchant_web.distribution_domain_name}"
 }
 
-output "storefront_web_url" {
-  value = "https://${module.frontend_storefront_web.distribution_domain_name}"
-}
-
 output "website_url" {
   value = "https://${module.frontend_website.distribution_domain_name}"
 }

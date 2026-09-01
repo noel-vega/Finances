@@ -37,8 +37,8 @@ terraform apply
 
 Contains: VPC + NAT, RDS Postgres 17 (`ordersail-production`), ElastiCache Redis,
 ECS cluster + 3 Fargate services (merchant-api, storefront-api, worker) + a
-migrator task, 2 ALBs, 3 CloudFront distributions (merchant-web, storefront-web,
-website) + S3 origin buckets, ACM cert (`*.ordersail.com`), Secrets Manager
+migrator task, 2 ALBs, 2 CloudFront distributions (merchant-web, website) + S3
+origin buckets, ACM cert (`*.ordersail.com`), Secrets Manager
 (one secret per API + the DB URL), ECR (4 repos), the GitHub OIDC provider, and
 two GitHub-Actions deploy roles (`-platform`, `-website`).
 
@@ -62,8 +62,7 @@ approval-sensitive jobs in `cd.yml` (`migrate`, `deploy-services`,
 | `AWS_REGION` | `us-east-1` | fixed |
 | `AWS_DEPLOY_ROLE_ARN` | `…:role/ordersail-github-actions-deploy-platform` | `terraform output deploy_role_platform_arn` |
 | `AWS_DEPLOY_ROLE_ARN_WEBSITE` | `…:role/ordersail-github-actions-deploy-website` | `terraform output deploy_role_website_arn` |
-| `VITE_STRIPE_PUBLISHABLE_KEY` | *(not set yet)* | platform Stripe publishable key — set before `merchant-web` deploys (OS-31) |
-| `VITE_STOREFRONT_APP_KEY` | *(not set yet)* | a prod storefront API key — set once a prod account is seeded (OS-32) |
+| `VITE_STRIPE_PUBLISHABLE_KEY` | `pk_test_…` | platform Stripe publishable key — `merchant-web`'s Stripe Connect view (OS-31) |
 
 ### OIDC trust
 

@@ -23,9 +23,8 @@ locals {
     worker         = module.ecs_service_worker
   }
   frontends = {
-    merchant-web   = module.frontend_merchant_web
-    storefront-web = module.frontend_storefront_web
-    website        = module.frontend_website
+    merchant-web = module.frontend_merchant_web
+    website      = module.frontend_website
   }
 }
 
@@ -184,8 +183,8 @@ module "ecs_service_merchant_api" {
     { name = "REDIS_HOST", value = module.elasticache.primary_endpoint_address },
     { name = "REDIS_PORT", value = tostring(module.elasticache.port) },
     # references the module directly, not local.frontends["merchant-web"] — that local
-    # aggregates all 3 frontend modules as one map expression, so going through it would make a
-    # -target apply of just this service also pull in storefront-web's (unrelated) frontend.
+    # aggregates every frontend module as one map expression, so going through it would make a
+    # -target apply of just this service also pull in the website's (unrelated) frontend.
     { name = "MERCHANT_WEB_URL", value = "https://${module.frontend_merchant_web.distribution_domain_name}" },
     { name = "MINIO_ENDPOINT", value = "https://s3.${var.region}.amazonaws.com" },
     { name = "MINIO_BUCKET", value = module.secrets.product_images_bucket_name },
@@ -223,9 +222,13 @@ module "ecs_service_storefront_api" {
     { name = "PORT", value = "3001" },
     { name = "REDIS_HOST", value = module.elasticache.primary_endpoint_address },
     { name = "REDIS_PORT", value = tostring(module.elasticache.port) },
-    # see the merchant-api service's MERCHANT_WEB_URL comment above — same reason to
-    # reference the module directly instead of going through local.frontends.
-    { name = "STOREFRONT_WEB_URL", value = "https://${module.frontend_storefront_web.distribution_domain_name}" },
+    # CORS allow-origin for the storefront. storefront-web is a reference client
+    # that merchants fork and host themselves (moving to its own public repo —
+    # see the "Extract storefront-web" Linear project), so there's no
+    # Ordersail-hosted storefront origin here yet. Placeholder subdomain (covered
+    # by the *.${domain} cert); revisit when the reference storefront gets a real
+    # home. No live client today, so this being a placeholder breaks nothing.
+    { name = "STOREFRONT_WEB_URL", value = "https://storefront.${var.domain_name}" },
   ]
 
   secrets = [
@@ -286,12 +289,6 @@ module "frontend_merchant_web" {
   acm_certificate_arn    = aws_acm_certificate_validation.frontends.certificate_arn
   enable_api_routing     = true
   api_origin_domain_name = module.alb_merchant_api.dns_name
-}
-
-module "frontend_storefront_web" {
-  source      = "../../modules/s3-static-site"
-  name_prefix = var.name_prefix
-  name        = "storefront-web"
 }
 
 module "frontend_website" {
