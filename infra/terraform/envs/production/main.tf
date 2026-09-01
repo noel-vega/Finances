@@ -150,6 +150,19 @@ module "alb_storefront_api" {
   acm_certificate_arn         = aws_acm_certificate_validation.frontends.certificate_arn
 }
 
+# Dedicated ALB, mirroring the other two public APIs. OS-63 (M7 cost pass)
+# revisits collapsing all three into one shared ALB with host-based routing.
+module "alb_pos_api" {
+  source                      = "../../modules/alb"
+  name_prefix                 = var.name_prefix
+  name                        = "pos-api"
+  vpc_id                      = module.network.vpc_id
+  public_subnet_ids           = module.network.public_subnet_ids
+  container_port              = 3004
+  ecs_tasks_security_group_id = module.ecs_cluster.ecs_tasks_security_group_id
+  acm_certificate_arn         = aws_acm_certificate_validation.frontends.certificate_arn
+}
+
 # merchant-api's task role: direct S3 access to the product-images
 # bucket. This is what the packages/storage credential fix (Phase 2) makes
 # possible — no static IAM user key needed in Secrets Manager.
@@ -292,11 +305,11 @@ module "ecs_service_pos_api" {
   container_port              = 3004
   image                       = "${module.ecr.repository_urls["pos-api"]}:latest"
 
-  # No ALB / public endpoint yet — that's OS-34, which also flips desired_count
-  # 0 -> 1 to bring pos-api live. Kept at 0 here so the service isn't
-  # crash-looping on an image that doesn't exist until OS-35 wires the CD push.
-  target_group_arn = null
-  desired_count    = 0
+  # module.alb_pos_api.target_group_arn is sourced through the HTTPS listener,
+  # so wiring it here implicitly orders this service after the listener exists
+  # (ECS's CreateService/UpdateService rejects a target group not yet attached
+  # to a load balancer).
+  target_group_arn = module.alb_pos_api.target_group_arn
 
   environment = [
     { name = "NODE_ENV", value = "production" },

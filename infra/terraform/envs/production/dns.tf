@@ -69,3 +69,18 @@ resource "aws_route53_record" "merchant_web_alias" {
     evaluate_target_health = false
   }
 }
+
+# pos-api's public endpoint — the native Expo POS app hits this directly, so it
+# needs a real *.${domain} host (the ALB serves the wildcard cert; a raw
+# *.elb.amazonaws.com name would fail TLS SNI).
+resource "aws_route53_record" "pos_api_alias" {
+  zone_id = data.aws_route53_zone.this.zone_id
+  name    = "pos.${var.domain_name}"
+  type    = "A"
+
+  alias {
+    name                   = module.alb_pos_api.dns_name
+    zone_id                = module.alb_pos_api.zone_id
+    evaluate_target_health = true
+  }
+}
