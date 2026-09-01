@@ -22,6 +22,18 @@ variable "github_repo" {
   type        = string
 }
 
+variable "github_owner_id" {
+  description = "Numeric id of the GitHub account that owns the repo. Half of GitHub's immutable OIDC subject prefix `repo:OWNER@OWNER_ID/REPO@REPO_ID` — the default token `sub` format since GitHub's 2025 rollout. null → trust only the legacy `repo:OWNER/REPO` prefix."
+  type        = number
+  default     = null
+}
+
+variable "github_repo_id" {
+  description = "Numeric GitHub repository id. Other half of the immutable OIDC subject prefix (see github_owner_id)."
+  type        = number
+  default     = null
+}
+
 variable "github_ref" {
   description = "Branch ref (e.g. \"refs/heads/main\") to trust for jobs that do NOT specify a GitHub Environment. Set to null if every workflow job using this role runs behind an environment gate (see github_environments)."
   type        = string

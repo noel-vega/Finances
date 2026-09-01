@@ -4,6 +4,10 @@ region      = "us-east-1"
 name_prefix = "ordersail"
 
 github_repo = "noel-vega/ordersail"
+# immutable OIDC subject prefix halves — `gh api repos/noel-vega/ordersail --jq '.owner.id, .id'`
+# (changes only on a GitHub owner/repo transfer)
+github_owner_id = 179352624
+github_repo_id  = 1292329338
 
 domain_name = "ordersail.com"
 
