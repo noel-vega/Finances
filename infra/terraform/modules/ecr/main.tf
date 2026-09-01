@@ -1,5 +1,5 @@
 locals {
-  repo_names = ["merchant-api", "storefront-api", "worker", "migrator"]
+  repo_names = ["merchant-api", "storefront-api", "worker", "migrator", "pos-api"]
 }
 
 resource "aws_ecr_repository" "this" {

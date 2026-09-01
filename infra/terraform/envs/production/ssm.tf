@@ -23,6 +23,7 @@ locals {
     "ecr/storefront-api-uri" = module.ecr.repository_urls["storefront-api"]
     "ecr/worker-uri"         = module.ecr.repository_urls["worker"]
     "ecr/migrator-uri"       = module.ecr.repository_urls["migrator"]
+    "ecr/pos-api-uri"        = module.ecr.repository_urls["pos-api"]
   }
 
   ssm_ecs = {
@@ -30,6 +31,7 @@ locals {
     "ecs/merchant-api-service"   = module.ecs_service_merchant_api.service_name
     "ecs/storefront-api-service" = module.ecs_service_storefront_api.service_name
     "ecs/worker-service"         = module.ecs_service_worker.service_name
+    "ecs/pos-api-service"        = module.ecs_service_pos_api.service_name
     "ecs/migrator-task-family"   = aws_ecs_task_definition.migrator.family
   }
 
