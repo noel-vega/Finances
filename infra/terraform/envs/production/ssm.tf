@@ -18,11 +18,6 @@ locals {
     "frontend/merchant-web-distribution" = module.frontend_merchant_web.distribution_id
   }
 
-  ssm_frontend_storefront_web = {
-    "frontend/storefront-web-bucket"       = module.frontend_storefront_web.bucket_name
-    "frontend/storefront-web-distribution" = module.frontend_storefront_web.distribution_id
-  }
-
   ssm_ecr = {
     "ecr/merchant-api-uri"   = module.ecr.repository_urls["merchant-api"]
     "ecr/storefront-api-uri" = module.ecr.repository_urls["storefront-api"]
@@ -58,13 +53,6 @@ resource "aws_ssm_parameter" "frontend_website" {
 
 resource "aws_ssm_parameter" "frontend_merchant_web" {
   for_each = local.ssm_frontend_merchant_web
-  name     = "/${var.name_prefix}/production/${each.key}"
-  type     = "String"
-  value    = each.value
-}
-
-resource "aws_ssm_parameter" "frontend_storefront_web" {
-  for_each = local.ssm_frontend_storefront_web
   name     = "/${var.name_prefix}/production/${each.key}"
   type     = "String"
   value    = each.value
