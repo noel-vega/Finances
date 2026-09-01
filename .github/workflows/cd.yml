@@ -3,16 +3,16 @@ name: CD
 on:
   push:
     branches: [main]
+  workflow_dispatch: {}
 
-# Required repo configuration before this workflow can run (see
-# infra/terraform/envs/production outputs and README further down this
-# repo's rollout plan):
-#   vars.AWS_DEPLOY_ROLE_ARN  = terraform output deploy_role_arn
-#   vars.AWS_REGION           = "us-east-1"
-#   A GitHub Environment named "production" with a required
-#   reviewer, so migrate/deploy-services/deploy-frontends need manual
-#   approval before touching live resources — there's no staging
-#   environment to catch mistakes first.
+# Required repo configuration before this workflow can run — see
+# infra/terraform/README.md ("Production rollout"). In short:
+#   vars.AWS_DEPLOY_ROLE_ARN = terraform output deploy_role_platform_arn
+#   vars.AWS_REGION          = "us-east-1"
+#   A GitHub Environment named "production" with a required reviewer, so
+#   migrate / deploy-services / deploy-frontends pause for manual approval
+#   before touching live resources — there's no staging to catch mistakes
+#   first (that's M4 / OS-38).
 
 permissions:
   id-token: write
