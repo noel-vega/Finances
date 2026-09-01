@@ -46,10 +46,20 @@ jobs:
           SG=$(aws ssm get-parameter --name /ordersail/production/network/ecs-tasks-security-group --query 'Parameter.Value' --output text)
           MIGRATOR_URI=$(aws ssm get-parameter --name /ordersail/production/ecr/migrator-uri --query 'Parameter.Value' --output text)
 
-          TASK_ARN=$(aws ecs run-task --cluster "$CLUSTER" --task-definition "$FAMILY" \
+          # `run-task --overrides` cannot change the container image — only
+          # command/env/cpu/memory. So register a new task-def revision pinned
+          # to this tag and run that (same pattern as cd.yml's deploy-services).
+          CURRENT=$(aws ecs describe-task-definition --task-definition "$FAMILY" --query 'taskDefinition')
+          NEW=$(echo "$CURRENT" | jq --arg IMG "$MIGRATOR_URI:$IMAGE_TAG" '
+            .containerDefinitions[0].image = $IMG
+            | {family, executionRoleArn, networkMode, containerDefinitions, requiresCompatibilities, cpu, memory}
+          ')
+          TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json "$NEW" --query 'taskDefinition.taskDefinitionArn' --output text)
+          echo "task-def: $TASK_DEF_ARN"
+
+          TASK_ARN=$(aws ecs run-task --cluster "$CLUSTER" --task-definition "$TASK_DEF_ARN" \
             --launch-type FARGATE \
             --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$SG],assignPublicIp=DISABLED}" \
-            --overrides "{\"containerOverrides\":[{\"name\":\"migrator\",\"image\":\"$MIGRATOR_URI:$IMAGE_TAG\"}]}" \
             --query 'tasks[0].taskArn' --output text)
           echo "task: $TASK_ARN"
 

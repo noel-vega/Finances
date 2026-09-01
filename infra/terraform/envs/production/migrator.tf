@@ -72,9 +72,10 @@ resource "aws_ecs_task_definition" "migrator" {
     }
   ])
 
-  # the CD workflow overrides the image tag per-deploy via `run-task
-  # --overrides` rather than registering a new revision every time; don't
-  # fight that by reverting it on every `terraform apply`
+  # the Migrate workflow registers a new revision per run, pinned to the
+  # deployed image tag (run-task --overrides can't change the image) — this
+  # is the TF-owned rev 1 baseline; ignore_changes stops `terraform apply`
+  # from reverting to it.
   lifecycle {
     ignore_changes = [container_definitions]
   }
