@@ -83,9 +83,13 @@ module "deploy_role_platform" {
   # sub claim instead — this role is used by both job shapes.
   github_environments = ["production"]
 
+  # the 3 API services' execution + task roles, plus the migrator's execution
+  # role — the Migrate / deploy-services workflows register new task-def
+  # revisions, which needs iam:PassRole on whatever role the revision names
   pass_role_arns = concat(
     [for k, s in local.ecs_services : s.execution_role_arn],
     [for k, s in local.ecs_services : s.task_role_arn],
+    [aws_iam_role.migrator_execution.arn],
   )
   s3_bucket_arns               = [for k, s in local.frontends : s.bucket_arn]
   cloudfront_distribution_arns = [for k, s in local.frontends : s.distribution_arn]

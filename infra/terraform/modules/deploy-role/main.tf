@@ -138,6 +138,22 @@ data "aws_iam_policy_document" "deploy" {
   }
 
   dynamic "statement" {
+    # so the deploy workflows can tail a stopped task's container log for
+    # diagnostics (the migrate / deploy-services jobs dump it on completion)
+    for_each = var.include_ecs_deploy ? [1] : []
+    content {
+      sid    = "ReadDeployLogs"
+      effect = "Allow"
+      actions = [
+        "logs:GetLogEvents",
+        "logs:FilterLogEvents",
+        "logs:DescribeLogStreams",
+      ]
+      resources = ["arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:/ecs/${var.name_prefix}-*:*"]
+    }
+  }
+
+  dynamic "statement" {
     for_each = length(var.pass_role_arns) > 0 ? [1] : []
     content {
       sid       = "PassEcsRoles"
