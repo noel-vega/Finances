@@ -16,6 +16,10 @@ output "storefront_api_url" {
   value = "https://${module.alb_storefront_api.dns_name}"
 }
 
+output "pos_api_url" {
+  value = "https://pos.${var.domain_name}"
+}
+
 output "merchant_web_url" {
   value = "https://${module.frontend_merchant_web.distribution_domain_name}"
 }

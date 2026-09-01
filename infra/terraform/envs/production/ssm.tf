@@ -43,6 +43,7 @@ locals {
   ssm_alb = {
     "alb/merchant-api-dns"   = module.alb_merchant_api.dns_name
     "alb/storefront-api-dns" = module.alb_storefront_api.dns_name
+    "alb/pos-api-dns"        = module.alb_pos_api.dns_name
   }
 }
 

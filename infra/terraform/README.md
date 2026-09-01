@@ -37,7 +37,8 @@ terraform apply
 
 Contains: VPC + NAT, RDS Postgres 17 (`ordersail-production`), ElastiCache Redis,
 ECS cluster + 4 Fargate services (merchant-api, storefront-api, worker, pos-api —
-pos-api at desired 0 until OS-34 gives it an ALB) + a migrator task, 2 ALBs, 2
+pos-api runs nothing until its first image is pushed, OS-35) + a migrator task,
+3 ALBs (merchant-api, storefront-api, pos-api at `pos.ordersail.com`), 2
 CloudFront distributions (merchant-web, website) + S3 origin buckets, ACM cert
 (`*.ordersail.com`), Secrets Manager (one secret per API + the DB URL), ECR
 (5 repos), the GitHub OIDC provider, and two GitHub-Actions deploy roles
