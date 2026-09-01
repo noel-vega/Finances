@@ -1,0 +1,75 @@
+name: Migrate
+
+# The DB migration gate: runs `drizzle-kit migrate` (packages/db) against the
+# production RDS via a one-off Fargate task (see infra/terraform/.../migrator.tf).
+#
+# Runnable on its own (`gh workflow run Migrate`) so migrations don't have to
+# ride a full deploy, and called by cd.yml between build-and-push and
+# deploy-services. Either way the `production` Environment gate applies.
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: migrator image tag in ECR (defaults to :latest, i.e. the last main build)
+        type: string
+        default: latest
+  workflow_call:
+    inputs:
+      image_tag:
+        type: string
+        required: true
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Run migration task
+        env:
+          IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |
+          set -euo pipefail
+
+          CLUSTER=$(aws ssm get-parameter --name /ordersail/production/ecs/cluster-name --query 'Parameter.Value' --output text)
+          FAMILY=$(aws ssm get-parameter --name /ordersail/production/ecs/migrator-task-family --query 'Parameter.Value' --output text)
+          SUBNETS=$(aws ssm get-parameter --name /ordersail/production/network/private-subnet-ids --query 'Parameter.Value' --output text)
+          SG=$(aws ssm get-parameter --name /ordersail/production/network/ecs-tasks-security-group --query 'Parameter.Value' --output text)
+          MIGRATOR_URI=$(aws ssm get-parameter --name /ordersail/production/ecr/migrator-uri --query 'Parameter.Value' --output text)
+
+          TASK_ARN=$(aws ecs run-task --cluster "$CLUSTER" --task-definition "$FAMILY" \
+            --launch-type FARGATE \
+            --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$SG],assignPublicIp=DISABLED}" \
+            --overrides "{\"containerOverrides\":[{\"name\":\"migrator\",\"image\":\"$MIGRATOR_URI:$IMAGE_TAG\"}]}" \
+            --query 'tasks[0].taskArn' --output text)
+          echo "task: $TASK_ARN"
+
+          aws ecs wait tasks-stopped --cluster "$CLUSTER" --tasks "$TASK_ARN"
+
+          # dump the container's stdout/stderr — the CD run is otherwise a black box on failure
+          TASK_ID=${TASK_ARN##*/}
+          echo "--- /ecs/ordersail-migrator : migrator/migrator/$TASK_ID ---"
+          aws logs get-log-events --log-group-name /ecs/ordersail-migrator \
+            --log-stream-name "migrator/migrator/$TASK_ID" --start-from-head \
+            --query 'events[].message' --output text || true
+          echo "--- end log ---"
+
+          EXIT_CODE=$(aws ecs describe-tasks --cluster "$CLUSTER" --tasks "$TASK_ARN" \
+            --query 'tasks[0].containers[0].exitCode' --output text)
+          STOPPED_REASON=$(aws ecs describe-tasks --cluster "$CLUSTER" --tasks "$TASK_ARN" \
+            --query 'tasks[0].stoppedReason' --output text)
+
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "::error::migration task exited with code $EXIT_CODE — $STOPPED_REASON"
+            exit 1
+          fi
+          echo "migration task exited 0"
