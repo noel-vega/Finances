@@ -21,6 +21,7 @@ locals {
     merchant-api   = module.ecs_service_merchant_api
     storefront-api = module.ecs_service_storefront_api
     worker         = module.ecs_service_worker
+    pos-api        = module.ecs_service_pos_api
   }
   frontends = {
     merchant-web = module.frontend_merchant_web
@@ -278,6 +279,39 @@ module "ecs_service_worker" {
   secrets_manager_secret_arns = [
     module.secrets.database_url_secret_arn,
     module.secrets.app_secret_arns["worker"],
+  ]
+}
+
+module "ecs_service_pos_api" {
+  source                      = "../../modules/ecs-service"
+  name_prefix                 = var.name_prefix
+  name                        = "pos-api"
+  cluster_id                  = module.ecs_cluster.cluster_id
+  private_subnet_ids          = module.network.private_subnet_ids
+  ecs_tasks_security_group_id = module.ecs_cluster.ecs_tasks_security_group_id
+  container_port              = 3004
+  image                       = "${module.ecr.repository_urls["pos-api"]}:latest"
+
+  # No ALB / public endpoint yet — that's OS-34, which also flips desired_count
+  # 0 -> 1 to bring pos-api live. Kept at 0 here so the service isn't
+  # crash-looping on an image that doesn't exist until OS-35 wires the CD push.
+  target_group_arn = null
+  desired_count    = 0
+
+  environment = [
+    { name = "NODE_ENV", value = "production" },
+    { name = "PORT", value = "3004" },
+    # POS is a native Expo app (no browser Origin), so POS_WEB_URL is left
+    # unset and pos-api/src/main.ts falls back to CORS origin:true. Set it if a
+    # POS web console ever ships.
+  ]
+
+  secrets = [
+    { name = "DATABASE_URL", valueFrom = module.secrets.database_url_secret_arn },
+  ]
+
+  secrets_manager_secret_arns = [
+    module.secrets.database_url_secret_arn,
   ]
 }
 
