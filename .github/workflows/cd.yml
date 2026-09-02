@@ -191,3 +191,79 @@ jobs:
             --cache-control "public,max-age=0,must-revalidate"
 
           aws cloudfront create-invalidation --distribution-id "$DIST_ID" --paths "/index.html" "/"
+
+  smoke-test:
+    needs: [deploy-services, deploy-frontends]
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Smoke-test live endpoints
+        run: |
+          set -uo pipefail   # NOT -e: run every check, accumulate failures
+
+          # A green deploy only means ECS reached steady state and the CloudFront
+          # invalidation was submitted — not that the apps serve correct
+          # responses. Each API here gets its /health (a real DB[/Redis] query)
+          # plus one guarded route that must answer 401 — proving routing + auth
+          # middleware are loaded, i.e. the app isn't 500ing on everything. Each
+          # frontend gets a marker string from its built HTML.
+          # worker has no public endpoint (BullMQ consumer on a private subnet);
+          # its liveness is covered by deploy-services' `wait services-stable`.
+
+          fail=0
+          hit() {        # hit <label> <want-status> [curl args...] <url>
+            local label=$1 want=$2; shift 2
+            local got n=0
+            while :; do
+              got=$(curl -s -o /tmp/smoke.body -w '%{http_code}' --max-time 15 "$@" || echo 000)
+              [ "$got" = "$want" ] && break
+              n=$((n + 1)); [ $n -ge 5 ] && break     # tolerate CloudFront propagation
+              sleep 6
+            done
+            if [ "$got" = "$want" ]; then
+              echo "ok    $label -> $got"
+            else
+              echo "FAIL  $label -> $got (want $want)"; head -c 300 /tmp/smoke.body; echo; fail=1
+            fi
+          }
+          body_has() {   # body_has <label> <needle> [curl args...] <url>
+            local label=$1 needle=$2; shift 2
+            if curl -s --max-time 15 "$@" | grep -qF -- "$needle"; then
+              echo "ok    $label body ~ '$needle'"
+            else
+              echo "FAIL  $label body missing '$needle'"; fail=1
+            fi
+          }
+
+          STOREFRONT=$(aws ssm get-parameter --name /ordersail/production/alb/storefront-api-dns \
+            --query Parameter.Value --output text)
+
+          echo "== APIs =="
+          hit      "merchant-api   GET /health"      200 https://merchant.ordersail.com/api/health
+          body_has "merchant-api   GET /health"      '"status":"ok"' https://merchant.ordersail.com/api/health
+          hit      "merchant-api   GET /products"    401 https://merchant.ordersail.com/api/products
+
+          # storefront-api has no domain — the raw ALB serves the *.ordersail.com
+          # wildcard cert, so -k (skip hostname check) is expected on this host only.
+          hit      "storefront-api GET /health"      200 -k "https://$STOREFRONT/health"
+          body_has "storefront-api GET /health"      '"status":"ok"' -k "https://$STOREFRONT/health"
+          hit      "storefront-api GET /products"    401 -k "https://$STOREFRONT/products"
+
+          hit      "pos-api        GET /health"      200 https://pos.ordersail.com/health
+          body_has "pos-api        GET /health"      '"status":"ok"' https://pos.ordersail.com/health
+          hit      "pos-api        GET /pos/session" 401 https://pos.ordersail.com/pos/session
+
+          echo "== Frontends =="
+          hit      "merchant-web   GET /"            200 https://merchant.ordersail.com/
+          body_has "merchant-web   GET /"            '<title>merchant-web</title>' https://merchant.ordersail.com/
+          hit      "website        GET /"            200 https://ordersail.com/
+          body_has "website        GET /"            'Set sail with your store.' https://ordersail.com/
+
+          [ $fail -eq 0 ] && { echo "all smoke checks passed"; exit 0; }
+          echo "::error::post-deploy smoke test failed"
+          exit 1
