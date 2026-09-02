@@ -295,7 +295,18 @@ async function ensureDefaultLocation(accountId: number) {
 
   const [location] = await db
     .insert(locationsTable)
-    .values({ accountId, name: 'Default' })
+    .values({
+      accountId,
+      name: 'Default',
+      // a real ship-from origin so web checkout can fetch Shippo rates without
+      // a manual Locations step (see docs/runbooks/web-checkout.md)
+      addressLine1: '2261 Market Street',
+      addressLine2: '4242',
+      addressCity: 'San Francisco',
+      addressState: 'CA',
+      addressPostalCode: '94114',
+      addressCountry: 'US',
+    })
     .returning();
   return location;
 }
@@ -407,7 +418,9 @@ async function ensureProduct(
     for (const variant of product.variants) {
       const [variantRow] = await tx
         .insert(productVariantsTable)
-        .values({ productId: row.id, priceCents: variant.priceCents })
+        // a shoe + box is ~2 lb — gives Shippo something realistic to quote
+        // instead of the 16 oz per-unit fallback
+        .values({ productId: row.id, priceCents: variant.priceCents, weightOz: 32 })
         .returning();
 
       const optionValueId = variant.optionValue
