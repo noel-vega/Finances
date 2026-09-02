@@ -187,7 +187,7 @@ module "ecs_service_merchant_api" {
   private_subnet_ids          = module.network.private_subnet_ids
   ecs_tasks_security_group_id = module.ecs_cluster.ecs_tasks_security_group_id
   container_port              = 3000
-  image                       = "${module.ecr.repository_urls["merchant-api"]}:latest"
+  image                       = "${module.ecr.repository_urls["merchant-api"]}:${var.bootstrap_image_tag}"
   target_group_arn            = module.alb_merchant_api.target_group_arn
   task_role_policy_json       = data.aws_iam_policy_document.merchant_api_task.json
 
@@ -228,7 +228,7 @@ module "ecs_service_storefront_api" {
   private_subnet_ids          = module.network.private_subnet_ids
   ecs_tasks_security_group_id = module.ecs_cluster.ecs_tasks_security_group_id
   container_port              = 3001
-  image                       = "${module.ecr.repository_urls["storefront-api"]}:latest"
+  image                       = "${module.ecr.repository_urls["storefront-api"]}:${var.bootstrap_image_tag}"
   target_group_arn            = module.alb_storefront_api.target_group_arn
 
   environment = [
@@ -267,7 +267,7 @@ module "ecs_service_worker" {
   private_subnet_ids          = module.network.private_subnet_ids
   ecs_tasks_security_group_id = module.ecs_cluster.ecs_tasks_security_group_id
   container_port              = 3003
-  image                       = "${module.ecr.repository_urls["worker"]}:latest"
+  image                       = "${module.ecr.repository_urls["worker"]}:${var.bootstrap_image_tag}"
   target_group_arn            = null # no ALB — pure BullMQ consumer
 
   environment = [
@@ -303,7 +303,7 @@ module "ecs_service_pos_api" {
   private_subnet_ids          = module.network.private_subnet_ids
   ecs_tasks_security_group_id = module.ecs_cluster.ecs_tasks_security_group_id
   container_port              = 3004
-  image                       = "${module.ecr.repository_urls["pos-api"]}:latest"
+  image                       = "${module.ecr.repository_urls["pos-api"]}:${var.bootstrap_image_tag}"
 
   # module.alb_pos_api.target_group_arn is sourced through the HTTPS listener,
   # so wiring it here implicitly orders this service after the listener exists

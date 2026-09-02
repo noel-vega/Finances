@@ -56,7 +56,7 @@ resource "aws_ecs_task_definition" "migrator" {
   container_definitions = jsonencode([
     {
       name      = "migrator"
-      image     = "${module.ecr.repository_urls["migrator"]}:latest"
+      image     = "${module.ecr.repository_urls["migrator"]}:${var.bootstrap_image_tag}"
       essential = true
       secrets = [
         { name = "DATABASE_URL", valueFrom = module.secrets.database_url_secret_arn }
