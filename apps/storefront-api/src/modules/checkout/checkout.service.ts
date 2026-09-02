@@ -3,6 +3,7 @@ import {
   BadRequestException,
   Inject,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
@@ -31,6 +32,7 @@ import { CheckoutSession } from './entities/checkout-session.entity';
 import { CheckoutConfig } from './entities/checkout-config.entity';
 import { CheckoutSessionStatus } from './entities/checkout-session-status.entity';
 import { ShippingOptionsResult } from './entities/shipping-options-result.entity';
+import type Stripe from 'stripe';
 import { stripe } from './stripe.client';
 import { shippo } from './shippo.client';
 
@@ -42,6 +44,8 @@ const DEFAULT_PARCEL_DIMENSIONS_IN = { length: '12', width: '9', height: '6' };
 
 @Injectable()
 export class CheckoutService {
+  private readonly logger = new Logger(CheckoutService.name);
+
   constructor(
     @Inject(DRIZZLE) private readonly db: typeof Db,
     private readonly cartService: CartService,
@@ -150,7 +154,12 @@ export class CheckoutService {
       .retrieve(dto.checkoutSessionId, undefined, {
         stripeAccount: stripeAccount.stripeAccountId,
       })
-      .catch(() => null);
+      .catch((err: unknown) => {
+        this.logger.warn(
+          `shipping-options: could not retrieve session ${dto.checkoutSessionId}: ${(err as Error).message}`,
+        );
+        return null;
+      });
     const cartToken = session?.metadata?.cartToken;
     if (!session || !cartToken) {
       return { ok: false, errorMessage: 'Unable to find your cart' };
@@ -209,9 +218,19 @@ export class CheckoutService {
         ],
         async: false,
       })
-      .catch(() => null);
+      .catch((err: unknown) => {
+        this.logger.warn(
+          `shipping-options: Shippo rate request failed: ${(err as Error).message}`,
+        );
+        return null;
+      });
 
     if (!shipment || shipment.rates.length === 0) {
+      if (shipment) {
+        this.logger.warn(
+          `shipping-options: Shippo returned 0 rates for shipment ${shipment.objectId} — messages: ${JSON.stringify(shipment.messages ?? [])}`,
+        );
+      }
       return {
         ok: false,
         errorMessage: "We can't calculate shipping to that address",
@@ -320,11 +339,20 @@ export class CheckoutService {
   // triggered by Stripe, not the browser — the redirect back from Checkout
   // isn't reliable (the tab can close), this webhook is the source of truth
   async handleWebhookEvent(rawBody: Buffer, signature: string): Promise<void> {
-    const event = stripe.webhooks.constructEvent(
-      rawBody,
-      signature,
-      env.STRIPE_CHECKOUT_WEBHOOK_SECRET,
-    );
+    let event: Stripe.Event;
+    try {
+      event = stripe.webhooks.constructEvent(
+        rawBody,
+        signature,
+        env.STRIPE_CHECKOUT_WEBHOOK_SECRET,
+      );
+    } catch (err) {
+      // bad signature / malformed payload — a client error; 400 so Stripe
+      // doesn't retry it for days
+      throw new BadRequestException(
+        `Webhook signature verification failed: ${(err as Error).message}`,
+      );
+    }
 
     if (event.type !== 'checkout.session.completed') return;
 
