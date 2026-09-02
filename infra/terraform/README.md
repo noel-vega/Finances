@@ -41,7 +41,8 @@ pos-api runs nothing until its first image is pushed, OS-35) + a migrator task,
 3 ALBs (merchant-api, storefront-api, pos-api at `pos.ordersail.com`), 2
 CloudFront distributions (merchant-web, website) + S3 origin buckets, ACM cert
 (`*.ordersail.com`), Secrets Manager (one secret per API + the DB URL), ECR
-(5 repos), the GitHub OIDC provider, and two GitHub-Actions deploy roles
+(5 repos, **IMMUTABLE** — `cd.yml` pushes exactly one tag per build, the git SHA;
+no `:latest`), the GitHub OIDC provider, and two GitHub-Actions deploy roles
 (`-platform`, `-website`).
 
 **State as of 2026-08-31:** fully applied and `merchant-*`-named. Previously the
@@ -100,3 +101,31 @@ snapshot is `ordersail-production-final`; delete it manually once you're sure.
 Creating or destroying a distribution takes ~15–20 min each (Terraform waits for
 `Deployed`). A rename touches two distributions serially — budget 30–45 min for
 that apply.
+
+### First-time image bootstrap
+
+ECR is `IMMUTABLE` and `cd.yml` only pushes `:<git-sha>` — there is no `:latest`.
+The Terraform-owned rev-1 task definitions (the `ecs_service_*` modules +
+`aws_ecs_task_definition.migrator`) reference `:${var.bootstrap_image_tag}`
+(default `bootstrap`); `ignore_changes = [container_definitions]` hands authority
+to `cd.yml` the moment the first deploy runs, so this tag is **never** the
+running image.
+
+For an already-applied stack: nothing to do (rev-1 task defs already exist and
+are ignored).
+
+For a **from-scratch** environment, each `ordersail-*` repo needs a `:bootstrap`
+tag before the first `terraform apply`. Either let `cd.yml`'s `build-and-push`
+run first and re-tag one of its SHAs, or:
+
+```bash
+KNOWN_SHA=<a git sha already built by CI>
+for r in merchant-api storefront-api worker migrator pos-api; do
+  M=$(aws ecr batch-get-image --repository-name ordersail-$r \
+      --image-ids imageTag="$KNOWN_SHA" --query 'images[0].imageManifest' --output text)
+  aws ecr put-image --repository-name ordersail-$r --image-tag bootstrap --image-manifest "$M"
+done
+```
+
+(Or set `-var bootstrap_image_tag=<sha>` on the first apply if that SHA is
+already in every repo.)

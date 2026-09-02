@@ -23,6 +23,18 @@ variable "github_repo_id" {
   type        = number
 }
 
+variable "bootstrap_image_tag" {
+  type        = string
+  default     = "bootstrap"
+  description = <<-EOT
+    Image tag the Terraform-owned rev-1 task definitions reference. Never the
+    running tag — `ignore_changes = [container_definitions]` hands authority to
+    cd.yml the moment the first deploy runs. A from-scratch environment must have
+    this tag present in every `ordersail-*` ECR repo before the first apply
+    (see README → "First-time image bootstrap"). No effect on an applied stack.
+  EOT
+}
+
 variable "db_instance_class" {
   type    = string
   default = "db.t4g.micro"

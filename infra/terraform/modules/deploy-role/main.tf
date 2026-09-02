@@ -96,6 +96,10 @@ data "aws_iam_policy_document" "deploy" {
         "ecr:InitiateLayerUpload",
         "ecr:UploadLayerPart",
         "ecr:CompleteLayerUpload",
+        # cd.yml build-and-push checks whether a SHA is already pushed;
+        # migrate.yml resolves the most recently pushed migrator tag
+        "ecr:DescribeImages",
+        "ecr:ListImages",
       ]
       resources = ["arn:aws:ecr:${var.region}:${data.aws_caller_identity.current.account_id}:repository/${var.name_prefix}-*"]
     }

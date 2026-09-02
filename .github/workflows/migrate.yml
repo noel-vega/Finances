@@ -11,9 +11,9 @@ on:
   workflow_dispatch:
     inputs:
       image_tag:
-        description: migrator image tag in ECR (defaults to :latest, i.e. the last main build)
+        description: migrator image tag (git SHA). Default = the most recently pushed image.
         type: string
-        default: latest
+        required: false
   workflow_call:
     inputs:
       image_tag:
@@ -39,6 +39,15 @@ jobs:
           IMAGE_TAG: ${{ inputs.image_tag }}
         run: |
           set -euo pipefail
+
+          # workflow_call (cd.yml) always passes the SHA; a bare `gh workflow run
+          # Migrate` leaves it empty — fall back to the newest image in the repo
+          # (there's no :latest tag anymore).
+          if [ -z "$IMAGE_TAG" ]; then
+            IMAGE_TAG=$(aws ecr describe-images --repository-name ordersail-migrator \
+              --query 'sort_by(imageDetails,&imagePushedAt)[-1].imageTags[0]' --output text)
+            echo "resolved most-recent migrator tag: $IMAGE_TAG"
+          fi
 
           CLUSTER=$(aws ssm get-parameter --name /ordersail/production/ecs/cluster-name --query 'Parameter.Value' --output text)
           FAMILY=$(aws ssm get-parameter --name /ordersail/production/ecs/migrator-task-family --query 'Parameter.Value' --output text)

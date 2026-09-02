@@ -59,16 +59,27 @@ jobs:
           URI=$(aws ssm get-parameter --name "/ordersail/production/ecr/${{ matrix.ssm_key }}" --query 'Parameter.Value' --output text)
           echo "uri=$URI" >> "$GITHUB_OUTPUT"
 
+      # ECR is IMMUTABLE — a re-pushed tag fails. On a workflow_dispatch re-run
+      # of a commit already built, skip rather than error.
+      - name: Skip build if this SHA is already in ECR
+        id: check
+        run: |
+          if aws ecr describe-images --repository-name "ordersail-${{ matrix.app }}" \
+               --image-ids imageTag="${{ github.sha }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "ordersail-${{ matrix.app }}:${{ github.sha }} already pushed — skipping build"
+          fi
+
       - uses: docker/setup-buildx-action@v3
+        if: steps.check.outputs.exists != 'true'
 
       - uses: docker/build-push-action@v6
+        if: steps.check.outputs.exists != 'true'
         with:
           context: .
           file: ${{ matrix.dockerfile }}
           push: true
-          tags: |
-            ${{ steps.ecr-uri.outputs.uri }}:${{ github.sha }}
-            ${{ steps.ecr-uri.outputs.uri }}:latest
+          tags: ${{ steps.ecr-uri.outputs.uri }}:${{ github.sha }}
 
   migrate:
     needs: build-and-push
