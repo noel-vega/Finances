@@ -3,7 +3,18 @@
   "analytics": true,
   "parallel": 8,
   "targetDefaults": {
-    "build": { "dependsOn": ["^build"] },
-    "dev": { "dependsOn": ["^build"], "cache": false, "continuous": true }
-  }
+    "build": {
+      "dependsOn": [
+        "^build"
+      ]
+    },
+    "dev": {
+      "dependsOn": [
+        "^build"
+      ],
+      "cache": false,
+      "continuous": true
+    }
+  },
+  "nxCloudId": "6a976dc192baa38eba1a2955"
 }
