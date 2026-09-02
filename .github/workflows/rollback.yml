@@ -1,0 +1,111 @@
+name: Rollback
+
+# Point an ECS service back at an earlier task-def revision. No rebuild, no
+# migration — the target revision already has its image pinned, so this is just
+# `update-service` + wait-stable.
+#
+# ⚠️  SERVICE CODE ONLY — the database is NOT rolled back. If the deploy you're
+#     undoing ran a migration, rolling back to code that expects the old schema
+#     breaks unless the migration was additive (expand/contract). Keep migrations
+#     additive so this stays safe; for a non-additive one, fix forward or
+#     PITR-restore RDS — see OS-41.
+#
+# Frontends (S3 / CloudFront) are out of scope: revert the commit and let cd.yml
+# redeploy, or re-sync a prior build by hand.
+#
+# Staging is deferred (M4 / OS-38) — this is production-only for now; an `env`
+# input gets added when staging lands.
+
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: which service to roll back
+        type: choice
+        options: [merchant-api, storefront-api, worker, pos-api, all]
+        required: true
+      to_revision:
+        description: target task-def revision number (blank = the previous ACTIVE revision)
+        type: string
+        required: false
+      dry_run:
+        description: log the from/to revision and stop, without touching the service
+        type: boolean
+        default: false
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    environment: production
+    strategy:
+      fail-fast: false
+      matrix:
+        app: ${{ fromJSON(inputs.service == 'all' && '["merchant-api","storefront-api","worker","pos-api"]' || format('["{0}"]', inputs.service)) }}
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Roll back ${{ matrix.app }}
+        run: |
+          set -euo pipefail
+          echo "::warning::Rollback is SERVICE CODE ONLY — the database schema is unchanged. If the deploy being undone ran a migration, see OS-41."
+
+          CLUSTER=$(aws ssm get-parameter --name /ordersail/production/ecs/cluster-name --query Parameter.Value --output text)
+          SERVICE=$(aws ssm get-parameter --name /ordersail/production/ecs/${{ matrix.app }}-service --query Parameter.Value --output text)
+          FAMILY="ordersail-${{ matrix.app }}"
+
+          img() { aws ecs describe-task-definition --task-definition "$1" --query 'taskDefinition.containerDefinitions[0].image' --output text; }
+
+          CURRENT_ARN=$(aws ecs describe-services --cluster "$CLUSTER" --services "$SERVICE" --query 'services[0].taskDefinition' --output text)
+          CURRENT_REV=${CURRENT_ARN##*:}
+          echo "current:  $FAMILY:$CURRENT_REV   $(img "$CURRENT_ARN")"
+
+          TARGET_REV="${{ inputs.to_revision }}"
+          if [ -z "$TARGET_REV" ]; then
+            R=$((CURRENT_REV - 1))
+            while [ "$R" -ge 1 ]; do
+              [ "$(aws ecs describe-task-definition --task-definition "$FAMILY:$R" --query 'taskDefinition.status' --output text 2>/dev/null || echo X)" = "ACTIVE" ] && break
+              R=$((R - 1))
+            done
+            [ "$R" -lt 1 ] && { echo "::error::no earlier ACTIVE revision for $FAMILY"; exit 1; }
+            TARGET_REV=$R
+          fi
+          TARGET_ARN="${CURRENT_ARN%:*}:$TARGET_REV"
+
+          [ "$(aws ecs describe-task-definition --task-definition "$TARGET_ARN" --query 'taskDefinition.status' --output text)" = "ACTIVE" ] \
+            || { echo "::error::$TARGET_ARN is not ACTIVE"; exit 1; }
+          TARGET_IMG=$(img "$TARGET_ARN")
+          echo "rollback: $FAMILY:$TARGET_REV   $TARGET_IMG"
+
+          # the target revision's image may have been ECR-lifecycle-expired (keep-last-15)
+          aws ecr describe-images --repository-name "ordersail-${{ matrix.app }}" \
+            --image-ids imageTag="${TARGET_IMG##*:}" >/dev/null 2>&1 \
+            || { echo "::error::image ${TARGET_IMG##*:} no longer in ECR — can't roll back this far"; exit 1; }
+
+          if [ "${{ inputs.dry_run }}" = "true" ]; then echo "dry run — stopping before update-service"; exit 0; fi
+
+          aws ecs update-service --cluster "$CLUSTER" --service "$SERVICE" --task-definition "$TARGET_ARN" >/dev/null
+          aws ecs wait services-stable --cluster "$CLUSTER" --services "$SERVICE"
+          echo "$SERVICE now on $FAMILY:$TARGET_REV"
+
+      - name: Health-check ${{ matrix.app }}
+        if: ${{ !inputs.dry_run && matrix.app != 'worker' }}
+        run: |
+          set -uo pipefail
+          case "${{ matrix.app }}" in
+            merchant-api)   URL="https://merchant.ordersail.com/api/health" ; K="" ;;
+            pos-api)        URL="https://pos.ordersail.com/health" ; K="" ;;
+            storefront-api) URL="https://$(aws ssm get-parameter --name /ordersail/production/alb/storefront-api-dns --query Parameter.Value --output text)/health" ; K="-k" ;;
+          esac
+          for i in $(seq 1 5); do
+            code=$(curl -s $K -o /tmp/b -w '%{http_code}' --max-time 15 "$URL" || echo 000)
+            if [ "$code" = "200" ] && grep -q '"status":"ok"' /tmp/b; then echo "ok  $URL -> 200"; exit 0; fi
+            sleep 6
+          done
+          echo "::error::${{ matrix.app }} /health not healthy after rollback"; head -c 300 /tmp/b; exit 1
