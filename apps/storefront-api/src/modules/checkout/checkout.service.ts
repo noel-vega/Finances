@@ -33,8 +33,8 @@ import { CheckoutConfig } from './entities/checkout-config.entity';
 import { CheckoutSessionStatus } from './entities/checkout-session-status.entity';
 import { ShippingOptionsResult } from './entities/shipping-options-result.entity';
 import type Stripe from 'stripe';
-import { stripe } from './stripe.client';
-import { shippo } from './shippo.client';
+import type { Shippo } from 'shippo';
+import { SHIPPO, STRIPE } from './checkout.constants';
 
 // used when a variant has no weight set — a real value, not a hard block
 const DEFAULT_ITEM_WEIGHT_OZ = 16;
@@ -48,6 +48,8 @@ export class CheckoutService {
 
   constructor(
     @Inject(DRIZZLE) private readonly db: typeof Db,
+    @Inject(STRIPE) private readonly stripe: Stripe,
+    @Inject(SHIPPO) private readonly shippo: Shippo,
     private readonly cartService: CartService,
     @InjectQueue(QUEUE_NAMES.ORDERS)
     private readonly ordersQueue: Queue<OrderJobData>,
@@ -95,7 +97,7 @@ export class CheckoutService {
 
     // embedded, not hosted — the customer never leaves the storefront's
     // own page; Stripe just mounts the payment form in an iframe there
-    const session = await stripe.checkout.sessions.create(
+    const session = await this.stripe.checkout.sessions.create(
       {
         mode: 'payment',
         ui_mode: 'embedded_page',
@@ -150,7 +152,7 @@ export class CheckoutService {
       };
     }
 
-    const session = await stripe.checkout.sessions
+    const session = await this.stripe.checkout.sessions
       .retrieve(dto.checkoutSessionId, undefined, {
         stripeAccount: stripeAccount.stripeAccountId,
       })
@@ -188,7 +190,7 @@ export class CheckoutService {
 
     const totalWeightOz = await this.totalCartWeightOz(cartToken, accountId);
 
-    const shipment = await shippo.shipments
+    const shipment = await this.shippo.shipments
       .create({
         addressFrom: {
           name: location.name,
@@ -241,7 +243,7 @@ export class CheckoutService {
       .sort((a, b) => parseFloat(a.amount) - parseFloat(b.amount))
       .slice(0, 3);
 
-    await stripe.checkout.sessions.update(
+    await this.stripe.checkout.sessions.update(
       dto.checkoutSessionId,
       {
         collected_information: {
@@ -323,7 +325,7 @@ export class CheckoutService {
 
     // scoping the retrieve to this account's connected Stripe account is
     // what prevents one tenant from looking up another tenant's session id
-    const session = await stripe.checkout.sessions
+    const session = await this.stripe.checkout.sessions
       .retrieve(sessionId, undefined, {
         stripeAccount: stripeAccount.stripeAccountId,
       })
@@ -341,7 +343,7 @@ export class CheckoutService {
   async handleWebhookEvent(rawBody: Buffer, signature: string): Promise<void> {
     let event: Stripe.Event;
     try {
-      event = stripe.webhooks.constructEvent(
+      event = this.stripe.webhooks.constructEvent(
         rawBody,
         signature,
         env.STRIPE_CHECKOUT_WEBHOOK_SECRET,
