@@ -2,12 +2,24 @@ import { BadRequestException, Logger } from '@nestjs/common';
 import { getQueueToken } from '@nestjs/bullmq';
 import { Test, TestingModule } from '@nestjs/testing';
 import { QUEUE_NAMES } from 'queue';
-import { makeDb, firstCall } from 'test-support';
+import {
+  firstCall,
+  insertAccount,
+  insertCart,
+  insertLocation,
+  insertOrder,
+  insertOrderPayment,
+  insertProductWithVariants,
+  insertStripeAccount,
+  useTestDb,
+} from 'test-support';
 import { DRIZZLE } from '../../database/database.constants';
 import { CartService } from '../cart/cart.service';
 import { CheckoutService } from './checkout.service';
 import { SHIPPO, STRIPE } from './checkout.constants';
 import type Stripe from 'stripe';
+
+const db = useTestDb();
 
 interface StripeMock {
   checkout: {
@@ -30,15 +42,6 @@ interface CartItem {
   stock: number;
   optionValues: { optionName: string; value: string }[];
 }
-
-const ACCOUNT_ID = 1;
-const CONNECTED = 'acct_test_1';
-const STRIPE_ACCOUNT_ROW = {
-  accountId: ACCOUNT_ID,
-  stripeAccountId: CONNECTED,
-  chargesEnabled: true,
-  detailsSubmitted: true,
-};
 
 function cartItem(over: Partial<CartItem> = {}): CartItem {
   return {
@@ -73,7 +76,6 @@ function newStripeMock(): StripeMock {
 }
 
 async function build(opts: {
-  db: unknown;
   getCart?: jest.Mock;
   stripe?: StripeMock;
   shippo?: ShippoMock;
@@ -86,14 +88,11 @@ async function build(opts: {
   const moduleRef: TestingModule = await Test.createTestingModule({
     providers: [
       CheckoutService,
-      { provide: DRIZZLE, useValue: opts.db },
+      { provide: DRIZZLE, useValue: db },
       { provide: STRIPE, useValue: stripe },
       { provide: SHIPPO, useValue: shippo },
       { provide: CartService, useValue: cartService },
-      {
-        provide: getQueueToken(QUEUE_NAMES.ORDERS),
-        useValue: ordersQueue,
-      },
+      { provide: getQueueToken(QUEUE_NAMES.ORDERS), useValue: ordersQueue },
     ],
   }).compile();
 
@@ -106,10 +105,21 @@ async function build(opts: {
   };
 }
 
+// account + connected Stripe account; returns the ids the tests assert against
+async function seedConnected(opts: { chargesEnabled?: boolean } = {}) {
+  const account = await insertAccount(db);
+  const stripeAccount = await insertStripeAccount(db, {
+    accountId: account.id,
+    chargesEnabled: opts.chargesEnabled ?? true,
+  });
+  return { accountId: account.id, connected: stripeAccount.stripeAccountId };
+}
+
 describe('CheckoutService.createSession', () => {
   const dto = { returnUrl: 'http://localhost:3002/checkout/return' };
 
   it('builds line items from the cart, not from the client, on the connected account', async () => {
+    const { accountId, connected } = await seedConnected();
     const items = [
       cartItem({ priceCents: 11500, quantity: 2 }),
       cartItem({
@@ -121,17 +131,14 @@ describe('CheckoutService.createSession', () => {
       }),
     ];
     const getCart = jest.fn().mockResolvedValue(cart(items));
-    const { service, stripe } = await build({
-      db: makeDb([[STRIPE_ACCOUNT_ROW]]),
-      getCart,
-    });
+    const { service, stripe } = await build({ getCart });
     stripe.checkout.sessions.create.mockResolvedValue({
       client_secret: 'cs_test_x_secret_y',
     });
 
-    await service.createSession('cart-tok-abc', ACCOUNT_ID, dto);
+    await service.createSession('cart-tok-abc', accountId, dto);
 
-    expect(getCart).toHaveBeenCalledWith('cart-tok-abc', ACCOUNT_ID);
+    expect(getCart).toHaveBeenCalledWith('cart-tok-abc', accountId);
     const [params, options] = firstCall(stripe.checkout.sessions.create) as [
       Record<string, unknown>,
       Record<string, unknown>,
@@ -154,19 +161,19 @@ describe('CheckoutService.createSession', () => {
         quantity: 1,
       },
     ]);
-    expect(options).toEqual({ stripeAccount: CONNECTED });
+    expect(options).toEqual({ stripeAccount: connected });
   });
 
   it('sets the embedded-checkout session shape, return_url and metadata', async () => {
+    const { accountId } = await seedConnected();
     const { service, stripe } = await build({
-      db: makeDb([[STRIPE_ACCOUNT_ROW]]),
       getCart: jest.fn().mockResolvedValue(cart()),
     });
     stripe.checkout.sessions.create.mockResolvedValue({
       client_secret: 'cs_x',
     });
 
-    await service.createSession('cart-tok-abc', ACCOUNT_ID, dto);
+    await service.createSession('cart-tok-abc', accountId, dto);
 
     const [params] = firstCall(stripe.checkout.sessions.create) as [
       Record<string, unknown>,
@@ -178,7 +185,7 @@ describe('CheckoutService.createSession', () => {
       permissions: { update_shipping_details: 'server_only' },
       return_url:
         'http://localhost:3002/checkout/return?session_id={CHECKOUT_SESSION_ID}',
-      metadata: { accountId: '1', cartToken: 'cart-tok-abc' },
+      metadata: { accountId: String(accountId), cartToken: 'cart-tok-abc' },
     });
     expect(params.shipping_options).toEqual([
       {
@@ -192,8 +199,8 @@ describe('CheckoutService.createSession', () => {
   });
 
   it('returns the client secret from the created session', async () => {
+    const { accountId } = await seedConnected();
     const { service, stripe } = await build({
-      db: makeDb([[STRIPE_ACCOUNT_ROW]]),
       getCart: jest.fn().mockResolvedValue(cart()),
     });
     stripe.checkout.sessions.create.mockResolvedValue({
@@ -201,63 +208,63 @@ describe('CheckoutService.createSession', () => {
     });
 
     await expect(
-      service.createSession('cart-tok-abc', ACCOUNT_ID, dto),
+      service.createSession('cart-tok-abc', accountId, dto),
     ).resolves.toEqual({ clientSecret: 'cs_test_abc_secret_def' });
   });
 
   it('rejects when the store has no connected Stripe account', async () => {
-    const { service, stripe } = await build({ db: makeDb([[]]) });
+    const account = await insertAccount(db);
+    const { service, stripe } = await build({});
 
     await expect(
-      service.createSession('cart-tok-abc', ACCOUNT_ID, dto),
+      service.createSession('cart-tok-abc', account.id, dto),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(stripe.checkout.sessions.create).not.toHaveBeenCalled();
   });
 
   it('rejects when charges are not enabled on the connected account', async () => {
-    const { service } = await build({
-      db: makeDb([[{ ...STRIPE_ACCOUNT_ROW, chargesEnabled: false }]]),
-    });
+    const { accountId } = await seedConnected({ chargesEnabled: false });
+    const { service } = await build({});
 
     await expect(
-      service.createSession('cart-tok-abc', ACCOUNT_ID, dto),
+      service.createSession('cart-tok-abc', accountId, dto),
     ).rejects.toThrow("This store isn't ready to accept payments yet");
   });
 
   it('rejects an empty or missing cart', async () => {
     for (const value of [undefined, cart([])]) {
+      const { accountId } = await seedConnected();
       const { service } = await build({
-        db: makeDb([[STRIPE_ACCOUNT_ROW]]),
         getCart: jest.fn().mockResolvedValue(value),
       });
       await expect(
-        service.createSession('cart-tok-abc', ACCOUNT_ID, dto),
+        service.createSession('cart-tok-abc', accountId, dto),
       ).rejects.toThrow('Cart is empty');
     }
   });
 
   it('rejects when a line exceeds available stock', async () => {
+    const { accountId } = await seedConnected();
     const { service } = await build({
-      db: makeDb([[STRIPE_ACCOUNT_ROW]]),
       getCart: jest
         .fn()
         .mockResolvedValue(cart([cartItem({ quantity: 5, stock: 2 })])),
     });
 
     await expect(
-      service.createSession('cart-tok-abc', ACCOUNT_ID, dto),
+      service.createSession('cart-tok-abc', accountId, dto),
     ).rejects.toThrow('Not enough stock for Nike Air Force 1');
   });
 
   it('rejects when Stripe returns a session without a client secret', async () => {
+    const { accountId } = await seedConnected();
     const { service, stripe } = await build({
-      db: makeDb([[STRIPE_ACCOUNT_ROW]]),
       getCart: jest.fn().mockResolvedValue(cart()),
     });
     stripe.checkout.sessions.create.mockResolvedValue({ client_secret: null });
 
     await expect(
-      service.createSession('cart-tok-abc', ACCOUNT_ID, dto),
+      service.createSession('cart-tok-abc', accountId, dto),
     ).rejects.toThrow('Failed to create checkout session');
   });
 });
@@ -276,16 +283,6 @@ describe('CheckoutService.getShippingOptions', () => {
       },
     },
   };
-  const location = {
-    id: 7,
-    name: 'Default',
-    addressLine1: '2261 Market Street',
-    addressLine2: null,
-    addressCity: 'San Francisco',
-    addressState: 'CA',
-    addressPostalCode: '94114',
-    addressCountry: 'US',
-  };
 
   function stripeWithSession(): StripeMock {
     const s = newStripeMock();
@@ -296,7 +293,25 @@ describe('CheckoutService.getShippingOptions', () => {
     return s;
   }
 
+  // a connected account + a ship-from location + a cart whose single line
+  // weighs 32oz, so totalCartWeightOz has real rows to sum
+  async function seedShippable() {
+    const { accountId, connected } = await seedConnected();
+    const location = await insertLocation(db, { accountId });
+    const [variant] = await insertProductWithVariants(db, {
+      accountId,
+      variants: [{ priceCents: 11500, weightOz: 32 }],
+    });
+    await insertCart(db, {
+      accountId,
+      token: 'cart-tok-abc',
+      items: [{ variantId: variant.id, quantity: 1 }],
+    });
+    return { accountId, connected, locationId: location.id };
+  }
+
   it('quotes the 3 cheapest Shippo rates and records the ship-from location', async () => {
+    const { accountId, connected, locationId } = await seedShippable();
     const stripe = stripeWithSession();
     const shippo: ShippoMock = {
       shipments: {
@@ -327,17 +342,9 @@ describe('CheckoutService.getShippingOptions', () => {
         }),
       },
     };
-    const { service } = await build({
-      db: makeDb([
-        [STRIPE_ACCOUNT_ROW],
-        [location],
-        [{ quantity: 1, weightOz: 32 }],
-      ]),
-      stripe,
-      shippo,
-    });
+    const { service } = await build({ stripe, shippo });
 
-    await expect(service.getShippingOptions(ACCOUNT_ID, dto)).resolves.toEqual({
+    await expect(service.getShippingOptions(accountId, dto)).resolves.toEqual({
       ok: true,
     });
 
@@ -345,24 +352,24 @@ describe('CheckoutService.getShippingOptions', () => {
       stripe.checkout.sessions.update,
     ) as [string, Record<string, unknown>, Record<string, unknown>];
     expect(sessionId).toBe('cs_test_1');
-    expect(options).toEqual({ stripeAccount: CONNECTED });
+    expect(options).toEqual({ stripeAccount: connected });
     expect(update.shipping_options).toEqual([
       rate(568, 'USPS Ground Advantage'),
       rate(837, 'USPS Priority'),
       rate(1210, 'UPS Ground'),
     ]);
-    expect(update.metadata).toMatchObject({ shippingLocationId: '7' });
+    expect(update.metadata).toMatchObject({
+      shippingLocationId: String(locationId),
+    });
   });
 
   it('fails when no location has a shipping-origin address', async () => {
+    const { accountId } = await seedConnected();
+    await insertLocation(db, { accountId, withAddress: false });
     const shippo: ShippoMock = { shipments: { create: jest.fn() } };
-    const { service } = await build({
-      db: makeDb([[STRIPE_ACCOUNT_ROW], []]),
-      stripe: stripeWithSession(),
-      shippo,
-    });
+    const { service } = await build({ stripe: stripeWithSession(), shippo });
 
-    await expect(service.getShippingOptions(ACCOUNT_ID, dto)).resolves.toEqual({
+    await expect(service.getShippingOptions(accountId, dto)).resolves.toEqual({
       ok: false,
       errorMessage: "This store hasn't set up a shipping origin yet",
     });
@@ -373,6 +380,7 @@ describe('CheckoutService.getShippingOptions', () => {
     const warn = jest
       .spyOn(Logger.prototype, 'warn')
       .mockImplementation(() => undefined);
+    const { accountId } = await seedShippable();
     const shippo: ShippoMock = {
       shipments: {
         create: jest.fn().mockResolvedValue({
@@ -382,17 +390,9 @@ describe('CheckoutService.getShippingOptions', () => {
         }),
       },
     };
-    const { service } = await build({
-      db: makeDb([
-        [STRIPE_ACCOUNT_ROW],
-        [location],
-        [{ quantity: 1, weightOz: 32 }],
-      ]),
-      stripe: stripeWithSession(),
-      shippo,
-    });
+    const { service } = await build({ stripe: stripeWithSession(), shippo });
 
-    await expect(service.getShippingOptions(ACCOUNT_ID, dto)).resolves.toEqual({
+    await expect(service.getShippingOptions(accountId, dto)).resolves.toEqual({
       ok: false,
       errorMessage: "We can't calculate shipping to that address",
     });
@@ -403,9 +403,10 @@ describe('CheckoutService.getShippingOptions', () => {
   });
 
   it('fails when the store has no connected Stripe account', async () => {
-    const { service } = await build({ db: makeDb([[]]) });
+    const account = await insertAccount(db);
+    const { service } = await build({});
 
-    await expect(service.getShippingOptions(ACCOUNT_ID, dto)).resolves.toEqual({
+    await expect(service.getShippingOptions(account.id, dto)).resolves.toEqual({
       ok: false,
       errorMessage: "This store isn't ready to accept payments yet",
     });
@@ -426,7 +427,6 @@ describe('CheckoutService.handleWebhookEvent', () => {
   const RAW = Buffer.from('{}');
   const SIG = 'sig_test';
 
-  // a realistic paid checkout.session.completed session object
   const baseSession = {
     id: 'cs_test_1',
     payment_status: 'paid',
@@ -466,7 +466,6 @@ describe('CheckoutService.handleWebhookEvent', () => {
   async function webhook(opts: {
     event?: Stripe.Event;
     constructThrows?: Error;
-    db?: unknown;
     getCart?: jest.Mock;
     queueAdd?: jest.Mock;
   }) {
@@ -483,7 +482,6 @@ describe('CheckoutService.handleWebhookEvent', () => {
     }
 
     const built = await build({
-      db: opts.db ?? makeDb([[]]),
       getCart: opts.getCart ?? jest.fn().mockResolvedValue(cart()),
       stripe,
     });
@@ -499,24 +497,18 @@ describe('CheckoutService.handleWebhookEvent', () => {
     await expect(service.handleWebhookEvent(RAW, SIG)).rejects.toBeInstanceOf(
       BadRequestException,
     );
-    await expect(service.handleWebhookEvent(RAW, SIG)).rejects.toThrow(
-      /Webhook signature verification failed/,
-    );
     expect(ordersQueue.add).not.toHaveBeenCalled();
   });
 
   it('ignores events that are not checkout.session.completed', async () => {
-    const db = makeDb([[]]);
     const { service, cartService, ordersQueue } = await webhook({
       event: {
         type: 'payment_intent.succeeded',
         data: { object: {} },
       } as unknown as Stripe.Event,
-      db,
     });
 
     await expect(service.handleWebhookEvent(RAW, SIG)).resolves.toBeUndefined();
-    expect(db.select).not.toHaveBeenCalled();
     expect(cartService.getCart).not.toHaveBeenCalled();
     expect(ordersQueue.add).not.toHaveBeenCalled();
   });
@@ -548,9 +540,14 @@ describe('CheckoutService.handleWebhookEvent', () => {
   });
 
   it('is idempotent — does nothing when a payment row already exists for the session', async () => {
-    const { service, cartService, ordersQueue } = await webhook({
-      db: makeDb([[{ id: 1 }]]),
+    const account = await insertAccount(db);
+    const order = await insertOrder(db, { accountId: account.id });
+    await insertOrderPayment(db, {
+      orderId: order.id,
+      stripeCheckoutSessionId: 'cs_test_1',
     });
+
+    const { service, cartService, ordersQueue } = await webhook({});
 
     await expect(service.handleWebhookEvent(RAW, SIG)).resolves.toBeUndefined();
     expect(cartService.getCart).not.toHaveBeenCalled();

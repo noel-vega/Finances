@@ -1,7 +1,7 @@
 {
   "name": "test-support",
   "version": "1.0.0",
-  "description": "Shared Jest helpers (fake drizzle clients, mock-call utils) — consumed as source by workspace specs, never built or shipped.",
+  "description": "Shared Jest helpers — a Testcontainers Postgres harness + row fixture builders. Consumed as source by workspace specs, never built or shipped.",
   "private": true,
   "type": "module",
   "main": "./src/index.ts",
@@ -13,9 +13,13 @@
   "devDependencies": {
     "@types/jest": "^30.0.0",
     "@types/node": "^24.0.0",
+    "@types/pg": "^8.15.5",
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "drizzle-orm": "^1.0.0-rc.4"
+    "@testcontainers/postgresql": "^11.7.1",
+    "db": "*",
+    "drizzle-orm": "^1.0.0-rc.4",
+    "pg": "^8.23.0"
   }
 }

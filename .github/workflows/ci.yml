@@ -61,11 +61,11 @@ jobs:
             --workspace=ui
 
       - name: Test
-        # packages/db creates its pool at import time from DATABASE_URL; the
-        # unit specs mock the connection but the string still has to parse.
-        # A real DB + integration tests are OS-42.
-        env:
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432/test
+        # storefront-api + worker boot a throwaway Postgres via Testcontainers
+        # in jest globalSetup (packages/test-support) and run their specs
+        # against real SQL — ubuntu-latest has Docker. merchant-api + pos-api
+        # still mock the DB; test/jest.env-setup.cjs gives them a dummy
+        # DATABASE_URL so packages/db's import-time pool string parses.
         run: |
           npm run test --workspace=merchant-api \
             --workspace=storefront-api \
