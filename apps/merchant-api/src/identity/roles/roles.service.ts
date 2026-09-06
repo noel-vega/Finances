@@ -7,6 +7,7 @@ import {
 import { DRIZZLE } from 'src/shared/database/database.constants';
 import {
   and,
+  type db as Db,
   eq,
   inArray,
   isUniqueViolation,
@@ -14,16 +15,15 @@ import {
   rolePermissionsTable,
   rolesTable,
   userRolesTable,
-  type db as Db,
-} from 'db';
+} from 'db/identity';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { Role } from './entities/role.entity';
 import { RoleDetail } from './entities/role-detail.entity';
-import { resolveOwned } from '../../shared/common/resolve-owned.util';
-import { groupBy } from '../../shared/common/group-by.util';
-import { assertCanGrant } from '../../shared/common/assert-can-grant.util';
-import { getPermissionKeysForRoles } from '../../shared/common/get-permission-keys-for-roles.util';
+import { resolveOwned } from '../shared/resolve-owned.util';
+import { groupBy } from '../shared/group-by.util';
+import { assertCanGrant } from '../shared/assert-can-grant.util';
+import { getPermissionKeysForRoles } from '../shared/get-permission-keys-for-roles.util';
 import { PermissionsService } from '../permissions/permissions.service';
 
 // callback param type of db.transaction() — lets createSystemRole join a

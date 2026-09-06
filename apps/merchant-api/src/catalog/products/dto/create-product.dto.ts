@@ -8,7 +8,7 @@ import {
   Min,
   MinLength,
 } from 'class-validator';
-import { productStatusEnum } from 'db/schema';
+import { productStatusEnum } from 'db/catalog';
 
 export class CreateProductDto {
   @ApiProperty()

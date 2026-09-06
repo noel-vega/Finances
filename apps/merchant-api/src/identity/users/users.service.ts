@@ -10,14 +10,15 @@ import { User, UserRoleSummary } from './entities/user.entity';
 import { EmailService } from 'src/shared/email/email.service';
 import { PermissionsService } from '../permissions/permissions.service';
 import { generateToken } from '../../shared/common/generate-token.util';
-import { resolveOwned } from '../../shared/common/resolve-owned.util';
-import { groupBy } from '../../shared/common/group-by.util';
-import { assertCanGrant } from '../../shared/common/assert-can-grant.util';
+import { resolveOwned } from '../shared/resolve-owned.util';
+import { groupBy } from '../shared/group-by.util';
+import { assertCanGrant } from '../shared/assert-can-grant.util';
 import { env } from 'src/shared/env';
-import { getPermissionKeysForRoles } from '../../shared/common/get-permission-keys-for-roles.util';
+import { getPermissionKeysForRoles } from '../shared/get-permission-keys-for-roles.util';
 import { DRIZZLE } from 'src/shared/database/database.constants';
 import {
   and,
+  type db as Db,
   eq,
   inArray,
   isForeignKeyViolation,
@@ -27,8 +28,7 @@ import {
   userInvitesTable,
   userRolesTable,
   usersTable,
-  type db as Db,
-} from 'db';
+} from 'db/identity';
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days, matches the refresh token TTL
 

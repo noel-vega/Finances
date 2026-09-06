@@ -6,19 +6,19 @@ import {
 } from '@nestjs/common';
 import { Logger } from 'logging';
 import { DRIZZLE } from 'src/shared/database/database.constants';
+import { accountsTable } from 'db/identity';
+import { locationsTable } from 'db/stock';
 import {
-  accountsTable,
   and,
+  type db as Db,
   eq,
   fulfillmentItemsTable,
   fulfillmentsTable,
   inArray,
-  locationsTable,
   orderItemsTable,
   orderShippingTable,
   ordersTable,
-  type db as Db,
-} from 'db';
+} from 'db/sales';
 import { OrdersService } from '../orders/orders.service';
 import { OrderDetail } from '../orders/entities/order-detail.entity';
 import { ShippingRate } from './entities/shipping-rate.entity';

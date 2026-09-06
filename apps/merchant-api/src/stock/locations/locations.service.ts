@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { CreateLocationDto } from './dto/create-location.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 import { DRIZZLE } from 'src/shared/database/database.constants';
-import { locationsTable, and, eq, type db as Db } from 'db';
+import { and, type db as Db, eq, locationsTable } from 'db/stock';
 
 @Injectable()
 export class LocationsService {

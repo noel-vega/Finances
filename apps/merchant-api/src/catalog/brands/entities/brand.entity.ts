@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { SelectBrand } from 'db/schema';
+import { SelectBrand } from 'db/catalog';
 
 export class Brand implements SelectBrand {
   @ApiProperty({ type: Number })

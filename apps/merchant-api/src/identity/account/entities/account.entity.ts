@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { SelectAccount } from 'db/schema';
+import { SelectAccount } from 'db/identity';
 
 export class Account implements SelectAccount {
   @ApiProperty({ type: Number })

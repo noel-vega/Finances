@@ -1,14 +1,14 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { DRIZZLE } from 'src/shared/database/database.constants';
 import {
+  type db as Db,
+  eq,
   PERMISSIONS_CATALOG,
   permissionsTable,
   rolePermissionsTable,
-  userRolesTable,
-  eq,
   sql,
-  type db as Db,
-} from 'db';
+  userRolesTable,
+} from 'db/identity';
 
 @Injectable()
 export class PermissionsService implements OnModuleInit {

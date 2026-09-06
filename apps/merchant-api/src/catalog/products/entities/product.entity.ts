@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { SelectProduct, productStatusEnum } from 'db/schema';
+import { productStatusEnum, SelectProduct } from 'db/catalog';
 
 export class Product implements SelectProduct {
   @ApiProperty({ type: Number })

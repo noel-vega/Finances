@@ -63,13 +63,46 @@ Adding a new cross-context edge = update the table above **and** the
   reactive flows, not synchronous reads. None yet.
 - The shared kernel — for pure infra only.
 
-## Data ownership
+## Data access (read-graph)
 
 One Postgres, one Drizzle schema (`packages/db`), **cross-domain FKs kept** (real
-integrity; `dashboard` needs the joins). *(OS-344 will add per-domain `db/<domain>`
-entrypoints + a lint rule so a context can only import — and thus only write —
-its own tables. Cross-context reads stay allowed through services / the
-`dashboard` read-model.)*
+integrity; `dashboard` needs the joins).
+
+`packages/db` exposes a **per-domain entrypoint** per context —
+`db/identity`, `db/catalog`, `db/stock`, `db/sales`, `db/payments` — each
+re-exporting that domain's schema tables + the drizzle query helpers. Root `db`
+stays the full export (for `platform/dashboard`, `drizzle-kit`, and the other
+apps).
+
+A context imports **its own `db/<domain>`** plus the entrypoints on its
+**read-graph**. Root `db` and `db/schema` are blocked in every context.
+Enforced by `no-restricted-imports` in `eslint.config.mjs` (the `denied` map
+there must agree with this table).
+
+| Context | may import `db/…` |
+|---|---|
+| `identity` | `identity`, `stock`¹ |
+| `catalog` | `catalog`, `stock`² |
+| `stock` | `stock`, `catalog`², `identity` |
+| `sales` | `sales`, `catalog`, `stock`, `identity` |
+| `payments` | `payments`, `identity` |
+| `platform` | root `db` — exempt (`dashboard` read-model) |
+| `shared` | root `db` only (the `DRIZZLE` provider); no schema |
+
+**Known coupling — revisit later:**
+
+- **² `catalog ↔ stock` cycle** — `catalog` reads stock levels for product
+  listings; `stock` reads product identity for inventory views. They change
+  together. If it bites: merge the two contexts, or break the reads through
+  service ports (OS-345 pattern).
+- **¹ `identity → stock`** — signup (`auth.service`) seeds the new tenant's
+  default `locations` row in the same transaction as the account. A provisioning
+  *write*, not a read. Revisit via an `account.created` domain event so `stock`
+  owns it.
+
+Reads still cross **only** these edges; a genuine service call between contexts
+goes through the barrel (see *Cross-context communication*), not raw table
+access.
 
 ## Extraction seams (if we ever split a context into its own service)
 

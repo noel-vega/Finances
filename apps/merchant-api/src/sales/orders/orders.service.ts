@@ -1,21 +1,20 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { DRIZZLE } from 'src/shared/database/database.constants';
+import { inventoryMovementsTable, locationsTable } from 'db/stock';
 import {
   and,
+  type db as Db,
   desc,
   eq,
   fulfillmentItemsTable,
   fulfillmentsTable,
   inArray,
-  inventoryMovementsTable,
-  locationsTable,
   orderItemsTable,
   orderPaymentsTable,
   orderShippingTable,
   ordersTable,
   sql,
-  type db as Db,
-} from 'db';
+} from 'db/sales';
 import { PaginatedOrders } from './entities/paginated-orders.entity';
 import {
   OrderDetail,

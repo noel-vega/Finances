@@ -140,4 +140,41 @@ export default tseslint.config(
       'boundaries/no-unknown-files': 'error',
     },
   },
+
+  // ── Data-access read-graph (see ARCHITECTURE.md § Data access) ────────────
+  // packages/db has a per-domain entrypoint per context (db/identity, db/catalog,
+  // …). A context imports its OWN db/<domain> plus the entrypoints on its
+  // read-graph; root `db` and `db/schema` are blocked in every context (they're
+  // the full schema — for platform/dashboard, migrations, and the other apps).
+  ...(() => {
+    // context → the db/* entrypoints it is NOT allowed to import
+    const denied = {
+      // identity → stock: signup (auth.service) seeds the new tenant's default
+      // location in the same transaction as the account. Provisioning write —
+      // known coupling, revisit via an `account.created` event. See ARCHITECTURE.md.
+      identity: ['db', 'db/schema', 'db/catalog', 'db/sales', 'db/payments'],
+      catalog: ['db', 'db/schema', 'db/identity', 'db/sales', 'db/payments'],
+      stock: ['db', 'db/schema', 'db/sales', 'db/payments'],
+      sales: ['db', 'db/schema', 'db/payments'],
+      payments: ['db', 'db/schema', 'db/catalog', 'db/stock', 'db/sales'],
+      // shared kernel: only root `db` (the DRIZZLE provider) — never the schema
+      shared: ['db/schema', 'db/identity', 'db/catalog', 'db/stock', 'db/sales', 'db/payments'],
+      // platform is exempt — dashboard is the cross-context read-model
+    };
+    return Object.entries(denied).map(([ctx, names]) => ({
+      files: [`src/${ctx}/**/*.ts`],
+      ignores: ['src/**/*.spec.ts'],
+      rules: {
+        'no-restricted-imports': [
+          'error',
+          {
+            paths: names.map((name) => ({
+              name,
+              message: `${ctx} may not import '${name}' — use db/${ctx} + its read-graph. See apps/merchant-api/ARCHITECTURE.md § Data access.`,
+            })),
+          },
+        ],
+      },
+    }));
+  })(),
 );
