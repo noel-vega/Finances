@@ -1,4 +1,4 @@
-export { makeDb } from './select-db.js';
-export { makeWriteDb } from './write-db.js';
-export type { WriteDbConfig, WriteDbCalls } from './write-db.js';
 export { firstCall } from './first-call.js';
+export { makeTestDb, resetDb, useTestDb } from './test-db/db.js';
+export type { TestDb } from './test-db/db.js';
+export * from './fixtures.js';

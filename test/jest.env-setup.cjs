@@ -5,7 +5,11 @@
 Object.assign(process.env, {
   NODE_ENV: 'test',
 
-  DATABASE_URL: 'postgres://postgres:postgres@localhost:5432/test',
+  // the test-support Testcontainers harness (storefront-api, worker) sets a
+  // real DATABASE_URL in jest globalSetup before workers fork — keep it.
+  // Other workspaces have no globalSetup and fall back to this dummy.
+  DATABASE_URL:
+    process.env.DATABASE_URL ?? 'postgres://postgres:postgres@localhost:5432/test',
 
   // merchant-api
   STAFF_JWT_SECRET: 'test-staff-secret',

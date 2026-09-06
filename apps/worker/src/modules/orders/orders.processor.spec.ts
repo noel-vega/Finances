@@ -1,162 +1,234 @@
 import { getQueueToken } from '@nestjs/bullmq';
 import { Test, TestingModule } from '@nestjs/testing';
 import type { Job } from 'bullmq';
+import {
+  cartsTable,
+  desc,
+  eq,
+  inventoryMovementsTable,
+  inventoryTable,
+  orderItemsTable,
+  orderPaymentsTable,
+  orderShippingTable,
+  ordersTable,
+} from 'db';
 import { Logger } from 'logging';
 import { QUEUE_NAMES, type OrderJobData } from 'queue';
-import { makeWriteDb, firstCall } from 'test-support';
+import {
+  insertAccount,
+  insertCart,
+  insertLocation,
+  insertOrder,
+  insertOrderPayment,
+  insertProductWithVariants,
+  useTestDb,
+  type TestDb,
+} from 'test-support';
 import { DRIZZLE } from '../../database/database.constants';
 import { OrdersProcessor } from './orders.processor';
 
-interface InvRow {
-  locationId: number;
-  stock: number;
+const db = useTestDb();
+
+async function build() {
+  const emailQueue = { add: jest.fn() };
+  const ref: TestingModule = await Test.createTestingModule({
+    providers: [
+      OrdersProcessor,
+      { provide: DRIZZLE, useValue: db },
+      { provide: getQueueToken(QUEUE_NAMES.EMAIL), useValue: emailQueue },
+    ],
+  }).compile();
+  return { processor: ref.get(OrdersProcessor), emailQueue };
 }
 
-interface Fx {
-  idempotency?: { id: number; confirmationEmailQueuedAt: Date | null };
-  orderId?: number;
-  /** per-line variant weight, in `data.items` order */
-  weights?: (number | null)[];
-  /** per-line `order_items.id` returned by `.returning()`, in `data.items` order */
-  orderItemIds?: number[];
-  /** per-line inventory rows, already sorted highest-stock-first (as the real query returns) */
-  inventoryRows?: InvRow[][];
-  account?: { name: string };
-  transactionThrows?: Error;
+interface Scenario {
+  accountId: number;
+  locationA: number;
+  locationB: number;
+  variantAf1: number;
+  variantAj1: number;
+  cartToken: string;
 }
 
-const BASE_DATA: OrderJobData = {
-  type: 'checkout-completed',
-  correlationId: 'corr-1',
-  accountId: 1,
-  cartToken: 'cart-tok',
-  stripeCheckoutSessionId: 'cs_1',
-  stripePaymentIntentId: 'pi_1',
-  customerEmail: 'buyer@test.com',
-  customerName: 'Buyer',
-  shippingLine1: '1 Main St',
-  shippingLine2: null,
-  shippingCity: 'SF',
-  shippingState: 'CA',
-  shippingPostalCode: '94114',
-  shippingCountry: 'US',
-  subtotalCents: 23000,
-  amountTotalCents: 23845,
-  shippingCents: 845,
-  shippingLocationId: 7,
-  storefrontUrl: 'http://localhost:3002',
-  items: [
-    {
-      variantId: 10,
-      productName: 'AF1',
-      sku: 'AF1-8',
-      optionsLabel: 'Size: 8',
-      priceCents: 11500,
-      quantity: 1,
-    },
-    {
-      variantId: 11,
-      productName: 'AJ1',
-      sku: null,
-      optionsLabel: null,
-      priceCents: 11500,
-      quantity: 1,
-    },
-  ],
-};
+// account + two locations + a two-variant product (weights 32 / null) +
+// per-location inventory + a cart to be deleted. Mirrors the old HAPPY
+// fixture: AF1 stock lives only at location A, AJ1 only at location B.
+async function seedScenario(
+  over: {
+    af1Stock?: { locationId: 'A' | 'B'; stock: number }[];
+    aj1Stock?: { locationId: 'A' | 'B'; stock: number }[];
+    af1Weight?: number | null;
+  } = {},
+): Promise<Scenario> {
+  const account = await insertAccount(db);
+  const locationA = await insertLocation(db, { accountId: account.id });
+  const locationB = await insertLocation(db, { accountId: account.id });
+  const loc = (id: 'A' | 'B') => (id === 'A' ? locationA.id : locationB.id);
 
-// fixture that lets the happy-path transaction run to completion
-const HAPPY: Fx = {
-  weights: [32, null],
-  orderItemIds: [201, 202],
-  inventoryRows: [[{ locationId: 1, stock: 5 }], [{ locationId: 2, stock: 3 }]],
-  account: { name: 'Depot' },
-};
+  const [af1, aj1] = await insertProductWithVariants(db, {
+    accountId: account.id,
+    productName: 'Sneakers',
+    variants: [
+      {
+        priceCents: 11500,
+        sku: 'AF1-8',
+        weightOz: over.af1Weight === undefined ? 32 : over.af1Weight,
+        stock: (over.af1Stock ?? [{ locationId: 'A', stock: 5 }]).map((s) => ({
+          locationId: loc(s.locationId),
+          stock: s.stock,
+        })),
+      },
+      {
+        priceCents: 11500,
+        sku: null,
+        weightOz: null,
+        stock: (over.aj1Stock ?? [{ locationId: 'B', stock: 3 }]).map((s) => ({
+          locationId: loc(s.locationId),
+          stock: s.stock,
+        })),
+      },
+    ],
+  });
 
-function job(data: Partial<OrderJobData> = {}): Job<OrderJobData> {
+  const cart = await insertCart(db, { accountId: account.id });
+
+  return {
+    accountId: account.id,
+    locationA: locationA.id,
+    locationB: locationB.id,
+    variantAf1: af1.id,
+    variantAj1: aj1.id,
+    cartToken: cart.token,
+  };
+}
+
+function job(s: Scenario, over: Partial<OrderJobData> = {}): Job<OrderJobData> {
+  const data: OrderJobData = {
+    type: 'checkout-completed',
+    correlationId: 'corr-1',
+    accountId: s.accountId,
+    cartToken: s.cartToken,
+    stripeCheckoutSessionId: 'cs_1',
+    stripePaymentIntentId: 'pi_1',
+    customerEmail: 'buyer@test.com',
+    customerName: 'Buyer',
+    shippingLine1: '1 Main St',
+    shippingLine2: null,
+    shippingCity: 'SF',
+    shippingState: 'CA',
+    shippingPostalCode: '94114',
+    shippingCountry: 'US',
+    subtotalCents: 23000,
+    amountTotalCents: 23845,
+    shippingCents: 845,
+    shippingLocationId: s.locationA,
+    storefrontUrl: 'http://localhost:3002',
+    items: [
+      {
+        variantId: s.variantAf1,
+        productName: 'AF1',
+        sku: 'AF1-8',
+        optionsLabel: 'Size: 8',
+        priceCents: 11500,
+        quantity: 1,
+      },
+      {
+        variantId: s.variantAj1,
+        productName: 'AJ1',
+        sku: null,
+        optionsLabel: null,
+        priceCents: 11500,
+        quantity: 1,
+      },
+    ],
+    ...over,
+  };
   return {
     id: '1',
     name: 'checkout-completed',
     opts: { attempts: 8 },
     attemptsMade: 0,
-    data: { ...BASE_DATA, ...data },
+    data,
   } as unknown as Job<OrderJobData>;
 }
 
-async function build(fx: Fx = {}) {
-  const h = makeWriteDb({
-    select: {
-      order_payments: () => (fx.idempotency ? [fx.idempotency] : []),
-      product_variants: (i: number) => [{ weightOz: fx.weights?.[i] ?? null }],
-      inventory: (i: number) => fx.inventoryRows?.[i] ?? [],
-      accounts: () => (fx.account ? [fx.account] : []),
-    },
-    returning: {
-      orders: () => ({ id: fx.orderId ?? 100 }),
-      order_items: (i: number) => ({ id: fx.orderItemIds?.[i] ?? 900 + i }),
-    },
-    transactionThrows: fx.transactionThrows,
-  });
-  const emailQueue = { add: jest.fn() };
-  const ref: TestingModule = await Test.createTestingModule({
-    providers: [
-      OrdersProcessor,
-      { provide: DRIZZLE, useValue: h.db },
-      { provide: getQueueToken(QUEUE_NAMES.EMAIL), useValue: emailQueue },
-    ],
-  }).compile();
-  return { processor: ref.get(OrdersProcessor), h, emailQueue };
-}
+const rowsFor = {
+  orders: (t: TestDb, accountId: number) =>
+    t.select().from(ordersTable).where(eq(ordersTable.accountId, accountId)),
+  movements: (t: TestDb, variantId: number) =>
+    t
+      .select()
+      .from(inventoryMovementsTable)
+      .where(eq(inventoryMovementsTable.variantId, variantId))
+      .orderBy(inventoryMovementsTable.id),
+  stock: async (t: TestDb, variantId: number) =>
+    t
+      .select({
+        locationId: inventoryTable.locationId,
+        stock: inventoryTable.stock,
+      })
+      .from(inventoryTable)
+      .where(eq(inventoryTable.variantId, variantId))
+      .orderBy(desc(inventoryTable.stock)),
+};
 
 describe('OrdersProcessor — checkout-completed', () => {
   it('writes the order, shipping and payment rows in one transaction', async () => {
-    const { processor, h } = await build(HAPPY);
+    const s = await seedScenario();
+    const { processor } = await build();
 
-    await processor.process(job());
+    await processor.process(job(s));
 
-    expect(h.inserted('orders')).toEqual([
-      {
-        accountId: 1,
-        channel: 'web',
-        customerEmail: 'buyer@test.com',
-        customerName: 'Buyer',
-        subtotalCents: 23000,
-        amountTotalCents: 23845,
-        shippingCents: 845,
-      },
-    ]);
-    expect(h.inserted('order_shipping')).toEqual([
-      {
-        orderId: 100,
-        line1: '1 Main St',
-        line2: null,
-        city: 'SF',
-        state: 'CA',
-        postalCode: '94114',
-        country: 'US',
-        locationId: 7,
-      },
-    ]);
-    expect(h.inserted('order_payments')).toEqual([
-      {
-        orderId: 100,
-        method: 'stripe',
-        amountCents: 23845,
-        stripeCheckoutSessionId: 'cs_1',
-        stripePaymentIntentId: 'pi_1',
-      },
-    ]);
+    const [order] = await rowsFor.orders(db, s.accountId);
+    expect(order).toMatchObject({
+      accountId: s.accountId,
+      channel: 'web',
+      customerEmail: 'buyer@test.com',
+      customerName: 'Buyer',
+      subtotalCents: 23000,
+      amountTotalCents: 23845,
+      shippingCents: 845,
+    });
+
+    const [shipping] = await db
+      .select()
+      .from(orderShippingTable)
+      .where(eq(orderShippingTable.orderId, order.id));
+    expect(shipping).toMatchObject({
+      line1: '1 Main St',
+      line2: null,
+      city: 'SF',
+      state: 'CA',
+      postalCode: '94114',
+      country: 'US',
+      locationId: s.locationA,
+    });
+
+    const [payment] = await db
+      .select()
+      .from(orderPaymentsTable)
+      .where(eq(orderPaymentsTable.orderId, order.id));
+    expect(payment).toMatchObject({
+      method: 'stripe',
+      amountCents: 23845,
+      stripeCheckoutSessionId: 'cs_1',
+      stripePaymentIntentId: 'pi_1',
+    });
   });
 
   it('snapshots each line into order_items with the variant weight', async () => {
-    const { processor, h } = await build(HAPPY);
+    const s = await seedScenario();
+    const { processor } = await build();
 
-    await processor.process(job());
+    await processor.process(job(s));
 
-    expect(h.inserted('order_items')).toEqual([
+    const items = await db
+      .select()
+      .from(orderItemsTable)
+      .orderBy(orderItemsTable.id);
+    expect(items).toMatchObject([
       {
-        orderId: 100,
-        variantId: 10,
+        variantId: s.variantAf1,
         productName: 'AF1',
         sku: 'AF1-8',
         optionsLabel: 'Size: 8',
@@ -165,8 +237,7 @@ describe('OrdersProcessor — checkout-completed', () => {
         weightOz: 32,
       },
       {
-        orderId: 100,
-        variantId: 11,
+        variantId: s.variantAj1,
         productName: 'AJ1',
         sku: null,
         optionsLabel: null,
@@ -177,54 +248,55 @@ describe('OrdersProcessor — checkout-completed', () => {
     ]);
   });
 
-  it('records one sold movement + inventory upsert per line and deletes the cart', async () => {
-    const { processor, h } = await build(HAPPY);
+  it('records one sold movement per line, decrements inventory and deletes the cart', async () => {
+    const s = await seedScenario();
+    const { processor } = await build();
 
-    await processor.process(job());
+    await processor.process(job(s));
 
-    expect(h.inserted('inventory_movements')).toEqual([
-      {
-        orderItemId: 201,
-        variantId: 10,
-        locationId: 1,
-        delta: -1,
-        reason: 'sold',
-      },
-      {
-        orderItemId: 202,
-        variantId: 11,
-        locationId: 2,
-        delta: -1,
-        reason: 'sold',
-      },
+    const af1Moves = await rowsFor.movements(db, s.variantAf1);
+    expect(af1Moves).toMatchObject([
+      { locationId: s.locationA, delta: -1, reason: 'sold' },
     ]);
-    expect(h.upserted('inventory')).toHaveLength(2);
-    expect(h.upserted('inventory')[0].values).toEqual({
-      variantId: 10,
-      locationId: 1,
-      stock: -1,
-    });
-    expect(h.deleted('carts')).toBe(1);
+    const aj1Moves = await rowsFor.movements(db, s.variantAj1);
+    expect(aj1Moves).toMatchObject([
+      { locationId: s.locationB, delta: -1, reason: 'sold' },
+    ]);
+
+    expect(await rowsFor.stock(db, s.variantAf1)).toEqual([
+      { locationId: s.locationA, stock: 4 },
+    ]);
+    expect(await rowsFor.stock(db, s.variantAj1)).toEqual([
+      { locationId: s.locationB, stock: 2 },
+    ]);
+
+    const carts = await db
+      .select()
+      .from(cartsTable)
+      .where(eq(cartsTable.token, s.cartToken));
+    expect(carts).toEqual([]);
   });
 
   it('enqueues an order-confirmation email and stamps confirmationEmailQueuedAt', async () => {
-    const { processor, h, emailQueue } = await build(HAPPY);
+    const s = await seedScenario();
+    const { processor, emailQueue } = await build();
 
-    await processor.process(job());
+    await processor.process(job(s));
 
     expect(emailQueue.add).toHaveBeenCalledTimes(1);
-    const [name, payload] = firstCall(emailQueue.add) as [
+    const [name, payload] = emailQueue.add.mock.calls[0] as [
       string,
       Record<string, unknown>,
     ];
     expect(name).toBe('order-confirmation');
-    expect(firstCall(emailQueue.add)).toHaveLength(2); // no job-options arg
+    expect(emailQueue.add.mock.calls[0]).toHaveLength(2); // no job-options arg
+    const [order] = await rowsFor.orders(db, s.accountId);
     expect(payload).toMatchObject({
       type: 'order-confirmation',
       to: 'buyer@test.com',
       customerName: 'Buyer',
-      accountName: 'Depot',
-      orderId: 100,
+      accountName: 'Test Store',
+      orderId: order.id,
       correlationId: 'corr-1',
       subtotalCents: 23000,
       shippingCents: 845,
@@ -233,32 +305,24 @@ describe('OrdersProcessor — checkout-completed', () => {
       shippingPostalCode: '94114',
       storefrontUrl: 'http://localhost:3002',
     });
-    expect(payload.items).toEqual(BASE_DATA.items);
-    const updates = h.updated('orders');
-    expect(updates).toHaveLength(1);
-    expect(
-      (updates[0] as Record<string, unknown>).confirmationEmailQueuedAt,
-    ).toBeInstanceOf(Date);
+    expect(payload.items).toEqual(job(s).data.items);
+    expect(order.confirmationEmailQueuedAt).toBeInstanceOf(Date);
   });
 
   it('allocates stock greedily across locations, highest stock first', async () => {
-    const { processor, h } = await build({
-      weights: [32],
-      orderItemIds: [201],
-      inventoryRows: [
-        [
-          { locationId: 2, stock: 5 },
-          { locationId: 1, stock: 4 },
-        ],
+    const s = await seedScenario({
+      af1Stock: [
+        { locationId: 'B', stock: 5 },
+        { locationId: 'A', stock: 4 },
       ],
-      account: { name: 'Depot' },
     });
+    const { processor } = await build();
 
     await processor.process(
-      job({
+      job(s, {
         items: [
           {
-            variantId: 10,
+            variantId: s.variantAf1,
             productName: 'AF1',
             sku: 'AF1-8',
             optionsLabel: 'Size: 8',
@@ -269,37 +333,25 @@ describe('OrdersProcessor — checkout-completed', () => {
       }),
     );
 
-    expect(h.inserted('inventory_movements')).toEqual([
-      {
-        orderItemId: 201,
-        variantId: 10,
-        locationId: 2,
-        delta: -5,
-        reason: 'sold',
-      },
-      {
-        orderItemId: 201,
-        variantId: 10,
-        locationId: 1,
-        delta: -2,
-        reason: 'sold',
-      },
+    expect(await rowsFor.movements(db, s.variantAf1)).toMatchObject([
+      { locationId: s.locationB, delta: -5, reason: 'sold' },
+      { locationId: s.locationA, delta: -2, reason: 'sold' },
+    ]);
+    expect(await rowsFor.stock(db, s.variantAf1)).toEqual([
+      { locationId: s.locationA, stock: 2 },
+      { locationId: s.locationB, stock: 0 },
     ]);
   });
 
   it('records the shortfall against the top location when stock runs out', async () => {
-    const { processor, h } = await build({
-      weights: [32],
-      orderItemIds: [201],
-      inventoryRows: [[{ locationId: 1, stock: 2 }]],
-      account: { name: 'Depot' },
-    });
+    const s = await seedScenario({ af1Stock: [{ locationId: 'A', stock: 2 }] });
+    const { processor } = await build();
 
     await processor.process(
-      job({
+      job(s, {
         items: [
           {
-            variantId: 10,
+            variantId: s.variantAf1,
             productName: 'AF1',
             sku: 'AF1-8',
             optionsLabel: 'Size: 8',
@@ -310,37 +362,25 @@ describe('OrdersProcessor — checkout-completed', () => {
       }),
     );
 
-    expect(h.inserted('inventory_movements')).toEqual([
-      {
-        orderItemId: 201,
-        variantId: 10,
-        locationId: 1,
-        delta: -2,
-        reason: 'sold',
-      },
-      {
-        orderItemId: 201,
-        variantId: 10,
-        locationId: 1,
-        delta: -3,
-        reason: 'sold',
-      },
+    expect(await rowsFor.movements(db, s.variantAf1)).toMatchObject([
+      { locationId: s.locationA, delta: -2, reason: 'sold' },
+      { locationId: s.locationA, delta: -3, reason: 'sold' },
+    ]);
+    // 2 - 2 - 3 — allowed to go negative, the payment already succeeded
+    expect(await rowsFor.stock(db, s.variantAf1)).toEqual([
+      { locationId: s.locationA, stock: -3 },
     ]);
   });
 
   it('creates the order but no movement when a variant has no inventory rows', async () => {
-    const { processor, h, emailQueue } = await build({
-      weights: [32],
-      orderItemIds: [201],
-      inventoryRows: [[]],
-      account: { name: 'Depot' },
-    });
+    const s = await seedScenario({ af1Stock: [] });
+    const { processor, emailQueue } = await build();
 
     await processor.process(
-      job({
+      job(s, {
         items: [
           {
-            variantId: 10,
+            variantId: s.variantAf1,
             productName: 'AF1',
             sku: 'AF1-8',
             optionsLabel: 'Size: 8',
@@ -351,68 +391,116 @@ describe('OrdersProcessor — checkout-completed', () => {
       }),
     );
 
-    expect(h.inserted('inventory_movements')).toEqual([]);
-    expect(h.inserted('order_items')).toHaveLength(1);
-    expect(h.deleted('carts')).toBe(1);
+    expect(await rowsFor.movements(db, s.variantAf1)).toEqual([]);
+    expect(
+      await db.select().from(orderItemsTable).orderBy(orderItemsTable.id),
+    ).toHaveLength(1);
+    expect(
+      await db
+        .select()
+        .from(cartsTable)
+        .where(eq(cartsTable.token, s.cartToken)),
+    ).toEqual([]);
     expect(emailQueue.add).toHaveBeenCalledTimes(1);
   });
 
   it('is a full no-op when the order already exists and its email was queued', async () => {
-    const { processor, h, emailQueue } = await build({
-      idempotency: { id: 55, confirmationEmailQueuedAt: new Date() },
+    const s = await seedScenario();
+    const order = await insertOrder(db, {
+      accountId: s.accountId,
+      confirmationEmailQueuedAt: new Date(),
     });
+    await insertOrderPayment(db, {
+      orderId: order.id,
+      stripeCheckoutSessionId: 'cs_1',
+    });
+    const { processor, emailQueue } = await build();
 
-    await processor.process(job());
+    await processor.process(job(s));
 
-    expect(h.inserted('orders')).toEqual([]);
-    expect(h.deleted('carts')).toBe(0);
+    expect(await rowsFor.orders(db, s.accountId)).toHaveLength(1);
+    expect(
+      await db
+        .select()
+        .from(cartsTable)
+        .where(eq(cartsTable.token, s.cartToken)),
+    ).toHaveLength(1);
     expect(emailQueue.add).not.toHaveBeenCalled();
   });
 
   it('re-enqueues only the confirmation email when the order exists but its email was not queued', async () => {
-    const { processor, h, emailQueue } = await build({
-      idempotency: { id: 55, confirmationEmailQueuedAt: null },
-      account: { name: 'Shop' },
+    const s = await seedScenario();
+    const order = await insertOrder(db, {
+      accountId: s.accountId,
+      confirmationEmailQueuedAt: null,
     });
+    await insertOrderPayment(db, {
+      orderId: order.id,
+      stripeCheckoutSessionId: 'cs_1',
+    });
+    const { processor, emailQueue } = await build();
 
-    await processor.process(job());
+    await processor.process(job(s));
 
-    expect(h.inserted('orders')).toEqual([]);
+    expect(await rowsFor.orders(db, s.accountId)).toHaveLength(1);
     expect(emailQueue.add).toHaveBeenCalledTimes(1);
-    const [, payload] = firstCall(emailQueue.add) as [
+    const [, payload] = emailQueue.add.mock.calls[0] as [
       string,
       Record<string, unknown>,
     ];
-    expect(payload).toMatchObject({ orderId: 55, accountName: 'Shop' });
-    const updates = h.updated('orders');
-    expect(updates).toHaveLength(1);
-    expect(
-      (updates[0] as Record<string, unknown>).confirmationEmailQueuedAt,
-    ).toBeInstanceOf(Date);
+    expect(payload).toMatchObject({
+      orderId: order.id,
+      accountName: 'Test Store',
+    });
+    const [reloaded] = await db
+      .select()
+      .from(ordersTable)
+      .where(eq(ordersTable.id, order.id));
+    expect(reloaded.confirmationEmailQueuedAt).toBeInstanceOf(Date);
   });
 
   it('swallows an email-enqueue failure — the order is already committed', async () => {
     const errSpy = jest
       .spyOn(Logger.prototype, 'error')
       .mockImplementation(() => undefined);
-    const { processor, h, emailQueue } = await build(HAPPY);
+    const s = await seedScenario();
+    const { processor, emailQueue } = await build();
     emailQueue.add.mockRejectedValue(new Error('redis down'));
 
-    await expect(processor.process(job())).resolves.toBeUndefined();
+    await expect(processor.process(job(s))).resolves.toBeUndefined();
 
-    expect(h.updated('orders')).toEqual([]); // never reached the stamp
+    const [order] = await rowsFor.orders(db, s.accountId);
+    expect(order).toBeDefined(); // committed
+    expect(order.confirmationEmailQueuedAt).toBeNull(); // never reached the stamp
     expect(errSpy).toHaveBeenCalledWith(
       expect.stringContaining('failed to enqueue its confirmation email'),
     );
     errSpy.mockRestore();
   });
 
-  it('lets a transaction failure propagate so BullMQ retries the job', async () => {
-    const { processor, emailQueue } = await build({
-      transactionThrows: new Error('db down'),
-    });
+  it('rolls the whole order back when a line hits a constraint, and rethrows', async () => {
+    const s = await seedScenario();
+    const { processor, emailQueue } = await build();
 
-    await expect(processor.process(job())).rejects.toThrow('db down');
+    await expect(
+      processor.process(
+        job(s, {
+          items: [
+            {
+              variantId: 999_999, // no such variant — FK violation on order_items
+              productName: 'Ghost',
+              sku: null,
+              optionsLabel: null,
+              priceCents: 100,
+              quantity: 1,
+            },
+          ],
+        }),
+      ),
+    ).rejects.toThrow();
+
+    expect(await rowsFor.orders(db, s.accountId)).toEqual([]);
+    expect(await db.select().from(orderPaymentsTable)).toEqual([]);
     expect(emailQueue.add).not.toHaveBeenCalled();
   });
 });
@@ -426,7 +514,13 @@ describe('OrdersProcessor.onFailed', () => {
 
     processor.onFailed(
       {
-        ...job(),
+        data: {
+          type: 'checkout-completed',
+          correlationId: 'c',
+          stripeCheckoutSessionId: 'cs',
+        },
+        id: '1',
+        name: 'checkout-completed',
         attemptsMade: 8,
         opts: { attempts: 8 },
       } as unknown as Job<OrderJobData>,
@@ -447,7 +541,13 @@ describe('OrdersProcessor.onFailed', () => {
 
     processor.onFailed(
       {
-        ...job(),
+        data: {
+          type: 'checkout-completed',
+          correlationId: 'c',
+          stripeCheckoutSessionId: 'cs',
+        },
+        id: '1',
+        name: 'checkout-completed',
         attemptsMade: 2,
         opts: { attempts: 8 },
       } as unknown as Job<OrderJobData>,
