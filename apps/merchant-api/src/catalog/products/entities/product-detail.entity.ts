@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { productStatusEnum } from 'db/schema';
+import { productStatusEnum } from 'db/catalog';
 import { Brand } from '../../brands/entities/brand.entity';
 import { ProductImage } from './product-image.entity';
 

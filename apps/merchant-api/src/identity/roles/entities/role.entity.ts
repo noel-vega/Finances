@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { SelectRole } from 'db/schema';
+import { SelectRole } from 'db/identity';
 
 export class Role implements SelectRole {
   @ApiProperty({ type: Number })

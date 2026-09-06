@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { SelectCategory } from 'db/schema';
+import { SelectCategory } from 'db/catalog';
 
 export class Category implements SelectCategory {
   @ApiProperty({ type: Number })

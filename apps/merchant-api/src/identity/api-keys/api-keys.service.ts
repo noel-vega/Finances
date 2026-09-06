@@ -1,6 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { DRIZZLE } from 'src/shared/database/database.constants';
-import { accountApiKeysTable, and, eq, isNull, type db as Db } from 'db';
+import {
+  accountApiKeysTable,
+  and,
+  type db as Db,
+  eq,
+  isNull,
+} from 'db/identity';
 
 @Injectable()
 export class ApiKeysService {

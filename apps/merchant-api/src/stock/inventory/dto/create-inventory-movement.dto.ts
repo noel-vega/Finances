@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsIn, IsInt, IsOptional, IsString, NotEquals } from 'class-validator';
-import { inventoryMovementReasonEnum } from 'db/schema';
+import { inventoryMovementReasonEnum } from 'db/stock';
 
 export class CreateInventoryMovementDto {
   @ApiProperty({ type: Number })

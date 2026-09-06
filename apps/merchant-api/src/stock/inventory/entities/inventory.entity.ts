@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { inventoryMovementReasonEnum } from 'db/schema';
+import { inventoryMovementReasonEnum } from 'db/stock';
 
 // a single variant's on-hand quantity at a single location — the row-level
 // unit stock is derived from; joined with variant/product/location for display

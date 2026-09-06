@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { SelectProductVariant } from 'db/schema';
+import { SelectProductVariant } from 'db/catalog';
 import { ProductImage } from './product-image.entity';
 
 export class VariantOptionValue {

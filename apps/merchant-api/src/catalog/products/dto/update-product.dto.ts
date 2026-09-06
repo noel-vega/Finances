@@ -7,7 +7,7 @@ import {
   IsString,
   MinLength,
 } from 'class-validator';
-import { productStatusEnum } from 'db/schema';
+import { productStatusEnum } from 'db/catalog';
 
 export class UpdateProductDto {
   @ApiProperty({ required: false })

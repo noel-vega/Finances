@@ -115,6 +115,7 @@
       "^queue$": "<rootDir>/../../../packages/queue/src/index.ts",
       "^logging$": "<rootDir>/../../../packages/logging/src/index.ts",
       "^db$": "<rootDir>/../../../packages/db/src/index.ts",
+      "^db/(identity|catalog|stock|sales|payments)$": "<rootDir>/../../../packages/db/src/domains/$1.ts",
       "^db/(.*)$": "<rootDir>/../../../packages/db/src/$1",
       "^email$": "<rootDir>/../../../packages/email/src/index.ts",
       "^email-templates$": "<rootDir>/../../../packages/email-templates/src/index.ts"

@@ -12,11 +12,10 @@ import {
   and,
   brandsTable,
   categoriesTable,
+  type db as Db,
   eq,
   inArray,
-  inventoryTable,
   isNull,
-  locationsTable,
   notInArray,
   productBarcodesTable,
   productCategoriesTable,
@@ -26,10 +25,10 @@ import {
   productsTable,
   productVariantsTable,
   sql,
-  variantOptionValuesTable,
-  type db as Db,
   type SQL,
-} from 'db';
+  variantOptionValuesTable,
+} from 'db/catalog';
+import { inventoryTable, locationsTable } from 'db/stock';
 import { Product } from './entities/product.entity';
 import { ProductVariant } from './entities/product-variant.entity';
 import { ProductOption } from './entities/product-option.entity';

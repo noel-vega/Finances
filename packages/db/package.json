@@ -12,6 +12,26 @@
     "./schema": {
       "types": "./dist/src/schema/index.d.ts",
       "default": "./dist/src/schema/index.js"
+    },
+    "./identity": {
+      "types": "./dist/src/domains/identity.d.ts",
+      "default": "./dist/src/domains/identity.js"
+    },
+    "./catalog": {
+      "types": "./dist/src/domains/catalog.d.ts",
+      "default": "./dist/src/domains/catalog.js"
+    },
+    "./stock": {
+      "types": "./dist/src/domains/stock.d.ts",
+      "default": "./dist/src/domains/stock.js"
+    },
+    "./sales": {
+      "types": "./dist/src/domains/sales.d.ts",
+      "default": "./dist/src/domains/sales.js"
+    },
+    "./payments": {
+      "types": "./dist/src/domains/payments.d.ts",
+      "default": "./dist/src/domains/payments.js"
     }
   },
   "scripts": {

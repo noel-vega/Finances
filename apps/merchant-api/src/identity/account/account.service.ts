@@ -1,6 +1,6 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { DRIZZLE } from 'src/shared/database/database.constants';
-import { accountsTable, eq, type db as Db } from 'db';
+import { accountsTable, type db as Db, eq } from 'db/identity';
 import { UpdateAccountDto } from './dto/update-account.dto';
 
 @Injectable()

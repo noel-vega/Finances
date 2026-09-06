@@ -1,10 +1,10 @@
 import {
+  type db as Db,
   eq,
   inArray,
   permissionsTable,
   rolePermissionsTable,
-  type db as Db,
-} from 'db';
+} from 'db/identity';
 
 type Queryable = Pick<typeof Db, 'select' | 'selectDistinct'>;
 

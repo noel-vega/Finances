@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { eq, stripeAccountsTable, type db as Db } from 'db';
+import { type db as Db, eq, stripeAccountsTable } from 'db/payments';
 import { DRIZZLE } from 'src/shared/database/database.constants';
 import { stripe } from './stripe.client';
 import { StripeConnectStatus } from './entities/stripe-connect-status.entity';

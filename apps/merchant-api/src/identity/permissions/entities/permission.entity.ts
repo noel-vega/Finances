@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { SelectPermission } from 'db/schema';
+import { SelectPermission } from 'db/identity';
 
 export class Permission implements SelectPermission {
   @ApiProperty({ type: Number })

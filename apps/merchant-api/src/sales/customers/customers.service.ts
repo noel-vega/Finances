@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Customer } from './entities/customer.entity';
 import { DRIZZLE } from 'src/shared/database/database.constants';
-import { customersTable, eq, type db as Db } from 'db';
+import { customersTable, type db as Db, eq } from 'db/sales';
 
 export function toCustomer(row: typeof customersTable.$inferSelect): Customer {
   return {

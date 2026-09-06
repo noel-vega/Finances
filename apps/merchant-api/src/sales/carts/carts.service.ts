@@ -1,21 +1,23 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { DRIZZLE } from 'src/shared/database/database.constants';
 import {
-  and,
-  cartItemsTable,
-  cartsTable,
-  desc,
-  eq,
-  inArray,
-  inventoryTable,
   productOptionsTable,
   productOptionValuesTable,
   productsTable,
   productVariantsTable,
-  sql,
   variantOptionValuesTable,
+} from 'db/catalog';
+import { inventoryTable } from 'db/stock';
+import {
+  and,
+  cartItemsTable,
+  cartsTable,
   type db as Db,
-} from 'db';
+  desc,
+  eq,
+  inArray,
+  sql,
+} from 'db/sales';
 import { PaginatedCarts } from './entities/paginated-carts.entity';
 import { CartDetail } from './entities/cart-detail.entity';
 

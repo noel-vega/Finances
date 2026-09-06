@@ -15,11 +15,11 @@ import { DRIZZLE } from 'src/shared/database/database.constants';
 import {
   accountApiKeysTable,
   accountsTable,
-  isUniqueViolation,
-  locationsTable,
-  usersTable,
   type db as Db,
-} from 'db';
+  isUniqueViolation,
+  usersTable,
+} from 'db/identity';
+import { locationsTable } from 'db/stock';
 import * as bcrypt from 'bcryptjs';
 import { generateApiKey } from '../api-keys/api-keys.util';
 

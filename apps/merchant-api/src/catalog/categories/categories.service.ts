@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { DRIZZLE } from 'src/shared/database/database.constants';
-import { categoriesTable, eq, type db as Db } from 'db';
+import { categoriesTable, type db as Db, eq } from 'db/catalog';
 
 @Injectable()
 export class CategoriesService {

@@ -1,19 +1,18 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { DRIZZLE } from 'src/shared/database/database.constants';
+import { usersTable } from 'db/identity';
+import { productsTable, productVariantsTable } from 'db/catalog';
 import {
   and,
+  type db as Db,
   desc,
   eq,
   inventoryMovementsTable,
   inventoryTable,
   locationsTable,
-  productsTable,
-  productVariantsTable,
   sql,
-  usersTable,
-  type db as Db,
   type SQL,
-} from 'db';
+} from 'db/stock';
 import {
   InventoryRecord,
   InventoryMovementRecord,

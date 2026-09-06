@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { SelectLocation } from 'db/schema';
+import { SelectLocation } from 'db/stock';
 
 export class Location implements SelectLocation {
   @ApiProperty({ type: Number })
