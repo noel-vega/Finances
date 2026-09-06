@@ -1,5 +1,5 @@
 import Stripe from 'stripe';
-import { env } from '../env';
+import { env } from 'src/shared/env';
 
 // platform's own secret key — Connect API calls act on behalf of a
 // connected account via the `stripeAccount` request option, not a

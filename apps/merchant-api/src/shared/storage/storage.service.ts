@@ -1,7 +1,7 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { Logger } from 'logging';
 import { createStorageClient } from 'storage';
-import { env } from '../../env';
+import { env } from '../env';
 
 @Injectable()
 export class StorageService implements OnModuleInit {
