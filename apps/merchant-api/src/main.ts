@@ -1,4 +1,4 @@
-import { env } from './env'; // validates process.env before anything else loads
+import { env } from './shared/env'; // validates process.env before anything else loads
 import { randomUUID } from 'node:crypto';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';

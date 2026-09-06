@@ -13,7 +13,7 @@ import { generateToken } from '../../shared/common/generate-token.util';
 import { resolveOwned } from '../../shared/common/resolve-owned.util';
 import { groupBy } from '../../shared/common/group-by.util';
 import { assertCanGrant } from '../../shared/common/assert-can-grant.util';
-import { env } from '../../env';
+import { env } from 'src/shared/env';
 import { getPermissionKeysForRoles } from '../../shared/common/get-permission-keys-for-roles.util';
 import { DRIZZLE } from 'src/shared/database/database.constants';
 import {
