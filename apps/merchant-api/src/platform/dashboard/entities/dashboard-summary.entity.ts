@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { OrderListItem, Customer } from 'src/sales';
+import { OrderListItem, Customer } from '../ports/sales.port';
 
 export class DashboardSummary {
   @ApiProperty({ type: Number })

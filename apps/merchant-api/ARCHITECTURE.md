@@ -55,10 +55,19 @@ Adding a new cross-context edge = update the table above **and** the
 
 ## Cross-context communication
 
-- **In-process service call via the barrel** — today's only live edge is
-  `platform/dashboard → sales` (`OrdersService`, `toCustomer`, view types).
-  *(OS-345 will wrap this in an adapter + local port interface so a future
-  extraction swaps the impl for an HTTP client with no change to the consumer.)*
+- **Adapter behind a local port** — the pattern for calling another context's
+  services. The consumer defines a port interface; an adapter class in the
+  consumer's `ports/` folder implements it by delegating to the producer's
+  barrel-exported services. The consumer's domain code depends only on the port.
+  Extraction = swap the adapter for an HTTP client, nothing else changes.
+
+  Today's one live edge: **`platform/dashboard → sales`**. `dashboard.service`
+  depends on `SalesPort` (`platform/dashboard/ports/sales.port.ts`);
+  `SalesAdapter` (`…/ports/sales.adapter.ts`) is the *only* file in `platform/`
+  that imports `sales`' services — enforced by `no-restricted-imports` in
+  `eslint.config.mjs`. `dashboard.service`'s `getOrderTotals` /
+  `getOutOfStockCount` stay as direct SQL (deliberate read-model projections —
+  platform is exempt from the read-graph).
 - **Domain events** (`EventEmitter2` / `@OnEvent`) — reserved for genuinely
   reactive flows, not synchronous reads. None yet.
 - The shared kernel — for pure infra only.

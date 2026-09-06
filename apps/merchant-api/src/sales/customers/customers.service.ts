@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Customer } from './entities/customer.entity';
 import { DRIZZLE } from 'src/shared/database/database.constants';
-import { customersTable, type db as Db, eq } from 'db/sales';
+import { customersTable, type db as Db, desc, eq } from 'db/sales';
 
 export function toCustomer(row: typeof customersTable.$inferSelect): Customer {
   return {
@@ -24,6 +24,18 @@ export class CustomersService {
       .select()
       .from(customersTable)
       .where(eq(customersTable.accountId, accountId));
+
+    return rows.map(toCustomer);
+  }
+
+  // the N most recently created customers — used by the dashboard read-model
+  async findRecent(accountId: number, limit: number): Promise<Customer[]> {
+    const rows = await this.db
+      .select()
+      .from(customersTable)
+      .where(eq(customersTable.accountId, accountId))
+      .orderBy(desc(customersTable.createdAt))
+      .limit(limit);
 
     return rows.map(toCustomer);
   }
