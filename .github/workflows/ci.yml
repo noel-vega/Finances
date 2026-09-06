@@ -133,6 +133,12 @@ jobs:
       - name: expo-doctor
         env:
           EXPO_NO_TELEMETRY: "1"
+          # skip only the "packages match versions required by installed Expo
+          # SDK" sub-check — it queries api.expo.dev for the latest SDK-57
+          # patch ranges, so CI goes red the moment Expo cuts a patch release
+          # regardless of this repo's contents. `npm run doctor` locally still
+          # runs it. The other 20 checks stay hard gates.
+          EXPO_DOCTOR_SKIP_DEPENDENCY_VERSION_CHECK: "1"
         run: npm run doctor --workspace=pos
 
   docker-smoke-build:
