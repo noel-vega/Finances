@@ -27,14 +27,19 @@ import { CartModule } from '../cart/cart.module';
       // can't silently change request/response shapes.
       provide: STRIPE,
       useFactory: (): Stripe =>
-        new Stripe(env.STRIPE_SECRET_KEY, { apiVersion: '2026-08-26.dahlia' }),
+        new Stripe(env.STRIPE_SECRET_KEY, {
+          apiVersion: '2026-08-26.dahlia',
+          // SDK default is 80s — too long to hold a checkout request
+          timeout: 20_000,
+          maxNetworkRetries: 1,
+        }),
     },
     {
       // one platform-owned key for every merchant, unlike Stripe where each
       // merchant connects their own account
       provide: SHIPPO,
       useFactory: (): Shippo =>
-        new Shippo({ apiKeyHeader: env.SHIPPO_API_KEY }),
+        new Shippo({ apiKeyHeader: env.SHIPPO_API_KEY, timeoutMs: 20_000 }),
     },
   ],
 })

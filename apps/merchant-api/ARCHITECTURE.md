@@ -130,6 +130,32 @@ Ordered by how clean the cut is:
 At each seam: the in-process adapter (OS-345 pattern) becomes an HTTP client, and
 the FKs listed above are dropped in favor of application-level references.
 
+## Resilience / blast radius
+
+merchant-api is one process — a fault in one context can take **all** contexts
+down. What keeps that bounded (OS-346 audit):
+
+- **Every external SDK client sets a timeout.** Redis: `commandTimeout: 5_000`
+  (`app.module.ts` via `createRedisConnection`). Stripe:
+  `timeout: 20_000, maxNetworkRetries: 1` (`payments/stripe.client.ts` — the SDK
+  default is 80 s). Shippo: `timeoutMs: 20_000`
+  (`sales/fulfillments/shippo.client.ts`). S3: `requestTimeout: 10_000`
+  (`packages/storage`). **Add a timeout to any new client.**
+- **Webhooks fail as 4xx, not 5xx, on bad input** —
+  `stripe-connect.controller.ts` catches `constructEvent` → `BadRequestException`
+  so Stripe stops retrying (same as storefront-api's checkout webhook).
+- **No unbounded in-process work** — no module-level mutable caches,
+  `setInterval`, `while(true)`, or unbounded recursion. `onModuleInit` hooks
+  either fail-fast (`permissions` — don't serve without the catalog) or are
+  wrapped (`storage`).
+- **List endpoints must paginate.** `sales/orders` is the reference
+  (`PaginatedOrders` + `@Query('limit', DefaultValuePipe, ParseIntPipe)`).
+  Still unbounded, tracked: `GET /inventory/movements` (OS-349, append-only
+  ledger) and `GET /products` `/inventory` `/customers` (OS-350).
+
+Not here: expand/contract migrations (deploy ≠ migration coupling) and canary
+deploys — those live in *Production readiness*.
+
 ## Not here
 
 - **Nx libraries** (contexts as `packages/merchant-<context>/` +

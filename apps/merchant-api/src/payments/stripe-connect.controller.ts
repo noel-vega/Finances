@@ -23,6 +23,7 @@ import {
   Public,
   type AuthenticatedUser,
 } from 'src/shared/auth/decorators';
+import type Stripe from 'stripe';
 import { stripe } from './stripe.client';
 
 @Controller('stripe-connect')
@@ -61,11 +62,20 @@ export class StripeConnectController {
       throw new BadRequestException('Missing signature');
     }
 
-    const event = stripe.webhooks.constructEvent(
-      req.rawBody,
-      signature,
-      env.STRIPE_ACCOUNT_WEBHOOK_SECRET,
-    );
+    let event: Stripe.Event;
+    try {
+      event = stripe.webhooks.constructEvent(
+        req.rawBody,
+        signature,
+        env.STRIPE_ACCOUNT_WEBHOOK_SECRET,
+      );
+    } catch (err) {
+      // bad signature / malformed body — a client error; 400 so Stripe stops
+      // retrying it (mirrors storefront-api's checkout webhook, OS-111)
+      throw new BadRequestException(
+        `Webhook signature verification failed: ${err instanceof Error ? err.message : err}`,
+      );
+    }
 
     if (event.type === 'account.updated' && event.account) {
       const account = event.data.object;
