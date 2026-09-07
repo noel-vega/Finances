@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import {
   BadRequestException,
   Inject,
@@ -96,6 +96,23 @@ export class CheckoutService {
       }
     }
 
+    // stable across retries (reload, double-click, client retry) but changes
+    // the moment the cart's contents change — so a rapid re-POST of the same
+    // cart returns Stripe's existing session instead of minting a new one,
+    // while a materially different cart still gets a fresh one
+    const idempotencyKey = `checkout:${accountId}:${cart.token}:${createHash(
+      'sha256',
+    )
+      .update(
+        cart.items
+          .map(
+            (item) => `${item.variantId}x${item.quantity}@${item.priceCents}`,
+          )
+          .sort()
+          .join('|'),
+      )
+      .digest('hex')}`;
+
     // embedded, not hosted — the customer never leaves the storefront's
     // own page; Stripe just mounts the payment form in an iframe there
     const session = await this.stripe.checkout.sessions.create(
@@ -126,7 +143,7 @@ export class CheckoutService {
         return_url: `${dto.returnUrl}?session_id={CHECKOUT_SESSION_ID}`,
         metadata: { accountId: String(accountId), cartToken: cart.token },
       },
-      { stripeAccount: stripeAccount.stripeAccountId },
+      { stripeAccount: stripeAccount.stripeAccountId, idempotencyKey },
     );
 
     if (!session.client_secret) {

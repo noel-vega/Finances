@@ -161,7 +161,32 @@ describe('CheckoutService.createSession', () => {
         quantity: 1,
       },
     ]);
-    expect(options).toEqual({ stripeAccount: connected });
+    expect(options).toMatchObject({ stripeAccount: connected });
+    expect(options.idempotencyKey).toEqual(expect.any(String));
+  });
+
+  it('reuses one idempotency key for the same cart and a different one when it changes', async () => {
+    const { accountId } = await seedConnected();
+    const { service, stripe } = await build({
+      getCart: jest
+        .fn()
+        .mockResolvedValueOnce(cart([cartItem({ quantity: 1 })]))
+        .mockResolvedValueOnce(cart([cartItem({ quantity: 1 })]))
+        .mockResolvedValueOnce(cart([cartItem({ quantity: 2 })])),
+    });
+    stripe.checkout.sessions.create.mockResolvedValue({
+      client_secret: 'cs_x',
+    });
+
+    await service.createSession('cart-tok-abc', accountId, dto);
+    await service.createSession('cart-tok-abc', accountId, dto);
+    await service.createSession('cart-tok-abc', accountId, dto);
+
+    const keys = (
+      stripe.checkout.sessions.create.mock.calls as unknown[][]
+    ).map((c) => (c[1] as { idempotencyKey: string }).idempotencyKey);
+    expect(keys[0]).toBe(keys[1]); // unchanged cart → same key → Stripe replays
+    expect(keys[2]).not.toBe(keys[0]); // qty changed → new key → fresh session
   });
 
   it('sets the embedded-checkout session shape, return_url and metadata', async () => {
