@@ -177,4 +177,31 @@ export default tseslint.config(
       },
     }));
   })(),
+
+  // ── dashboard → sales goes through the adapter, nowhere else ──────────────
+  // platform/dashboard is the cross-context read-model, but only its
+  // anti-corruption layer (ports/) — and the module that wires it — may touch
+  // src/sales. dashboard.service / entities depend on the local SalesPort.
+  {
+    files: ['src/platform/**/*.ts'],
+    ignores: [
+      'src/platform/dashboard/ports/**',
+      'src/platform/dashboard/dashboard.module.ts',
+      'src/**/*.spec.ts',
+    ],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['src/sales', 'src/sales/*'],
+              message:
+                "reach sales through platform/dashboard/ports (SalesPort + SalesAdapter), not directly — see apps/merchant-api/ARCHITECTURE.md § Cross-context communication",
+            },
+          ],
+        },
+      ],
+    },
+  },
 );

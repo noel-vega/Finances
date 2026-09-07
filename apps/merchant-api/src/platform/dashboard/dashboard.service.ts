@@ -1,8 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { DRIZZLE } from 'src/shared/database/database.constants';
 import {
-  customersTable,
-  desc,
   eq,
   inventoryTable,
   ordersTable,
@@ -11,8 +9,8 @@ import {
   sql,
   type db as Db,
 } from 'db';
-import { OrdersService, toCustomer } from 'src/sales';
 import { DashboardSummary } from './entities/dashboard-summary.entity';
+import { SALES_PORT, type SalesPort } from './ports/sales.port';
 
 const RECENT_LIMIT = 5;
 
@@ -20,39 +18,19 @@ const RECENT_LIMIT = 5;
 export class DashboardService {
   constructor(
     @Inject(DRIZZLE) private readonly db: typeof Db,
-    private readonly ordersService: OrdersService,
+    @Inject(SALES_PORT) private readonly sales: SalesPort,
   ) {}
 
   async getSummary(accountId: number): Promise<DashboardSummary> {
     const [recentOrders, recentCustomers, totals, outOfStockCount] =
       await Promise.all([
-        this.getRecentOrders(accountId),
-        this.getRecentCustomers(accountId),
+        this.sales.recentOrders(accountId, RECENT_LIMIT),
+        this.sales.recentCustomers(accountId, RECENT_LIMIT),
         this.getOrderTotals(accountId),
         this.getOutOfStockCount(accountId),
       ]);
 
     return { ...totals, outOfStockCount, recentOrders, recentCustomers };
-  }
-
-  private async getRecentOrders(accountId: number) {
-    const { items } = await this.ordersService.findAll(
-      RECENT_LIMIT,
-      0,
-      accountId,
-    );
-    return items;
-  }
-
-  private async getRecentCustomers(accountId: number) {
-    const rows = await this.db
-      .select()
-      .from(customersTable)
-      .where(eq(customersTable.accountId, accountId))
-      .orderBy(desc(customersTable.createdAt))
-      .limit(RECENT_LIMIT);
-
-    return rows.map(toCustomer);
   }
 
   private async getOrderTotals(accountId: number) {
