@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { DatabaseModule } from './shared/database/database.module';
 import { StorageModule } from './shared/storage/storage.module';
 import { EmailModule } from './shared/email/email.module';
+import { EventsModule } from './shared/events';
 import { IdentityModule } from './identity';
 import { CatalogModule } from './catalog';
 import { StockModule } from './stock';
@@ -25,6 +26,7 @@ import { PlatformModule } from './platform';
     DatabaseModule,
     StorageModule,
     EmailModule,
+    EventsModule,
     // bounded contexts
     IdentityModule,
     CatalogModule,
