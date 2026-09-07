@@ -1,0 +1,28 @@
+{
+  "name": "payments",
+  "version": "1.0.0",
+  "description": "Shared Stripe surface: the pinned API version, the client factory (with timeouts), and webhook signature verification. Everything else (Connect onboarding, embedded checkout) stays app-specific.",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.0.1",
+    "stripe": "^22.4.0"
+  }
+}

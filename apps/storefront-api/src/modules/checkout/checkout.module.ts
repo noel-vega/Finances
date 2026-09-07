@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
-import Stripe from 'stripe';
+import type Stripe from 'stripe';
+import { createStripeClient } from 'payments';
 import { Shippo } from 'shippo';
 import { ORDER_JOB_OPTIONS, QUEUE_NAMES } from 'queue';
 import { env } from '../../env';
@@ -23,16 +24,10 @@ import { CartModule } from '../cart/cart.module';
     {
       // platform's own secret key — sessions are created directly on a
       // merchant's connected account via the `stripeAccount` request option,
-      // so funds never touch the platform. Pinned API version so an SDK bump
-      // can't silently change request/response shapes.
+      // so funds never touch the platform. Version pin + timeouts live in
+      // `packages/payments`.
       provide: STRIPE,
-      useFactory: (): Stripe =>
-        new Stripe(env.STRIPE_SECRET_KEY, {
-          apiVersion: '2026-08-26.dahlia',
-          // SDK default is 80s — too long to hold a checkout request
-          timeout: 20_000,
-          maxNetworkRetries: 1,
-        }),
+      useFactory: (): Stripe => createStripeClient(env.STRIPE_SECRET_KEY),
     },
     {
       // one platform-owned key for every merchant, unlike Stripe where each

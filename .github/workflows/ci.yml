@@ -30,6 +30,7 @@ jobs:
         run: |
           npm run build --workspace=config \
             --workspace=db \
+            --workspace=payments \
             --workspace=logging \
             --workspace=queue \
             --workspace=storage \
@@ -94,6 +95,7 @@ jobs:
         run: |
           npm run build --workspace=config \
             --workspace=db \
+            --workspace=payments \
             --workspace=logging \
             --workspace=queue \
             --workspace=storage \

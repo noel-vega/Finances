@@ -33,6 +33,7 @@ import { CheckoutConfig } from './entities/checkout-config.entity';
 import { CheckoutSessionStatus } from './entities/checkout-session-status.entity';
 import { ShippingOptionsResult } from './entities/shipping-options-result.entity';
 import type Stripe from 'stripe';
+import { constructWebhookEvent } from 'payments';
 import type { Shippo } from 'shippo';
 import { SHIPPO, STRIPE } from './checkout.constants';
 
@@ -340,21 +341,17 @@ export class CheckoutService {
 
   // triggered by Stripe, not the browser — the redirect back from Checkout
   // isn't reliable (the tab can close), this webhook is the source of truth
-  async handleWebhookEvent(rawBody: Buffer, signature: string): Promise<void> {
-    let event: Stripe.Event;
-    try {
-      event = this.stripe.webhooks.constructEvent(
-        rawBody,
-        signature,
-        env.STRIPE_CHECKOUT_WEBHOOK_SECRET,
-      );
-    } catch (err) {
-      // bad signature / malformed payload — a client error; 400 so Stripe
-      // doesn't retry it for days
-      throw new BadRequestException(
-        `Webhook signature verification failed: ${(err as Error).message}`,
-      );
-    }
+  async handleWebhookEvent(
+    rawBody: Buffer | undefined,
+    signature: string | string[] | undefined,
+  ): Promise<void> {
+    // verifies the signature or throws a 400 (see packages/payments)
+    const event = constructWebhookEvent(
+      this.stripe,
+      rawBody,
+      signature,
+      env.STRIPE_CHECKOUT_WEBHOOK_SECRET,
+    );
 
     if (event.type !== 'checkout.session.completed') return;
 

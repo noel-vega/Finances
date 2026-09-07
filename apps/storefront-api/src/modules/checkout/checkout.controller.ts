@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Get,
@@ -75,12 +74,10 @@ export class CheckoutController {
   @Post('webhook')
   @ApiExcludeEndpoint()
   async webhook(@Req() req: RawBodyRequest<Request>) {
-    const signature = req.headers['stripe-signature'];
-    if (!req.rawBody || typeof signature !== 'string') {
-      throw new BadRequestException('Missing signature');
-    }
-
-    await this.checkoutService.handleWebhookEvent(req.rawBody, signature);
+    await this.checkoutService.handleWebhookEvent(
+      req.rawBody,
+      req.headers['stripe-signature'],
+    );
     return { received: true };
   }
 }
