@@ -37,6 +37,11 @@ export function createStorageClient(config: StorageConfig) {
         ? { accessKeyId: config.accessKeyId, secretAccessKey: config.secretAccessKey }
         : undefined,
     forcePathStyle: config.forcePathStyle ?? true,
+    // the SDK sets no request timeout by default — bound the network calls
+    // (ensureBucket at startup, deleteObject on image removal) so a hung S3
+    // can't hold a request. Presigning is local and unaffected.
+    requestHandler: { requestTimeout: 10_000, connectionTimeout: 5_000 },
+    maxAttempts: 3,
   });
 
   return {
