@@ -1,8 +1,10 @@
 import { BadRequestException, Logger } from '@nestjs/common';
 import { getQueueToken } from '@nestjs/bullmq';
 import { Test, TestingModule } from '@nestjs/testing';
-import { QUEUE_NAMES } from 'queue';
+import { QUEUE_NAMES, type OrderJobData } from 'queue';
 import {
+  canonicalOrderJobData,
+  checkoutSession,
   firstCall,
   insertAccount,
   insertCart,
@@ -11,6 +13,7 @@ import {
   insertOrderPayment,
   insertProductWithVariants,
   insertStripeAccount,
+  seedCheckoutScenario,
   useTestDb,
 } from 'test-support';
 import { DRIZZLE } from '../../database/database.constants';
@@ -79,6 +82,9 @@ async function build(opts: {
   getCart?: jest.Mock;
   stripe?: StripeMock;
   shippo?: ShippoMock;
+  // use the real CartService (reads the test DB) instead of the mock — for
+  // the end-to-end producer contract test
+  realCart?: boolean;
 }) {
   const stripe = opts.stripe ?? newStripeMock();
   const shippo = opts.shippo ?? { shipments: { create: jest.fn() } };
@@ -91,7 +97,9 @@ async function build(opts: {
       { provide: DRIZZLE, useValue: db },
       { provide: STRIPE, useValue: stripe },
       { provide: SHIPPO, useValue: shippo },
-      { provide: CartService, useValue: cartService },
+      opts.realCart
+        ? CartService
+        : { provide: CartService, useValue: cartService },
       { provide: getQueueToken(QUEUE_NAMES.ORDERS), useValue: ordersQueue },
     ],
   }).compile();
@@ -726,5 +734,45 @@ describe('CheckoutService.handleWebhookEvent', () => {
     await expect(service.handleWebhookEvent(RAW, SIG)).rejects.toThrow(
       'redis down',
     );
+  });
+});
+
+// The producer half of the checkout→order path, pinned to the shared canonical
+// scenario in test-support. The consumer half is asserted in apps/worker
+// (checkout-to-order.e2e.spec.ts) against the same canonicalOrderJobData.
+// M9 relocates this producer to merchant-api sales — this test moves with it;
+// the shared fixture keeps both ends honest across the move.
+describe('CheckoutService.handleWebhookEvent — end-to-end producer contract (M9 anchor)', () => {
+  it('resolves the canonical paid session + real cart into the canonical checkout-completed job', async () => {
+    const scenario = await seedCheckoutScenario(db);
+
+    const event = {
+      type: 'checkout.session.completed',
+      data: { object: checkoutSession(scenario) },
+    } as unknown as Stripe.Event;
+    const stripe = newStripeMock();
+    stripe.webhooks.constructEvent.mockReturnValue(event);
+
+    const { service, ordersQueue } = await build({ stripe, realCart: true });
+
+    await service.handleWebhookEvent(Buffer.from('{}'), 'sig_test');
+
+    expect(ordersQueue.add).toHaveBeenCalledTimes(1);
+    const [name, payload] = firstCall(ordersQueue.add) as [
+      string,
+      OrderJobData,
+    ];
+    expect(name).toBe('checkout-completed');
+
+    // the producer's item order follows the cart query (no ORDER BY) — compare
+    // sorted, the same way canonicalOrderJobData orders its items
+    const sorted = {
+      ...payload,
+      items: [...payload.items].sort((a, b) => a.variantId - b.variantId),
+    };
+    expect(sorted).toMatchObject(
+      canonicalOrderJobData(scenario, payload.correlationId),
+    );
+    expect(payload.correlationId).toEqual(expect.any(String));
   });
 });
