@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Controller,
   Get,
   Post,
@@ -23,7 +22,7 @@ import {
   Public,
   type AuthenticatedUser,
 } from 'src/shared/auth/decorators';
-import type Stripe from 'stripe';
+import { constructWebhookEvent } from 'payments';
 import { stripe } from './stripe.client';
 
 @Controller('stripe-connect')
@@ -57,25 +56,12 @@ export class StripeConnectController {
   @Post('webhook')
   @ApiExcludeEndpoint()
   async webhook(@Req() req: RawBodyRequest<FastifyRequest>) {
-    const signature = req.headers['stripe-signature'];
-    if (!req.rawBody || typeof signature !== 'string') {
-      throw new BadRequestException('Missing signature');
-    }
-
-    let event: Stripe.Event;
-    try {
-      event = stripe.webhooks.constructEvent(
-        req.rawBody,
-        signature,
-        env.STRIPE_ACCOUNT_WEBHOOK_SECRET,
-      );
-    } catch (err) {
-      // bad signature / malformed body — a client error; 400 so Stripe stops
-      // retrying it (mirrors storefront-api's checkout webhook, OS-111)
-      throw new BadRequestException(
-        `Webhook signature verification failed: ${err instanceof Error ? err.message : err}`,
-      );
-    }
+    const event = constructWebhookEvent(
+      stripe,
+      req.rawBody,
+      req.headers['stripe-signature'],
+      env.STRIPE_ACCOUNT_WEBHOOK_SECRET,
+    );
 
     if (event.type === 'account.updated' && event.account) {
       const account = event.data.object;
