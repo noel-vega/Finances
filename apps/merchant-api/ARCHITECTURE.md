@@ -27,6 +27,8 @@ root.
 anywhere, **no domain logic**:
 `common/` (utils), `database/` (the `DRIZZLE` provider, `@Global`),
 `storage/` (S3/MinIO, `@Global`), `email/` (BullMQ enqueue, `@Global`),
+`events/` (in-process domain-event bus + the event registry, `@Global` — see
+*Cross-context communication*),
 `auth/decorators.ts` (`@CurrentUser` / `@Public` / `@RequirePermissions` + the
 request-context types — the guards themselves live in `identity/auth` and run
 globally via `APP_GUARD`), `env.ts`.
@@ -68,8 +70,28 @@ Adding a new cross-context edge = update the table above **and** the
   `eslint.config.mjs`. `dashboard.service`'s `getOrderTotals` /
   `getOutOfStockCount` stay as direct SQL (deliberate read-model projections —
   platform is exempt from the read-graph).
-- **Domain events** (`EventEmitter2` / `@OnEvent`) — reserved for genuinely
-  reactive flows, not synchronous reads. None yet.
+- **Domain events** — for a genuine reactive side-effect in another context,
+  not a synchronous read (use a port for that). In-process, via
+  `@nestjs/event-emitter`, wired by the `shared/events` kernel module.
+
+  The registry lives in `src/shared/events/events.ts`: a `DOMAIN_EVENTS` name
+  constant + a `DomainEventMap` entry (payload type) per event. Payload types
+  live in the shared kernel because producer and consumer both depend on them
+  and neither context owns them. Producer: inject `DomainEventBus` and call
+  `emit(DOMAIN_EVENTS.X, payload)` (name + payload are type-checked). Consumer:
+  a provider method decorated `@OnDomainEvent(DOMAIN_EVENTS.X)` with its
+  parameter typed `DomainEventMap['x']`.
+
+  Delivery is **synchronous and in-process on the emitting call stack, and not
+  durable** — a crash mid-handler loses the event. So a handler that must do
+  durable work does it within the emitting request's lifetime and tolerates a
+  retry (e.g. enqueues a BullMQ job whose consumer is idempotent), and catches
+  its own errors — a rejected async listener is an unhandledRejection the
+  emitter never sees. An event does not cross the boundary lint (`payments`
+  never imports `sales`); only `shared/events` is shared.
+
+  Live events: **`checkout.session.paid`** — owner `payments` (the checkout
+  webhook), consumed by `sales` to create the order. See M9.
 - The shared kernel — for pure infra only.
 
 ## Data access (read-graph)
