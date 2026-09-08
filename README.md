@@ -155,11 +155,12 @@ and seed. Stripe Connect onboarding, hosted checkout, and Shippo label purchase
 need real **test-mode** credentials:
 
 - APIs (`apps/merchant-api/.env`, `apps/storefront-api/.env`): `STRIPE_SECRET_KEY`,
-  `STRIPE_ACCOUNT_WEBHOOK_SECRET` / `STRIPE_CHECKOUT_WEBHOOK_SECRET`, `SHIPPO_API_KEY`
+  `STRIPE_WEBHOOK_SECRET` (merchant-api only — the one Stripe webhook endpoint),
+  `SHIPPO_API_KEY`
 - web (`apps/merchant-web/.env`, `apps/storefront-web/.env`): `VITE_STRIPE_PUBLISHABLE_KEY`
 
-Forward Stripe webhooks locally with `npm run stripe:listen -w merchant-api` and
-`npm run stripe:listen -w storefront-api`.
+Forward Stripe webhooks locally with `npm run stripe:listen -w merchant-api`
+(account.updated + checkout.session.* → `POST /webhooks/stripe`).
 
 ### Everyday tasks
 

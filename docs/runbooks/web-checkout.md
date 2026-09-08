@@ -12,7 +12,7 @@ storefront-web /checkout                         [storefront-api :3001]
   → pay (embedded Stripe form)
 
   → checkout.session.completed         [merchant-api :3000]
-      POST /checkout/webhook           payments: verify sig → emit checkout.session.paid (awaited)
+      POST /webhooks/stripe            payments: verify sig → emit checkout.session.paid (awaited)
       → sales CheckoutOrderHandler     resolve cart by token → enqueue 'checkout-completed' on ORDERS
                                        (skips if an order_payments row already exists for the session)
 
@@ -35,15 +35,13 @@ storefront-web /checkout                         [storefront-api :3001]
 Fill these in `.env` (already done if `apps/storefront-api/.env` etc. exist — `npm run setup` only copies, never overwrites):
 
 - `apps/storefront-api/.env`: `STRIPE_SECRET_KEY`, `SHIPPO_API_KEY`
-- `apps/merchant-api/.env`: `STRIPE_SECRET_KEY` (same), `STRIPE_ACCOUNT_WEBHOOK_SECRET`, `STRIPE_CHECKOUT_WEBHOOK_SECRET`, `SHIPPO_API_KEY`
+- `apps/merchant-api/.env`: `STRIPE_SECRET_KEY` (same), `STRIPE_WEBHOOK_SECRET`, `SHIPPO_API_KEY`
 - `apps/storefront-web/.env`: `VITE_STRIPE_PUBLISHABLE_KEY`, `VITE_STOREFRONT_APP_KEY` (the `sfk_…` from `npm run bootstrap`)
 - `apps/merchant-web/.env`: `VITE_STRIPE_PUBLISHABLE_KEY`
 
-> `stripe listen` prints one stable per-CLI signing secret (`whsec_…`) at startup, the
-> same for every invocation — so `STRIPE_ACCOUNT_WEBHOOK_SECRET` and
-> `STRIPE_CHECKOUT_WEBHOOK_SECRET` are the **same string** locally (both `stripe listen`
-> processes below share it). In production they are two separate Stripe Dashboard
-> destinations with their own secrets.
+> `STRIPE_WEBHOOK_SECRET` = the `whsec_…` line `stripe listen` prints at startup
+> (stable per CLI install). One endpoint, one secret — `account.updated` and
+> `checkout.session.*` both route to `POST /webhooks/stripe`.
 
 ## Stand it up
 
@@ -52,9 +50,8 @@ npm run up          # postgres + redis + minio + mailpit
 npm run bootstrap   # drizzle push + seed — copy "Created storefront API key: sfk_…" into apps/storefront-web/.env
 npm run dev         # merchant-api :3000, storefront-api :3001, storefront-web :3002, worker :3003, merchant-web :5000
 
-# in two more terminals — leave running (both forward to merchant-api now):
-npm run stripe:listen -w merchant-api            # account.updated                → :3000/stripe-connect/webhook
-npm run stripe:listen:checkout -w merchant-api   # checkout.session.completed/... → :3000/checkout/webhook
+# in one more terminal — leave running:
+npm run stripe:listen -w merchant-api   # account.updated + checkout.session.* → :3000/webhooks/stripe
 ```
 
 The seed's "Default" location ships from a real address and every variant has a weight,
@@ -112,7 +109,7 @@ and `stripePaymentIntentId`, `order_shipping.locationId` = the quoted ship-from,
 
 - Confirmation email: Mailpit `http://localhost:8025` — "Your order from Sneaker Depot is confirmed (#N)"
 - merchant-web → **Orders** — the order, channel "Online", "Unfulfilled"
-- `stripe:listen:checkout` (merchant-api) log: `--> checkout.session.completed` then `<-- [201]`
+- `stripe listen` (merchant-api) log: `--> checkout.session.completed` then `<-- [201]`
 - `merchant-api` log: `[CheckoutOrderService] checkout cs_test_…: order job enqueued`
 - `worker` log: `created order for session cs_test_…`
 
@@ -122,23 +119,23 @@ and `stripePaymentIntentId`, `order_shipping.locationId` = the quoted ship-from,
 where stripeCheckoutSessionId = …` before doing anything, and the column is `UNIQUE`.
 Stripe retries a webhook only on a non-2xx response; a duplicate delivery is a no-op (the
 worker re-queues just the confirmation email if it wasn't sent). A bad signature returns
-**400** (so Stripe stops retrying), not 500. The `payments` webhook `await`s the `sales`
+**400** (so Stripe stops retrying), not 500. `StripeWebhookController` `await`s the `sales`
 handler (`emitAsync`), so a failed enqueue returns non-2xx and Stripe redelivers — a paid
 order is never silently lost.
 
 ## Production (Stripe Dashboard)
 
-Two **event destinations**, both "Events from: Connected accounts", each with its own
-signing secret:
+**One** event destination, "Events from: Connected accounts", **Snapshot (v1) events**,
+Stripe API version **`2026-08-26.dahlia`** (matches the `packages/payments` SDK pin):
 
-| Destination | URL | Events | App secret key |
-|---|---|---|---|
-| account | `https://<merchant-api>/api/stripe-connect/webhook` | `account.updated` | `ordersail/production/merchant-api` → `STRIPE_ACCOUNT_WEBHOOK_SECRET` |
-| checkout | `https://<merchant-api>/api/checkout/webhook` | `checkout.session.completed`, `checkout.session.async_payment_succeeded` (later: `expired`, `async_payment_failed` — OS-115) | `ordersail/production/merchant-api` → `STRIPE_CHECKOUT_WEBHOOK_SECRET` |
+| URL | Events | Secret |
+|---|---|---|
+| `https://merchant.ordersail.com/api/webhooks/stripe` | `account.updated`, `checkout.session.completed`, `checkout.session.async_payment_succeeded` (later: `expired`, `async_payment_failed` — OS-115) | `ordersail/production/merchant-api` → `STRIPE_WEBHOOK_SECRET` |
 
-Create the checkout destination at Stripe API version **`2026-08-26.dahlia`** to match
-the SDK pin in `packages/payments` (the older account destination is on `2024-12-18.acacia`
-— harmless for `account.updated`, but new destinations should track the pin).
+`account.updated` → `StripeConnectService.handleAccountUpdated`; `checkout.session.*` →
+the `checkout.session.paid` domain event → `sales`. `/api/` is stripped by the
+CloudFront function before the request reaches the ALB, so the app route is
+`/webhooks/stripe`.
 
 ## Not covered by this flow (later milestones)
 

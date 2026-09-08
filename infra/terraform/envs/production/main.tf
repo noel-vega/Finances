@@ -215,10 +215,11 @@ module "ecs_service_merchant_api" {
     { name = "DATABASE_URL", valueFrom = module.secrets.database_url_secret_arn },
     { name = "STAFF_JWT_SECRET", valueFrom = "${module.secrets.app_secret_arns["merchant-api"]}:STAFF_JWT_SECRET::" },
     { name = "STRIPE_SECRET_KEY", valueFrom = "${module.secrets.app_secret_arns["merchant-api"]}:STRIPE_SECRET_KEY::" },
-    { name = "STRIPE_ACCOUNT_WEBHOOK_SECRET", valueFrom = "${module.secrets.app_secret_arns["merchant-api"]}:STRIPE_ACCOUNT_WEBHOOK_SECRET::" },
-    # checkout webhook moved here from storefront-api (M9). The key must be
-    # added to the ordersail/production/merchant-api secret JSON.
-    { name = "STRIPE_CHECKOUT_WEBHOOK_SECRET", valueFrom = "${module.secrets.app_secret_arns["merchant-api"]}:STRIPE_CHECKOUT_WEBHOOK_SECRET::" },
+    # the one Stripe event destination (account.updated + checkout.session.*) —
+    # M9/OS-360. Key must exist in the ordersail/production/merchant-api secret JSON.
+    # NOTE: container_definitions is ignore_changes'd — this only applies on first
+    # create; a running service needs a manual register-task-definition (OS-361).
+    { name = "STRIPE_WEBHOOK_SECRET", valueFrom = "${module.secrets.app_secret_arns["merchant-api"]}:STRIPE_WEBHOOK_SECRET::" },
     { name = "SHIPPO_API_KEY", valueFrom = "${module.secrets.app_secret_arns["merchant-api"]}:SHIPPO_API_KEY::" },
   ]
 
