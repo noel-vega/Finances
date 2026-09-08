@@ -11,7 +11,7 @@
 # open a PR removing this file + the two basic_auth_credentials wirings in
 # main.tf, then apply.
 data "aws_ssm_parameter" "frontend_basic_auth" {
-  name = "${var.name_prefix}/production/frontend/basic-auth"
+  name = "$/{var.name_prefix}/production/frontend/basic-auth"
 }
 
 locals {
