@@ -50,19 +50,16 @@ jobs:
           fi
 
           CLUSTER=$(aws ssm get-parameter --name /ordersail/production/ecs/cluster-name --query 'Parameter.Value' --output text)
-          FAMILY=$(aws ssm get-parameter --name /ordersail/production/ecs/migrator-task-family --query 'Parameter.Value' --output text)
           SUBNETS=$(aws ssm get-parameter --name /ordersail/production/network/private-subnet-ids --query 'Parameter.Value' --output text)
           SG=$(aws ssm get-parameter --name /ordersail/production/network/ecs-tasks-security-group --query 'Parameter.Value' --output text)
           MIGRATOR_URI=$(aws ssm get-parameter --name /ordersail/production/ecr/migrator-uri --query 'Parameter.Value' --output text)
 
           # `run-task --overrides` cannot change the container image — only
-          # command/env/cpu/memory. So register a new task-def revision pinned
-          # to this tag and run that (same pattern as cd.yml's deploy-services).
-          CURRENT=$(aws ecs describe-task-definition --task-definition "$FAMILY" --query 'taskDefinition')
-          NEW=$(echo "$CURRENT" | jq --arg IMG "$MIGRATOR_URI:$IMAGE_TAG" '
-            .containerDefinitions[0].image = $IMG
-            | {family, executionRoleArn, networkMode, containerDefinitions, requiresCompatibilities, cpu, memory}
-          ')
+          # command/env/cpu/memory. Register a revision from the Terraform-rendered
+          # SSM contract (same source of truth as cd.yml's deploy-services, OS-361)
+          # pinned to this image tag and run that.
+          NEW=$(aws ssm get-parameter --name /ordersail/production/ecs/migrator-taskdef --query 'Parameter.Value' --output text \
+            | jq --arg IMG "$MIGRATOR_URI:$IMAGE_TAG" '.containerDefinitions[0].image = $IMG')
           TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json "$NEW" --query 'taskDefinition.taskDefinitionArn' --output text)
           echo "task-def: $TASK_DEF_ARN"
 
