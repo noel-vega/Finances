@@ -77,18 +77,23 @@ Adding a new cross-context edge = update the table above **and** the
   The registry lives in `src/shared/events/events.ts`: a `DOMAIN_EVENTS` name
   constant + a `DomainEventMap` entry (payload type) per event. Payload types
   live in the shared kernel because producer and consumer both depend on them
-  and neither context owns them. Producer: inject `DomainEventBus` and call
-  `emit(DOMAIN_EVENTS.X, payload)` (name + payload are type-checked). Consumer:
-  a provider method decorated `@OnDomainEvent(DOMAIN_EVENTS.X)` with its
-  parameter typed `DomainEventMap['x']`.
+  and neither context owns them. Consumer: a provider method decorated
+  `@OnDomainEvent(DOMAIN_EVENTS.X)` with its parameter typed `DomainEventMap['x']`.
+  Producer: inject `DomainEventBus` and call one of —
+  - **`emit(name, payload)`** — fire-and-forget, in-process, on the emitting
+    call stack. The emitter doesn't wait for handlers and never sees their
+    errors (a rejected async handler is an unhandledRejection). For non-critical
+    reactions; such a handler must catch its own errors.
+  - **`await emitAsync(name, payload)`** — awaits every handler and rejects if
+    any of them rejects. Use when the emitter must not report success until the
+    reaction durably happened — e.g. the checkout webhook returns non-2xx (and
+    Stripe retries) if `sales` couldn't enqueue the order.
 
-  Delivery is **synchronous and in-process on the emitting call stack, and not
-  durable** — a crash mid-handler loses the event. So a handler that must do
-  durable work does it within the emitting request's lifetime and tolerates a
-  retry (e.g. enqueues a BullMQ job whose consumer is idempotent), and catches
-  its own errors — a rejected async listener is an unhandledRejection the
-  emitter never sees. An event does not cross the boundary lint (`payments`
-  never imports `sales`); only `shared/events` is shared.
+  Neither is **durable** — a process crash between emit and handler loses the
+  event. A handler doing durable work does it within the emitting request's
+  lifetime and tolerates a retry (enqueues a BullMQ job whose consumer is
+  idempotent). An event does not cross the boundary lint (`payments` never
+  imports `sales`); only `shared/events` is shared.
 
   Live events: **`checkout.session.paid`** — owner `payments` (the checkout
   webhook), consumed by `sales` to create the order. See M9.
