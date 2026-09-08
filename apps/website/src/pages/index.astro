@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import { signupUrl } from '../lib/urls';
 
 const features = [
 	{ n: '01', title: 'Products & inventory', desc: 'Catalog, categories, brands, and stock tracked per location.' },
@@ -16,233 +17,140 @@ const steps = [
 	{ title: 'Add products, connect Stripe', desc: 'Your catalog, your payouts.' },
 	{ title: 'Share your storefront', desc: 'Set sail — start taking orders.' },
 ];
-
-// Merchant signup lives on a different subdomain (merchant.ordersail.com).
-// Overridable so preview/staging builds can retarget the funnel.
-const signupUrl =
-	import.meta.env.PUBLIC_MERCHANT_SIGNUP_URL ?? 'https://merchant.ordersail.com/signup';
-// Existing merchants sign in on the same app, same origin as signup.
-const signinUrl = new URL('/signin', signupUrl).href;
-
-const year = new Date().getFullYear();
 ---
 
 <Layout>
-	<div class="wrap">
-		<header class="top">
-			<span class="mark">
-				<svg class="mark-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true">
-					<path d="M12 3v11" stroke-linecap="round" />
-					<circle cx="12" cy="4.6" r="1.6" />
-					<path d="M4 14c1.6 3.6 5 5.6 8 5.6s6.4-2 8-5.6" stroke-linecap="round" />
-					<path d="M4 14l2.2 4.4M20 14l-2.2 4.4" stroke-linecap="round" />
-				</svg>
-				OrderSail
-			</span>
-			<nav class="nav">
-				<a href="#index">Index</a>
-				<a href="#route">Process</a>
-			</nav>
-			<div class="top-actions">
-				<a class="signin-top" href={signinUrl}>Sign in</a>
-				<a class="cta-top" href={signupUrl}>Start selling</a>
-			</div>
-		</header>
+	<section class="hero">
+		<p class="eyebrow">Charting commerce for small business — Est. 2026</p>
+		<h1>Set sail with your store.</h1>
+		<p class="lede">
+			One system for your products, storefront, point of sale, orders, and
+			payouts — no separate tools, no duct-taped integrations.
+		</p>
+		<div class="actions">
+			<a class="btn-primary" href={signupUrl}>Sign up — free</a>
+			<a class="btn-line" href="#index">View the index</a>
+		</div>
+	</section>
 
-		<section class="hero">
-			<p class="eyebrow">Charting commerce for small business — Est. 2026</p>
-			<h1>Set sail with your store.</h1>
-			<p class="lede">
-				One system for your products, storefront, point of sale, orders, and
-				payouts — no separate tools, no duct-taped integrations.
+	<section class="problem" id="problem">
+		<p class="eyebrow">Rough waters</p>
+		<h2 class="problem-title">Running a store shouldn't feel like this.</h2>
+		<div class="problem-grid">
+			<div class="problem-item">
+				<h3>Too many disconnected tools</h3>
+				<p>Inventory in one app, orders in another, payments somewhere else — nothing talks to each other.</p>
+			</div>
+			<div class="problem-item">
+				<h3>Inventory that doesn't reflect reality</h3>
+				<p>A single stock number that drifts out of sync the moment you sell somewhere else.</p>
+			</div>
+			<div class="problem-item">
+				<h3>Payouts you can't trace</h3>
+				<p>Money moves, but connecting an order to what actually landed in your account takes a spreadsheet.</p>
+			</div>
+			<div class="problem-item">
+				<h3>Shipping bolted on as an afterthought</h3>
+				<p>Buying a label means leaving your order screen — and hoping the tracking number makes it back.</p>
+			</div>
+		</div>
+		<div class="solution">
+			<h2 class="solution-title">One deck. Everything in view.</h2>
+			<p>
+				OrderSail brings your catalog, inventory, orders, payments, and shipping into a
+				single system. Real per-location stock with a full history, Stripe Connect payouts
+				that go straight to you, and shipping labels purchased right from the order — so
+				nothing drifts out of sync, and nothing gets lost overboard.
 			</p>
-			<div class="actions">
-				<a class="btn-primary" href={signupUrl}>Sign up — free</a>
-				<a class="btn-line" href="#index">View the index</a>
-			</div>
-		</section>
+		</div>
+	</section>
 
-		<section class="problem" id="problem">
-			<p class="eyebrow">Rough waters</p>
-			<h2 class="problem-title">Running a store shouldn't feel like this.</h2>
-			<div class="problem-grid">
-				<div class="problem-item">
-					<h3>Too many disconnected tools</h3>
-					<p>Inventory in one app, orders in another, payments somewhere else — nothing talks to each other.</p>
-				</div>
-				<div class="problem-item">
-					<h3>Inventory that doesn't reflect reality</h3>
-					<p>A single stock number that drifts out of sync the moment you sell somewhere else.</p>
-				</div>
-				<div class="problem-item">
-					<h3>Payouts you can't trace</h3>
-					<p>Money moves, but connecting an order to what actually landed in your account takes a spreadsheet.</p>
-				</div>
-				<div class="problem-item">
-					<h3>Shipping bolted on as an afterthought</h3>
-					<p>Buying a label means leaving your order screen — and hoping the tracking number makes it back.</p>
+	<hr class="rule" />
+
+	<section class="index" id="index">
+		<h2>Index</h2>
+		<div class="list">
+			{
+				features.map((f) => (
+					<div class="row">
+						<span class="row-n">{f.n}</span>
+						<h3>{f.title}</h3>
+						<p>{f.desc}</p>
+					</div>
+				))
+			}
+		</div>
+	</section>
+
+	<section class="journey" id="journey">
+		<p class="eyebrow">The customer's voyage</p>
+		<h2>A smooth trip, every time.</h2>
+		<div class="journey-list">
+			<div class="jstep">
+				<span class="jstep-dot"></span>
+				<div class="jstep-body">
+					<h4>Browse</h4>
+					<p>Your storefront, fast and mobile-friendly — always in sync with real stock.</p>
 				</div>
 			</div>
-			<div class="solution">
-				<h2 class="solution-title">One deck. Everything in view.</h2>
-				<p>
-					OrderSail brings your catalog, inventory, orders, payments, and shipping into a
-					single system. Real per-location stock with a full history, Stripe Connect payouts
-					that go straight to you, and shipping labels purchased right from the order — so
-					nothing drifts out of sync, and nothing gets lost overboard.
-				</p>
+			<div class="jstep">
+				<span class="jstep-dot"></span>
+				<div class="jstep-body">
+					<h4>Add to cart</h4>
+					<p>Guest or signed in — their cart follows them either way.</p>
+				</div>
 			</div>
-		</section>
+			<div class="jstep">
+				<span class="jstep-dot"></span>
+				<div class="jstep-body">
+					<h4>Checkout</h4>
+					<p>Stripe-hosted checkout with live shipping rates, done in seconds.</p>
+				</div>
+			</div>
+			<div class="jstep">
+				<span class="jstep-dot"></span>
+				<div class="jstep-body">
+					<h4>Shipped</h4>
+					<p>A label's purchased, and tracking goes out automatically.</p>
+				</div>
+			</div>
+			<div class="jstep jstep-last">
+				<span class="jstep-dot"></span>
+				<div class="jstep-body">
+					<h4>Delivered</h4>
+					<p>Tracking updates land right on the order — no guessing where it is.</p>
+				</div>
+			</div>
+		</div>
+	</section>
 
-		<hr class="rule" />
+	<hr class="rule" />
 
-		<section class="index" id="index">
-			<h2>Index</h2>
-			<div class="list">
-				{
-					features.map((f) => (
-						<div class="row">
-							<span class="row-n">{f.n}</span>
-							<h3>{f.title}</h3>
-							<p>{f.desc}</p>
+	<section class="route" id="route">
+		<h2>Process</h2>
+		<div class="route-list">
+			{
+				steps.map((s, i) => (
+					<div class="rstep">
+						<span class="rstep-n">{String(i + 1).padStart(2, '0')}</span>
+						<div>
+							<h4>{s.title}</h4>
+							<p>{s.desc}</p>
 						</div>
-					))
-				}
-			</div>
-		</section>
-
-		<section class="journey" id="journey">
-			<p class="eyebrow">The customer's voyage</p>
-			<h2>A smooth trip, every time.</h2>
-			<div class="journey-list">
-				<div class="jstep">
-					<span class="jstep-dot"></span>
-					<div class="jstep-body">
-						<h4>Browse</h4>
-						<p>Your storefront, fast and mobile-friendly — always in sync with real stock.</p>
 					</div>
-				</div>
-				<div class="jstep">
-					<span class="jstep-dot"></span>
-					<div class="jstep-body">
-						<h4>Add to cart</h4>
-						<p>Guest or signed in — their cart follows them either way.</p>
-					</div>
-				</div>
-				<div class="jstep">
-					<span class="jstep-dot"></span>
-					<div class="jstep-body">
-						<h4>Checkout</h4>
-						<p>Stripe-hosted checkout with live shipping rates, done in seconds.</p>
-					</div>
-				</div>
-				<div class="jstep">
-					<span class="jstep-dot"></span>
-					<div class="jstep-body">
-						<h4>Shipped</h4>
-						<p>A label's purchased, and tracking goes out automatically.</p>
-					</div>
-				</div>
-				<div class="jstep jstep-last">
-					<span class="jstep-dot"></span>
-					<div class="jstep-body">
-						<h4>Delivered</h4>
-						<p>Tracking updates land right on the order — no guessing where it is.</p>
-					</div>
-				</div>
-			</div>
-		</section>
+				))
+			}
+		</div>
+	</section>
 
-		<hr class="rule" />
-
-		<section class="route" id="route">
-			<h2>Process</h2>
-			<div class="route-list">
-				{
-					steps.map((s, i) => (
-						<div class="rstep">
-							<span class="rstep-n">{String(i + 1).padStart(2, '0')}</span>
-							<div>
-								<h4>{s.title}</h4>
-								<p>{s.desc}</p>
-							</div>
-						</div>
-					))
-				}
-			</div>
-		</section>
-
-		<section class="final" id="get-started">
-			<h2>Set sail today.</h2>
-			<p>Free while in beta. No credit card.</p>
-			<a class="btn-primary" href={signupUrl}>Create your account →</a>
-		</section>
-
-		<footer class="foot">
-			<span>OrderSail</span>
-			<span>&copy; {year}</span>
-		</footer>
-	</div>
+	<section class="final" id="get-started">
+		<h2>Set sail today.</h2>
+		<p>Free while in beta. No credit card.</p>
+		<a class="btn-primary" href={signupUrl}>Create your account →</a>
+	</section>
 </Layout>
 
 <style>
-	.top {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 18px 0;
-		font-family: ui-monospace, monospace;
-	}
-	.mark {
-		display: inline-flex;
-		align-items: center;
-		gap: 6px;
-		font-weight: 700;
-		font-size: 1rem;
-		letter-spacing: -0.01em;
-	}
-	.mark-icon {
-		width: 15px;
-		height: 15px;
-		flex-shrink: 0;
-	}
-	.nav {
-		display: flex;
-		gap: 28px;
-		font-size: 0.82rem;
-		text-transform: uppercase;
-		letter-spacing: 0.1em;
-	}
-	.nav a {
-		text-decoration: none;
-	}
-	.nav a:hover {
-		text-decoration: underline;
-	}
-	.top-actions {
-		display: flex;
-		align-items: center;
-		gap: 22px;
-	}
-	.signin-top {
-		text-decoration: none;
-		font-size: 0.82rem;
-		text-transform: uppercase;
-		letter-spacing: 0.1em;
-		color: var(--ink-dim);
-	}
-	.signin-top:hover {
-		text-decoration: underline;
-	}
-	.cta-top {
-		text-decoration: none;
-		font-size: 0.82rem;
-		text-transform: uppercase;
-		letter-spacing: 0.1em;
-		border-bottom: 1px solid var(--line);
-		padding-bottom: 2px;
-	}
-
 	.hero {
 		padding: 24px 0 64px;
 	}
@@ -474,20 +382,7 @@ const year = new Date().getFullYear();
 		margin: 0 0 32px;
 	}
 
-	.foot {
-		display: flex;
-		justify-content: space-between;
-		padding: 26px 0 60px;
-		border-top: 1px solid var(--line);
-		font-family: ui-monospace, monospace;
-		font-size: 0.8rem;
-		color: var(--ink-dim);
-	}
-
 	@media (max-width: 720px) {
-		.nav {
-			display: none;
-		}
 		.row {
 			grid-template-columns: 1fr;
 			gap: 8px;
