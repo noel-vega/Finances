@@ -5,6 +5,7 @@ import {
   cartsTable,
   desc,
   eq,
+  failedOrdersTable,
   inventoryMovementsTable,
   inventoryTable,
   orderItemsTable,
@@ -505,22 +506,106 @@ describe('OrdersProcessor — checkout-completed', () => {
   });
 });
 
+// a fully-formed job for the given scenario, with the attempt counters set
+function jobAt(
+  s: Scenario,
+  attemptsMade: number,
+  over: Partial<OrderJobData> = {},
+): Job<OrderJobData> {
+  return {
+    ...(job(s, over) as unknown as Record<string, unknown>),
+    id: 'j-1',
+    attemptsMade,
+    opts: { attempts: 8 },
+  } as unknown as Job<OrderJobData>;
+}
+
 describe('OrdersProcessor.onFailed', () => {
-  it('logs a permanent failure once retries are exhausted', async () => {
+  it('logs a retry warning while attempts remain, and writes no row', async () => {
+    const warnSpy = jest
+      .spyOn(Logger.prototype, 'warn')
+      .mockImplementation(() => undefined);
+    const s = await seedScenario();
+    const { processor } = await build();
+
+    await processor.onFailed(jobAt(s, 2), new Error('boom'));
+
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('failed on attempt 2/8'),
+    );
+    expect(await db.select().from(failedOrdersTable)).toEqual([]);
+    warnSpy.mockRestore();
+  });
+
+  it('records a failed_orders row and an [alert] line once retries are exhausted', async () => {
+    const errSpy = jest
+      .spyOn(Logger.prototype, 'error')
+      .mockImplementation(() => undefined);
+    const s = await seedScenario();
+    const { processor } = await build();
+    const j = jobAt(s, 8);
+
+    await processor.onFailed(j, new Error('db exploded'));
+
+    const [row] = await db.select().from(failedOrdersTable);
+    expect(row).toMatchObject({
+      stripeCheckoutSessionId: j.data.stripeCheckoutSessionId,
+      stripePaymentIntentId: j.data.stripePaymentIntentId,
+      accountId: s.accountId,
+      jobId: 'j-1',
+      errorMessage: 'db exploded',
+      attempts: 8,
+      resolvedAt: null,
+      resolvedBy: null,
+    });
+    expect(row.payload).toMatchObject({ type: 'checkout-completed' });
+    expect(errSpy).toHaveBeenCalledWith(
+      expect.stringMatching(/\[alert].*1 unresolved failed order/s),
+    );
+    errSpy.mockRestore();
+  });
+
+  it('upserts on the checkout session — a re-failed replay updates, not duplicates', async () => {
+    jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+    const s = await seedScenario();
+    const { processor } = await build();
+
+    await processor.onFailed(jobAt(s, 8), new Error('first failure'));
+    await processor.onFailed(jobAt(s, 8), new Error('second failure'));
+
+    const rows = await db.select().from(failedOrdersTable);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].errorMessage).toBe('second failure');
+  });
+
+  it('never throws when writing the row itself fails', async () => {
+    const errSpy = jest
+      .spyOn(Logger.prototype, 'error')
+      .mockImplementation(() => undefined);
+    const { processor } = await build();
+    // accountId 999999 → FK violation on the failed_orders insert
+    const j = jobAt({ ...(await seedScenario()), accountId: 999_999 }, 8);
+
+    await expect(
+      processor.onFailed(j, new Error('boom')),
+    ).resolves.toBeUndefined();
+    expect(errSpy).toHaveBeenCalledWith(
+      expect.stringContaining('recording the failed_orders row failed'),
+    );
+    errSpy.mockRestore();
+  });
+
+  it('logs a plain permanent-failure line for a non-checkout job type', async () => {
     const errSpy = jest
       .spyOn(Logger.prototype, 'error')
       .mockImplementation(() => undefined);
     const { processor } = await build();
 
-    processor.onFailed(
+    await processor.onFailed(
       {
-        data: {
-          type: 'checkout-completed',
-          correlationId: 'c',
-          stripeCheckoutSessionId: 'cs',
-        },
+        data: { type: 'something-else', correlationId: 'c' },
         id: '1',
-        name: 'checkout-completed',
+        name: 'x',
         attemptsMade: 8,
         opts: { attempts: 8 },
       } as unknown as Job<OrderJobData>,
@@ -530,33 +615,47 @@ describe('OrdersProcessor.onFailed', () => {
     expect(errSpy).toHaveBeenCalledWith(
       expect.stringContaining('failed permanently'),
     );
+    expect(await db.select().from(failedOrdersTable)).toEqual([]);
     errSpy.mockRestore();
   });
+});
 
-  it('logs a retry warning while attempts remain', async () => {
-    const warnSpy = jest
-      .spyOn(Logger.prototype, 'warn')
-      .mockImplementation(() => undefined);
+describe('OrdersProcessor.onCompleted', () => {
+  it('resolves a matching failed_orders row (a replay finally succeeded)', async () => {
+    jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+    const s = await seedScenario();
+    const { processor } = await build();
+    const j = jobAt(s, 8);
+
+    await processor.onFailed(j, new Error('boom')); // creates the row
+    await processor.onCompleted(j); // the replay succeeds
+
+    const [row] = await db.select().from(failedOrdersTable);
+    expect(row.resolvedBy).toBe('worker');
+    expect(row.resolvedAt).toBeInstanceOf(Date);
+  });
+
+  it('is a no-op for a normal first-time order (no row to resolve)', async () => {
+    const s = await seedScenario();
     const { processor } = await build();
 
-    processor.onFailed(
-      {
-        data: {
-          type: 'checkout-completed',
-          correlationId: 'c',
-          stripeCheckoutSessionId: 'cs',
-        },
-        id: '1',
-        name: 'checkout-completed',
-        attemptsMade: 2,
-        opts: { attempts: 8 },
-      } as unknown as Job<OrderJobData>,
-      new Error('boom'),
-    );
+    await expect(processor.onCompleted(jobAt(s, 0))).resolves.toBeUndefined();
+    expect(await db.select().from(failedOrdersTable)).toEqual([]);
+  });
 
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('failed on attempt 2/8'),
-    );
-    warnSpy.mockRestore();
+  it('does not touch an already-resolved row on a later completion', async () => {
+    jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+    const s = await seedScenario();
+    const { processor } = await build();
+    const j = jobAt(s, 8);
+    await processor.onFailed(j, new Error('boom'));
+    await processor.onCompleted(j);
+    const [afterFirst] = await db.select().from(failedOrdersTable);
+
+    await processor.onCompleted(j);
+    const [afterSecond] = await db.select().from(failedOrdersTable);
+
+    // the `resolvedAt IS NULL` guard means the second completion matches nothing
+    expect(afterSecond.resolvedAt).toEqual(afterFirst.resolvedAt);
   });
 });
