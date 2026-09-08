@@ -1,26 +1,18 @@
 import { BadRequestException, Logger } from '@nestjs/common';
-import { getQueueToken } from '@nestjs/bullmq';
 import { Test, TestingModule } from '@nestjs/testing';
-import { QUEUE_NAMES, type OrderJobData } from 'queue';
 import {
-  canonicalOrderJobData,
-  checkoutSession,
   firstCall,
   insertAccount,
   insertCart,
   insertLocation,
-  insertOrder,
-  insertOrderPayment,
   insertProductWithVariants,
   insertStripeAccount,
-  seedCheckoutScenario,
   useTestDb,
 } from 'test-support';
 import { DRIZZLE } from '../../database/database.constants';
 import { CartService } from '../cart/cart.service';
 import { CheckoutService } from './checkout.service';
 import { SHIPPO, STRIPE } from './checkout.constants';
-import type Stripe from 'stripe';
 
 const db = useTestDb();
 
@@ -28,7 +20,6 @@ interface StripeMock {
   checkout: {
     sessions: { create: jest.Mock; retrieve: jest.Mock; update: jest.Mock };
   };
-  webhooks: { constructEvent: jest.Mock };
 }
 
 interface ShippoMock {
@@ -74,7 +65,6 @@ function newStripeMock(): StripeMock {
     checkout: {
       sessions: { create: jest.fn(), retrieve: jest.fn(), update: jest.fn() },
     },
-    webhooks: { constructEvent: jest.fn() },
   };
 }
 
@@ -82,14 +72,10 @@ async function build(opts: {
   getCart?: jest.Mock;
   stripe?: StripeMock;
   shippo?: ShippoMock;
-  // use the real CartService (reads the test DB) instead of the mock — for
-  // the end-to-end producer contract test
-  realCart?: boolean;
 }) {
   const stripe = opts.stripe ?? newStripeMock();
   const shippo = opts.shippo ?? { shipments: { create: jest.fn() } };
   const cartService = { getCart: opts.getCart ?? jest.fn() };
-  const ordersQueue = { add: jest.fn() };
 
   const moduleRef: TestingModule = await Test.createTestingModule({
     providers: [
@@ -97,10 +83,7 @@ async function build(opts: {
       { provide: DRIZZLE, useValue: db },
       { provide: STRIPE, useValue: stripe },
       { provide: SHIPPO, useValue: shippo },
-      opts.realCart
-        ? CartService
-        : { provide: CartService, useValue: cartService },
-      { provide: getQueueToken(QUEUE_NAMES.ORDERS), useValue: ordersQueue },
+      { provide: CartService, useValue: cartService },
     ],
   }).compile();
 
@@ -109,7 +92,6 @@ async function build(opts: {
     stripe,
     shippo,
     cartService,
-    ordersQueue,
   };
 }
 
@@ -455,324 +437,3 @@ function rate(amount: number, displayName: string) {
     },
   };
 }
-
-describe('CheckoutService.handleWebhookEvent', () => {
-  const RAW = Buffer.from('{}');
-  const SIG = 'sig_test';
-
-  const baseSession = {
-    id: 'cs_test_1',
-    payment_status: 'paid',
-    metadata: {
-      accountId: '1',
-      cartToken: 'cart-tok-abc',
-      shippingLocationId: '7',
-    },
-    payment_intent: 'pi_test_1',
-    collected_information: {
-      shipping_details: {
-        name: 'Test Buyer',
-        address: {
-          line1: '1 Main St',
-          line2: null,
-          city: 'SF',
-          state: 'CA',
-          postal_code: '94114',
-          country: 'US',
-        },
-      },
-    },
-    customer_details: { email: 'buyer@test.com', name: 'Test Buyer' },
-    amount_total: 12345,
-    shipping_cost: { amount_total: 845 },
-  };
-
-  function completedEvent(
-    sessionOverrides: Record<string, unknown> = {},
-  ): Stripe.Event {
-    return {
-      type: 'checkout.session.completed',
-      data: { object: { ...baseSession, ...sessionOverrides } },
-    } as unknown as Stripe.Event;
-  }
-
-  async function webhook(opts: {
-    event?: Stripe.Event;
-    constructThrows?: Error;
-    getCart?: jest.Mock;
-    queueAdd?: jest.Mock;
-  }) {
-    const stripe = newStripeMock();
-    if (opts.constructThrows) {
-      const err = opts.constructThrows;
-      stripe.webhooks.constructEvent.mockImplementation(() => {
-        throw err;
-      });
-    } else {
-      stripe.webhooks.constructEvent.mockReturnValue(
-        opts.event ?? completedEvent(),
-      );
-    }
-
-    const built = await build({
-      getCart: opts.getCart ?? jest.fn().mockResolvedValue(cart()),
-      stripe,
-    });
-    if (opts.queueAdd) built.ordersQueue.add = opts.queueAdd;
-    return built;
-  }
-
-  it('rejects with a 400 when the signature does not verify', async () => {
-    const { service, ordersQueue } = await webhook({
-      constructThrows: new Error('no signatures found matching the payload'),
-    });
-
-    await expect(service.handleWebhookEvent(RAW, SIG)).rejects.toBeInstanceOf(
-      BadRequestException,
-    );
-    expect(ordersQueue.add).not.toHaveBeenCalled();
-  });
-
-  it('ignores events that are not checkout.session.completed', async () => {
-    const { service, cartService, ordersQueue } = await webhook({
-      event: {
-        type: 'payment_intent.succeeded',
-        data: { object: {} },
-      } as unknown as Stripe.Event,
-    });
-
-    await expect(service.handleWebhookEvent(RAW, SIG)).resolves.toBeUndefined();
-    expect(cartService.getCart).not.toHaveBeenCalled();
-    expect(ordersQueue.add).not.toHaveBeenCalled();
-  });
-
-  it('ignores a completed session that was not paid', async () => {
-    const { service, ordersQueue } = await webhook({
-      event: completedEvent({ payment_status: 'unpaid' }),
-    });
-
-    await expect(service.handleWebhookEvent(RAW, SIG)).resolves.toBeUndefined();
-    expect(ordersQueue.add).not.toHaveBeenCalled();
-  });
-
-  it('ignores a session missing accountId or cartToken metadata', async () => {
-    for (const metadata of [
-      { cartToken: 'cart-tok-abc' },
-      { accountId: '1' },
-    ]) {
-      const { service, cartService, ordersQueue } = await webhook({
-        event: completedEvent({ metadata }),
-      });
-
-      await expect(
-        service.handleWebhookEvent(RAW, SIG),
-      ).resolves.toBeUndefined();
-      expect(cartService.getCart).not.toHaveBeenCalled();
-      expect(ordersQueue.add).not.toHaveBeenCalled();
-    }
-  });
-
-  it('is idempotent — does nothing when a payment row already exists for the session', async () => {
-    const account = await insertAccount(db);
-    const order = await insertOrder(db, { accountId: account.id });
-    await insertOrderPayment(db, {
-      orderId: order.id,
-      stripeCheckoutSessionId: 'cs_test_1',
-    });
-
-    const { service, cartService, ordersQueue } = await webhook({});
-
-    await expect(service.handleWebhookEvent(RAW, SIG)).resolves.toBeUndefined();
-    expect(cartService.getCart).not.toHaveBeenCalled();
-    expect(ordersQueue.add).not.toHaveBeenCalled();
-  });
-
-  it('does not enqueue when the cart is gone or empty', async () => {
-    for (const value of [undefined, cart([])]) {
-      const { service, ordersQueue } = await webhook({
-        getCart: jest.fn().mockResolvedValue(value),
-      });
-
-      await expect(
-        service.handleWebhookEvent(RAW, SIG),
-      ).resolves.toBeUndefined();
-      expect(ordersQueue.add).not.toHaveBeenCalled();
-    }
-  });
-
-  it('enqueues a checkout-completed job with the resolved order payload', async () => {
-    const { service, ordersQueue } = await webhook({
-      getCart: jest.fn().mockResolvedValue(
-        cart([
-          cartItem(),
-          cartItem({
-            variantId: 11,
-            productName: 'AJ1',
-            sku: null,
-            optionValues: [],
-          }),
-        ]),
-      ),
-    });
-
-    await service.handleWebhookEvent(RAW, SIG);
-
-    expect(ordersQueue.add).toHaveBeenCalledTimes(1);
-    const [name, payload] = firstCall(ordersQueue.add) as [
-      string,
-      Record<string, unknown>,
-    ];
-    expect(name).toBe('checkout-completed');
-    expect(firstCall(ordersQueue.add)).toHaveLength(2); // no job-options arg
-    expect(payload).toMatchObject({
-      type: 'checkout-completed',
-      accountId: 1,
-      cartToken: 'cart-tok-abc',
-      stripeCheckoutSessionId: 'cs_test_1',
-      stripePaymentIntentId: 'pi_test_1',
-      customerEmail: 'buyer@test.com',
-      customerName: 'Test Buyer',
-      shippingLine1: '1 Main St',
-      shippingLine2: null,
-      shippingCity: 'SF',
-      shippingState: 'CA',
-      shippingPostalCode: '94114',
-      shippingCountry: 'US',
-      subtotalCents: 23000,
-      amountTotalCents: 12345,
-      shippingCents: 845,
-      shippingLocationId: 7,
-      storefrontUrl: 'http://localhost:3002',
-    });
-    expect(payload.correlationId).toEqual(expect.any(String));
-    expect(payload.items).toEqual([
-      {
-        variantId: 10,
-        productName: 'Nike Air Force 1',
-        sku: 'AF1-8',
-        optionsLabel: 'Size: 8',
-        priceCents: 11500,
-        quantity: 1,
-      },
-      {
-        variantId: 11,
-        productName: 'AJ1',
-        sku: null,
-        optionsLabel: null,
-        priceCents: 11500,
-        quantity: 1,
-      },
-    ]);
-  });
-
-  it('records no payment intent id when Stripe expands payment_intent to an object', async () => {
-    const { service, ordersQueue } = await webhook({
-      event: completedEvent({ payment_intent: { id: 'pi_x' } }),
-    });
-
-    await service.handleWebhookEvent(RAW, SIG);
-
-    const [, payload] = firstCall(ordersQueue.add) as [
-      string,
-      Record<string, unknown>,
-    ];
-    expect(payload.stripePaymentIntentId).toBeNull();
-  });
-
-  it('falls back to safe defaults for nullable session fields', async () => {
-    const { service, ordersQueue } = await webhook({
-      event: completedEvent({
-        amount_total: null,
-        shipping_cost: undefined,
-        metadata: { accountId: '1', cartToken: 'cart-tok-abc' },
-      }),
-    });
-
-    await service.handleWebhookEvent(RAW, SIG);
-
-    const [, payload] = firstCall(ordersQueue.add) as [
-      string,
-      Record<string, unknown>,
-    ];
-    expect(payload).toMatchObject({
-      amountTotalCents: 11500, // cart.subtotalCents
-      shippingCents: 0,
-      shippingLocationId: null,
-    });
-  });
-
-  it('uses empty strings when the session has no collected shipping details', async () => {
-    const { service, ordersQueue } = await webhook({
-      event: completedEvent({
-        collected_information: undefined,
-        customer_details: { email: 'b@t.com', name: null },
-      }),
-    });
-
-    await service.handleWebhookEvent(RAW, SIG);
-
-    const [, payload] = firstCall(ordersQueue.add) as [
-      string,
-      Record<string, unknown>,
-    ];
-    expect(payload).toMatchObject({
-      customerName: '',
-      shippingLine1: '',
-      shippingLine2: null,
-      shippingCity: '',
-      shippingState: null,
-      shippingPostalCode: '',
-      shippingCountry: '',
-    });
-  });
-
-  it('lets an enqueue failure propagate (a lost paid order must not be swallowed)', async () => {
-    const { service } = await webhook({
-      queueAdd: jest.fn().mockRejectedValue(new Error('redis down')),
-    });
-
-    await expect(service.handleWebhookEvent(RAW, SIG)).rejects.toThrow(
-      'redis down',
-    );
-  });
-});
-
-// The producer half of the checkout→order path, pinned to the shared canonical
-// scenario in test-support. The consumer half is asserted in apps/worker
-// (checkout-to-order.e2e.spec.ts) against the same canonicalOrderJobData.
-// M9 relocates this producer to merchant-api sales — this test moves with it;
-// the shared fixture keeps both ends honest across the move.
-describe('CheckoutService.handleWebhookEvent — end-to-end producer contract (M9 anchor)', () => {
-  it('resolves the canonical paid session + real cart into the canonical checkout-completed job', async () => {
-    const scenario = await seedCheckoutScenario(db);
-
-    const event = {
-      type: 'checkout.session.completed',
-      data: { object: checkoutSession(scenario) },
-    } as unknown as Stripe.Event;
-    const stripe = newStripeMock();
-    stripe.webhooks.constructEvent.mockReturnValue(event);
-
-    const { service, ordersQueue } = await build({ stripe, realCart: true });
-
-    await service.handleWebhookEvent(Buffer.from('{}'), 'sig_test');
-
-    expect(ordersQueue.add).toHaveBeenCalledTimes(1);
-    const [name, payload] = firstCall(ordersQueue.add) as [
-      string,
-      OrderJobData,
-    ];
-    expect(name).toBe('checkout-completed');
-
-    // the producer's item order follows the cart query (no ORDER BY) — compare
-    // sorted, the same way canonicalOrderJobData orders its items
-    const sorted = {
-      ...payload,
-      items: [...payload.items].sort((a, b) => a.variantId - b.variantId),
-    };
-    expect(sorted).toMatchObject(
-      canonicalOrderJobData(scenario, payload.correlationId),
-    );
-    expect(payload.correlationId).toEqual(expect.any(String));
-  });
-});

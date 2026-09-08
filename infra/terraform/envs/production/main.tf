@@ -200,6 +200,11 @@ module "ecs_service_merchant_api" {
     # aggregates every frontend module as one map expression, so going through it would make a
     # -target apply of just this service also pull in the website's (unrelated) frontend.
     { name = "MERCHANT_WEB_URL", value = "https://${module.frontend_merchant_web.distribution_domain_name}" },
+    # placeholder subdomain (covered by the *.${domain} cert) — mirrors
+    # storefront-api below; carried into the order job so the worker can build
+    # the confirmation-email link. Revisit when the reference storefront gets a
+    # real home (see the "Extract storefront-web" Linear project).
+    { name = "STOREFRONT_WEB_URL", value = "https://storefront.${var.domain_name}" },
     { name = "MINIO_ENDPOINT", value = "https://s3.${var.region}.amazonaws.com" },
     { name = "MINIO_BUCKET", value = module.secrets.product_images_bucket_name },
     { name = "MINIO_PUBLIC_BASE_URL", value = "https://${module.secrets.product_images_bucket_name}.s3.${var.region}.amazonaws.com" },
@@ -211,6 +216,9 @@ module "ecs_service_merchant_api" {
     { name = "STAFF_JWT_SECRET", valueFrom = "${module.secrets.app_secret_arns["merchant-api"]}:STAFF_JWT_SECRET::" },
     { name = "STRIPE_SECRET_KEY", valueFrom = "${module.secrets.app_secret_arns["merchant-api"]}:STRIPE_SECRET_KEY::" },
     { name = "STRIPE_ACCOUNT_WEBHOOK_SECRET", valueFrom = "${module.secrets.app_secret_arns["merchant-api"]}:STRIPE_ACCOUNT_WEBHOOK_SECRET::" },
+    # checkout webhook moved here from storefront-api (M9). The key must be
+    # added to the ordersail/production/merchant-api secret JSON.
+    { name = "STRIPE_CHECKOUT_WEBHOOK_SECRET", valueFrom = "${module.secrets.app_secret_arns["merchant-api"]}:STRIPE_CHECKOUT_WEBHOOK_SECRET::" },
     { name = "SHIPPO_API_KEY", valueFrom = "${module.secrets.app_secret_arns["merchant-api"]}:SHIPPO_API_KEY::" },
   ]
 
@@ -249,7 +257,8 @@ module "ecs_service_storefront_api" {
     { name = "DATABASE_URL", valueFrom = module.secrets.database_url_secret_arn },
     { name = "CUSTOMER_JWT_SECRET", valueFrom = "${module.secrets.app_secret_arns["storefront-api"]}:CUSTOMER_JWT_SECRET::" },
     { name = "STRIPE_SECRET_KEY", valueFrom = "${module.secrets.app_secret_arns["storefront-api"]}:STRIPE_SECRET_KEY::" },
-    { name = "STRIPE_CHECKOUT_WEBHOOK_SECRET", valueFrom = "${module.secrets.app_secret_arns["storefront-api"]}:STRIPE_CHECKOUT_WEBHOOK_SECRET::" },
+    # STRIPE_CHECKOUT_WEBHOOK_SECRET removed — the checkout webhook moved to
+    # merchant-api (M9). The key can be dropped from the storefront-api secret.
     { name = "SHIPPO_API_KEY", valueFrom = "${module.secrets.app_secret_arns["storefront-api"]}:SHIPPO_API_KEY::" },
   ]
 

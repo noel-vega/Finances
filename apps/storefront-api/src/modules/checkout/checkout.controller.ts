@@ -1,16 +1,6 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-  Req,
-  type RawBodyRequest,
-} from '@nestjs/common';
-import type { Request } from 'express';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import {
   ApiCreatedResponse,
-  ApiExcludeEndpoint,
   ApiOkResponse,
   ApiSecurity,
 } from '@nestjs/swagger';
@@ -21,7 +11,7 @@ import { CheckoutSession } from './entities/checkout-session.entity';
 import { CheckoutConfig } from './entities/checkout-config.entity';
 import { CheckoutSessionStatus } from './entities/checkout-session-status.entity';
 import { ShippingOptionsResult } from './entities/shipping-options-result.entity';
-import { CurrentAccountId, Public } from '../app-key/app-key.decorators';
+import { CurrentAccountId } from '../app-key/app-key.decorators';
 import { CurrentCartToken } from '../cart/cart.decorators';
 
 @ApiSecurity('AppKey-auth')
@@ -66,18 +56,5 @@ export class CheckoutController {
     @CurrentAccountId() accountId: number,
   ) {
     return this.checkoutService.getSessionStatus(accountId, sessionId);
-  }
-
-  // subscribed in the Stripe dashboard to "events on connected accounts",
-  // separate endpoint/secret from merchant-api's account webhook
-  @Public()
-  @Post('webhook')
-  @ApiExcludeEndpoint()
-  async webhook(@Req() req: RawBodyRequest<Request>) {
-    await this.checkoutService.handleWebhookEvent(
-      req.rawBody,
-      req.headers['stripe-signature'],
-    );
-    return { received: true };
   }
 }

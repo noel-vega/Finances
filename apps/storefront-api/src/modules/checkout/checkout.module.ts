@@ -1,9 +1,7 @@
 import { Module } from '@nestjs/common';
-import { BullModule } from '@nestjs/bullmq';
 import type Stripe from 'stripe';
 import { createStripeClient } from 'payments';
 import { Shippo } from 'shippo';
-import { ORDER_JOB_OPTIONS, QUEUE_NAMES } from 'queue';
 import { env } from '../../env';
 import { CheckoutController } from './checkout.controller';
 import { CheckoutService } from './checkout.service';
@@ -11,13 +9,7 @@ import { SHIPPO, STRIPE } from './checkout.constants';
 import { CartModule } from '../cart/cart.module';
 
 @Module({
-  imports: [
-    CartModule,
-    BullModule.registerQueue({
-      name: QUEUE_NAMES.ORDERS,
-      defaultJobOptions: ORDER_JOB_OPTIONS,
-    }),
-  ],
+  imports: [CartModule],
   controllers: [CheckoutController],
   providers: [
     CheckoutService,
