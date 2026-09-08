@@ -22,6 +22,7 @@ import { Route as AppCartsIndexRouteImport } from './routes/app/carts/index'
 import { Route as AppCartsIdRouteImport } from './routes/app/carts/$id'
 import { Route as AppCustomersIndexRouteImport } from './routes/app/customers/index'
 import { Route as AppDevelopersIndexRouteImport } from './routes/app/developers/index'
+import { Route as AppFailedOrdersIndexRouteImport } from './routes/app/failed-orders/index'
 import { Route as AppInventoryIndexRouteImport } from './routes/app/inventory/index'
 import { Route as AppInventoryMovementsRouteImport } from './routes/app/inventory/movements'
 import { Route as AppLocationsIndexRouteImport } from './routes/app/locations/index'
@@ -107,6 +108,11 @@ const AppCustomersIndexRoute = AppCustomersIndexRouteImport.update({
 const AppDevelopersIndexRoute = AppDevelopersIndexRouteImport.update({
   id: '/developers/',
   path: '/developers/',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppFailedOrdersIndexRoute = AppFailedOrdersIndexRouteImport.update({
+  id: '/failed-orders/',
+  path: '/failed-orders/',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppInventoryIndexRoute = AppInventoryIndexRouteImport.update({
@@ -239,6 +245,7 @@ export interface FileRoutesByFullPath {
   '/app/carts/': typeof AppCartsIndexRoute
   '/app/customers/': typeof AppCustomersIndexRoute
   '/app/developers/': typeof AppDevelopersIndexRoute
+  '/app/failed-orders/': typeof AppFailedOrdersIndexRoute
   '/app/inventory/': typeof AppInventoryIndexRoute
   '/app/locations/': typeof AppLocationsIndexRoute
   '/app/orders/': typeof AppOrdersIndexRoute
@@ -272,6 +279,7 @@ export interface FileRoutesByTo {
   '/app/carts': typeof AppCartsIndexRoute
   '/app/customers': typeof AppCustomersIndexRoute
   '/app/developers': typeof AppDevelopersIndexRoute
+  '/app/failed-orders': typeof AppFailedOrdersIndexRoute
   '/app/inventory': typeof AppInventoryIndexRoute
   '/app/locations': typeof AppLocationsIndexRoute
   '/app/orders': typeof AppOrdersIndexRoute
@@ -309,6 +317,7 @@ export interface FileRoutesById {
   '/app/carts/': typeof AppCartsIndexRoute
   '/app/customers/': typeof AppCustomersIndexRoute
   '/app/developers/': typeof AppDevelopersIndexRoute
+  '/app/failed-orders/': typeof AppFailedOrdersIndexRoute
   '/app/inventory/': typeof AppInventoryIndexRoute
   '/app/locations/': typeof AppLocationsIndexRoute
   '/app/orders/': typeof AppOrdersIndexRoute
@@ -347,6 +356,7 @@ export interface FileRouteTypes {
     | '/app/carts/'
     | '/app/customers/'
     | '/app/developers/'
+    | '/app/failed-orders/'
     | '/app/inventory/'
     | '/app/locations/'
     | '/app/orders/'
@@ -380,6 +390,7 @@ export interface FileRouteTypes {
     | '/app/carts'
     | '/app/customers'
     | '/app/developers'
+    | '/app/failed-orders'
     | '/app/inventory'
     | '/app/locations'
     | '/app/orders'
@@ -416,6 +427,7 @@ export interface FileRouteTypes {
     | '/app/carts/'
     | '/app/customers/'
     | '/app/developers/'
+    | '/app/failed-orders/'
     | '/app/inventory/'
     | '/app/locations/'
     | '/app/orders/'
@@ -531,6 +543,13 @@ declare module '@tanstack/react-router' {
       path: '/developers'
       fullPath: '/app/developers/'
       preLoaderRoute: typeof AppDevelopersIndexRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/failed-orders/': {
+      id: '/app/failed-orders/'
+      path: '/failed-orders'
+      fullPath: '/app/failed-orders/'
+      preLoaderRoute: typeof AppFailedOrdersIndexRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/app/inventory/': {
@@ -734,6 +753,7 @@ interface AppRouteRouteChildren {
   AppCartsIndexRoute: typeof AppCartsIndexRoute
   AppCustomersIndexRoute: typeof AppCustomersIndexRoute
   AppDevelopersIndexRoute: typeof AppDevelopersIndexRoute
+  AppFailedOrdersIndexRoute: typeof AppFailedOrdersIndexRoute
   AppInventoryIndexRoute: typeof AppInventoryIndexRoute
   AppLocationsIndexRoute: typeof AppLocationsIndexRoute
   AppOrdersIndexRoute: typeof AppOrdersIndexRoute
@@ -755,6 +775,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppCartsIndexRoute: AppCartsIndexRoute,
   AppCustomersIndexRoute: AppCustomersIndexRoute,
   AppDevelopersIndexRoute: AppDevelopersIndexRoute,
+  AppFailedOrdersIndexRoute: AppFailedOrdersIndexRoute,
   AppInventoryIndexRoute: AppInventoryIndexRoute,
   AppLocationsIndexRoute: AppLocationsIndexRoute,
   AppOrdersIndexRoute: AppOrdersIndexRoute,
