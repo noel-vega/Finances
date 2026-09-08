@@ -2253,6 +2253,67 @@
           "PosDevices"
         ]
       }
+    },
+    "/failed-orders": {
+      "get": {
+        "operationId": "FailedOrdersController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FailedOrdersList"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "FailedOrders"
+        ]
+      }
+    },
+    "/failed-orders/{id}/retry": {
+      "post": {
+        "operationId": "FailedOrdersController_retry",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FailedOrder"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "FailedOrders"
+        ]
+      }
     }
   },
   "info": {
@@ -4323,6 +4384,92 @@
             "type": "number"
           }
         }
+      },
+      "FailedOrder": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "stripeCheckoutSessionId": {
+            "type": "string"
+          },
+          "stripePaymentIntentId": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerName": {
+            "type": "string",
+            "nullable": true
+          },
+          "itemCount": {
+            "type": "number"
+          },
+          "amountTotalCents": {
+            "type": "number",
+            "nullable": true
+          },
+          "errorMessage": {
+            "type": "string"
+          },
+          "attempts": {
+            "type": "number"
+          },
+          "resolvedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "resolvedBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "stripeCheckoutSessionId",
+          "stripePaymentIntentId",
+          "customerEmail",
+          "customerName",
+          "itemCount",
+          "amountTotalCents",
+          "errorMessage",
+          "attempts",
+          "resolvedAt",
+          "resolvedBy",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "FailedOrdersList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FailedOrder"
+            }
+          },
+          "unresolvedCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "unresolvedCount"
+        ]
       }
     }
   }
