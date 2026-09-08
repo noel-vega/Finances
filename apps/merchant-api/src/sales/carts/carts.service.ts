@@ -77,7 +77,29 @@ export class CartsService {
       .from(cartsTable)
       .where(and(eq(cartsTable.id, id), eq(cartsTable.accountId, accountId)));
     if (!cart) return undefined;
+    return this.loadCartDetail(cart);
+  }
 
+  // by cart token — the checkout webhook carries the token, not the id.
+  // Order creation (CheckoutOrderService) is the caller; the cart is the
+  // source of truth for what was ordered.
+  async findByToken(
+    token: string,
+    accountId: number,
+  ): Promise<CartDetail | undefined> {
+    const [cart] = await this.db
+      .select()
+      .from(cartsTable)
+      .where(
+        and(eq(cartsTable.token, token), eq(cartsTable.accountId, accountId)),
+      );
+    if (!cart) return undefined;
+    return this.loadCartDetail(cart);
+  }
+
+  private async loadCartDetail(
+    cart: typeof cartsTable.$inferSelect,
+  ): Promise<CartDetail> {
     const rows = await this.db
       .select({
         variantId: cartItemsTable.variantId,
