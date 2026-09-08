@@ -7,47 +7,69 @@ import { DOMAIN_EVENTS, type CheckoutSessionPaidPayload } from './events';
 @Injectable()
 class Listener {
   readonly received: CheckoutSessionPaidPayload[] = [];
+  shouldThrow = false;
 
   @OnDomainEvent(DOMAIN_EVENTS.CHECKOUT_SESSION_PAID)
-  handle(payload: CheckoutSessionPaidPayload) {
+  async handle(payload: CheckoutSessionPaidPayload) {
+    await Promise.resolve();
+    if (this.shouldThrow) throw new Error('handler failed');
     this.received.push(payload);
   }
 }
 
+const payload: CheckoutSessionPaidPayload = {
+  accountId: 1,
+  cartToken: 'cart-tok-abc',
+  checkoutSessionId: 'cs_test_1',
+  paymentIntentId: 'pi_test_1',
+  customerEmail: 'buyer@test.com',
+  customerName: 'Test Buyer',
+  amountTotalCents: 12345,
+  shippingAmountCents: 845,
+  shippingLocationId: 7,
+  shippingAddress: {
+    name: 'Test Buyer',
+    line1: '1 Market St',
+    line2: null,
+    city: 'San Francisco',
+    state: 'CA',
+    postalCode: '94105',
+    country: 'US',
+  },
+};
+
+async function build() {
+  const ref = await Test.createTestingModule({
+    imports: [EventEmitterModule.forRoot()],
+    providers: [DomainEventBus, Listener],
+  }).compile();
+  await ref.init();
+  return { bus: ref.get(DomainEventBus), listener: ref.get(Listener) };
+}
+
 describe('DomainEventBus', () => {
-  it('delivers a typed domain event to an @OnDomainEvent handler in-process', async () => {
-    const ref = await Test.createTestingModule({
-      imports: [EventEmitterModule.forRoot()],
-      providers: [DomainEventBus, Listener],
-    }).compile();
-    await ref.init();
+  it('emitAsync delivers a typed domain event to an @OnDomainEvent handler and awaits it', async () => {
+    const { bus, listener } = await build();
 
-    const bus = ref.get(DomainEventBus);
-    const listener = ref.get(Listener);
-
-    const payload: CheckoutSessionPaidPayload = {
-      accountId: 1,
-      cartToken: 'cart-tok-abc',
-      checkoutSessionId: 'cs_test_1',
-      paymentIntentId: 'pi_test_1',
-      customerEmail: 'buyer@test.com',
-      customerName: 'Test Buyer',
-      amountTotalCents: 12345,
-      shippingAmountCents: 845,
-      shippingLocationId: 7,
-      shippingAddress: {
-        name: 'Test Buyer',
-        line1: '1 Market St',
-        line2: null,
-        city: 'San Francisco',
-        state: 'CA',
-        postalCode: '94105',
-        country: 'US',
-      },
-    };
-
-    bus.emit(DOMAIN_EVENTS.CHECKOUT_SESSION_PAID, payload);
+    await bus.emitAsync(DOMAIN_EVENTS.CHECKOUT_SESSION_PAID, payload);
 
     expect(listener.received).toEqual([payload]);
+  });
+
+  it('emitAsync rejects when a handler rejects', async () => {
+    const { bus, listener } = await build();
+    listener.shouldThrow = true;
+
+    await expect(
+      bus.emitAsync(DOMAIN_EVENTS.CHECKOUT_SESSION_PAID, payload),
+    ).rejects.toThrow('handler failed');
+    expect(listener.received).toEqual([]);
+  });
+
+  it('emit does not await the handler', async () => {
+    const { bus, listener } = await build();
+
+    bus.emit(DOMAIN_EVENTS.CHECKOUT_SESSION_PAID, payload);
+    expect(listener.received).toEqual([]); // async handler hasn't resolved yet
   });
 });

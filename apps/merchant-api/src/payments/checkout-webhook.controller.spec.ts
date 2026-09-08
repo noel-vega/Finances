@@ -57,64 +57,77 @@ const REQ = {
 } as unknown as RawBodyRequest<FastifyRequest>;
 
 async function build() {
-  const emit = jest.fn();
+  const emitAsync = jest.fn().mockResolvedValue(undefined);
   const ref = await Test.createTestingModule({
     controllers: [CheckoutWebhookController],
-    providers: [{ provide: DomainEventBus, useValue: { emit } }],
+    providers: [{ provide: DomainEventBus, useValue: { emitAsync } }],
   }).compile();
-  return { controller: ref.get(CheckoutWebhookController), emit };
+  return { controller: ref.get(CheckoutWebhookController), emitAsync };
 }
 
 beforeEach(() => mockedConstruct.mockReset());
 
 describe('CheckoutWebhookController', () => {
-  it('throws a 400 when the signature does not verify', async () => {
+  it('rejects with a 400 when the signature does not verify', async () => {
     mockedConstruct.mockImplementation(() => {
       throw new BadRequestException('bad sig');
     });
-    const { controller, emit } = await build();
+    const { controller, emitAsync } = await build();
 
-    expect(() => controller.webhook(REQ)).toThrow(BadRequestException);
-    expect(emit).not.toHaveBeenCalled();
+    await expect(controller.webhook(REQ)).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+    expect(emitAsync).not.toHaveBeenCalled();
+  });
+
+  it('propagates a handler failure so Stripe redelivers', async () => {
+    mockedConstruct.mockReturnValue(eventOf('checkout.session.completed'));
+    const { controller, emitAsync } = await build();
+    emitAsync.mockRejectedValue(new Error('redis down'));
+
+    await expect(controller.webhook(REQ)).rejects.toThrow('redis down');
   });
 
   it('emits checkout.session.paid for a paid completed session', async () => {
     mockedConstruct.mockReturnValue(eventOf('checkout.session.completed'));
-    const { controller, emit } = await build();
+    const { controller, emitAsync } = await build();
 
-    expect(controller.webhook(REQ)).toEqual({ received: true });
-    expect(emit).toHaveBeenCalledTimes(1);
-    expect(emit).toHaveBeenCalledWith(DOMAIN_EVENTS.CHECKOUT_SESSION_PAID, {
-      accountId: 7,
-      cartToken: 'cart-tok',
-      checkoutSessionId: 'cs_test_1',
-      paymentIntentId: 'pi_test_1',
-      customerEmail: 'buyer@test.com',
-      customerName: 'Test Buyer',
-      amountTotalCents: 26845,
-      shippingAmountCents: 845,
-      shippingLocationId: 3,
-      shippingAddress: {
-        name: 'Test Buyer',
-        line1: '1 Market St',
-        line2: null,
-        city: 'San Francisco',
-        state: 'CA',
-        postalCode: '94105',
-        country: 'US',
+    await expect(controller.webhook(REQ)).resolves.toEqual({ received: true });
+    expect(emitAsync).toHaveBeenCalledTimes(1);
+    expect(emitAsync).toHaveBeenCalledWith(
+      DOMAIN_EVENTS.CHECKOUT_SESSION_PAID,
+      {
+        accountId: 7,
+        cartToken: 'cart-tok',
+        checkoutSessionId: 'cs_test_1',
+        paymentIntentId: 'pi_test_1',
+        customerEmail: 'buyer@test.com',
+        customerName: 'Test Buyer',
+        amountTotalCents: 26845,
+        shippingAmountCents: 845,
+        shippingLocationId: 3,
+        shippingAddress: {
+          name: 'Test Buyer',
+          line1: '1 Market St',
+          line2: null,
+          city: 'San Francisco',
+          state: 'CA',
+          postalCode: '94105',
+          country: 'US',
+        },
       },
-    });
+    );
   });
 
   it('also emits for async_payment_succeeded', async () => {
     mockedConstruct.mockReturnValue(
       eventOf('checkout.session.async_payment_succeeded'),
     );
-    const { controller, emit } = await build();
+    const { controller, emitAsync } = await build();
 
-    controller.webhook(REQ);
+    await controller.webhook(REQ);
 
-    expect(emit).toHaveBeenCalledWith(
+    expect(emitAsync).toHaveBeenCalledWith(
       DOMAIN_EVENTS.CHECKOUT_SESSION_PAID,
       expect.objectContaining({ checkoutSessionId: 'cs_test_1' }),
     );
@@ -124,33 +137,33 @@ describe('CheckoutWebhookController', () => {
     mockedConstruct.mockReturnValue(
       eventOf('checkout.session.completed', { payment_status: 'unpaid' }),
     );
-    const { controller, emit } = await build();
+    const { controller, emitAsync } = await build();
 
-    controller.webhook(REQ);
+    await controller.webhook(REQ);
 
-    expect(emit).not.toHaveBeenCalled();
+    expect(emitAsync).not.toHaveBeenCalled();
   });
 
   it('does not emit when accountId or cartToken metadata is missing', async () => {
-    const { controller, emit } = await build();
+    const { controller, emitAsync } = await build();
     for (const metadata of [{ cartToken: 'x' }, { accountId: '1' }, {}]) {
       mockedConstruct.mockReturnValue(
         eventOf('checkout.session.completed', { metadata }),
       );
-      controller.webhook(REQ);
+      await controller.webhook(REQ);
     }
-    expect(emit).not.toHaveBeenCalled();
+    expect(emitAsync).not.toHaveBeenCalled();
   });
 
   it('records no payment intent id when Stripe expands payment_intent to an object', async () => {
     mockedConstruct.mockReturnValue(
       eventOf('checkout.session.completed', { payment_intent: { id: 'pi_x' } }),
     );
-    const { controller, emit } = await build();
+    const { controller, emitAsync } = await build();
 
-    controller.webhook(REQ);
+    await controller.webhook(REQ);
 
-    expect(emit).toHaveBeenCalledWith(
+    expect(emitAsync).toHaveBeenCalledWith(
       DOMAIN_EVENTS.CHECKOUT_SESSION_PAID,
       expect.objectContaining({ paymentIntentId: null }),
     );
@@ -158,10 +171,10 @@ describe('CheckoutWebhookController', () => {
 
   it('ignores unrelated event types', async () => {
     mockedConstruct.mockReturnValue(eventOf('payment_intent.succeeded'));
-    const { controller, emit } = await build();
+    const { controller, emitAsync } = await build();
 
-    expect(controller.webhook(REQ)).toEqual({ received: true });
-    expect(emit).not.toHaveBeenCalled();
+    await expect(controller.webhook(REQ)).resolves.toEqual({ received: true });
+    expect(emitAsync).not.toHaveBeenCalled();
   });
 
   it('falls back to nulls when the session omits amounts and shipping', async () => {
@@ -174,21 +187,24 @@ describe('CheckoutWebhookController', () => {
         metadata: { accountId: '7', cartToken: 'cart-tok' },
       }),
     );
-    const { controller, emit } = await build();
+    const { controller, emitAsync } = await build();
 
-    controller.webhook(REQ);
+    await controller.webhook(REQ);
 
-    expect(emit).toHaveBeenCalledWith(DOMAIN_EVENTS.CHECKOUT_SESSION_PAID, {
-      accountId: 7,
-      cartToken: 'cart-tok',
-      checkoutSessionId: 'cs_test_1',
-      paymentIntentId: 'pi_test_1',
-      customerEmail: null,
-      customerName: null,
-      amountTotalCents: null,
-      shippingAmountCents: null,
-      shippingLocationId: null,
-      shippingAddress: null,
-    });
+    expect(emitAsync).toHaveBeenCalledWith(
+      DOMAIN_EVENTS.CHECKOUT_SESSION_PAID,
+      {
+        accountId: 7,
+        cartToken: 'cart-tok',
+        checkoutSessionId: 'cs_test_1',
+        paymentIntentId: 'pi_test_1',
+        customerEmail: null,
+        customerName: null,
+        amountTotalCents: null,
+        shippingAmountCents: null,
+        shippingLocationId: null,
+        shippingAddress: null,
+      },
+    );
   });
 });

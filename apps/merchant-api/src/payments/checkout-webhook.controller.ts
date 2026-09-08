@@ -31,7 +31,7 @@ export class CheckoutWebhookController {
   @Public()
   @Post('webhook')
   @ApiExcludeEndpoint()
-  webhook(@Req() req: RawBodyRequest<FastifyRequest>) {
+  async webhook(@Req() req: RawBodyRequest<FastifyRequest>) {
     // verifies the signature or throws a 400 (see packages/payments)
     const event = constructWebhookEvent(
       stripe,
@@ -49,7 +49,13 @@ export class CheckoutWebhookController {
     ) {
       const payload = toPaidPayload(event.data.object);
       if (payload) {
-        this.events.emit(DOMAIN_EVENTS.CHECKOUT_SESSION_PAID, payload);
+        // emitAsync, not emit: if the sales handler can't enqueue the order
+        // (e.g. Redis is down) this rejects, the endpoint returns non-2xx,
+        // and Stripe redelivers — a paid order must never be silently lost.
+        await this.events.emitAsync(
+          DOMAIN_EVENTS.CHECKOUT_SESSION_PAID,
+          payload,
+        );
       } else {
         this.logger.log(
           `${event.type} ${event.data.object.id}: not paid or missing accountId/cartToken metadata — ignored`,
