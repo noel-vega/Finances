@@ -75,6 +75,7 @@
     "prettier": "^3.4.2",
     "source-map-support": "^0.5.21",
     "supertest": "^7.0.0",
+    "test-support": "*",
     "ts-jest": "^29.2.5",
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
@@ -107,6 +108,10 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
+    "globalSetup": "<rootDir>/../../../packages/test-support/src/test-db/global-setup.ts",
+    "globalTeardown": "<rootDir>/../../../packages/test-support/src/test-db/global-teardown.ts",
+    "maxWorkers": 1,
+    "testTimeout": 30000,
     "setupFiles": [
       "<rootDir>/../../../test/jest.env-setup.cjs"
     ],
@@ -120,7 +125,8 @@
       "^db/(identity|catalog|stock|sales|payments)$": "<rootDir>/../../../packages/db/src/domains/$1.ts",
       "^db/(.*)$": "<rootDir>/../../../packages/db/src/$1",
       "^email$": "<rootDir>/../../../packages/email/src/index.ts",
-      "^email-templates$": "<rootDir>/../../../packages/email-templates/src/index.ts"
+      "^email-templates$": "<rootDir>/../../../packages/email-templates/src/index.ts",
+      "^test-support$": "<rootDir>/../../../packages/test-support/src/index.ts"
     }
   }
 }
