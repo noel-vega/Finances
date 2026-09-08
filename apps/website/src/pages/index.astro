@@ -15,6 +15,11 @@ const steps = [
 	{ title: 'Share your storefront', desc: 'Set sail — start taking orders.' },
 ];
 
+// Merchant signup lives on a different subdomain (merchant.ordersail.com).
+// Overridable so preview/staging builds can retarget the funnel.
+const signupUrl =
+	import.meta.env.PUBLIC_MERCHANT_SIGNUP_URL ?? 'https://merchant.ordersail.com/signup';
+
 const year = new Date().getFullYear();
 ---
 
@@ -47,7 +52,7 @@ const year = new Date().getFullYear();
 					<a href="#index">Index</a>
 					<a href="#route">Process</a>
 				</nav>
-				<a class="cta-top" href="#get-started">Sign up</a>
+				<a class="cta-top" href={signupUrl}>Start selling</a>
 			</header>
 
 			<section class="hero">
@@ -58,7 +63,7 @@ const year = new Date().getFullYear();
 					to doorstep. No separate tools, no duct-taped integrations.
 				</p>
 				<div class="actions">
-					<a class="btn-primary" href="#get-started">Sign up — free</a>
+					<a class="btn-primary" href={signupUrl}>Sign up — free</a>
 					<a class="btn-line" href="#index">View the index</a>
 				</div>
 			</section>
@@ -176,7 +181,7 @@ const year = new Date().getFullYear();
 			<section class="final" id="get-started">
 				<h2>Set sail today.</h2>
 				<p>Free while in beta. No credit card.</p>
-				<a class="btn-primary" href="/signup">Create your account →</a>
+				<a class="btn-primary" href={signupUrl}>Create your account →</a>
 			</section>
 
 			<footer class="foot">
