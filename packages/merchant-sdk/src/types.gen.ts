@@ -724,6 +724,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/failed-orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["FailedOrdersController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/failed-orders/{id}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["FailedOrdersController_retry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1253,6 +1285,28 @@ export interface components {
         UpdatePosDeviceDto: {
             name?: string;
             locationId?: number;
+        };
+        FailedOrder: {
+            id: number;
+            stripeCheckoutSessionId: string;
+            stripePaymentIntentId: string | null;
+            customerEmail: string | null;
+            customerName: string | null;
+            itemCount: number;
+            amountTotalCents: number | null;
+            errorMessage: string;
+            attempts: number;
+            /** Format: date-time */
+            resolvedAt: string | null;
+            resolvedBy: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        FailedOrdersList: {
+            items: components["schemas"]["FailedOrder"][];
+            unresolvedCount: number;
         };
     };
     responses: never;
@@ -2680,6 +2734,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PosDevicePairing"];
+                };
+            };
+        };
+    };
+    FailedOrdersController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FailedOrdersList"];
+                };
+            };
+        };
+    };
+    FailedOrdersController_retry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FailedOrder"];
                 };
             };
         };
