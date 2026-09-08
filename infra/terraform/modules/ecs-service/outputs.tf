@@ -17,3 +17,9 @@ output "task_role_arn" {
 output "log_group_name" {
   value = aws_cloudwatch_log_group.this.name
 }
+
+# The full `register-task-definition` payload (JSON string) — envs/production
+# publishes this to SSM for cd.yml to consume. See OS-361.
+output "register_task_definition_input" {
+  value = jsonencode(local.register_task_definition_input)
+}

@@ -45,15 +45,8 @@ resource "aws_iam_role_policy" "migrator_execution_secrets" {
   })
 }
 
-resource "aws_ecs_task_definition" "migrator" {
-  family                   = "${var.name_prefix}-migrator"
-  requires_compatibilities = ["FARGATE"]
-  network_mode             = "awsvpc"
-  cpu                      = "256"
-  memory                   = "512"
-  execution_role_arn       = aws_iam_role.migrator_execution.arn
-
-  container_definitions = jsonencode([
+locals {
+  migrator_container_definitions = [
     {
       name      = "migrator"
       image     = "${module.ecr.repository_urls["migrator"]}:${var.bootstrap_image_tag}"
@@ -70,7 +63,30 @@ resource "aws_ecs_task_definition" "migrator" {
         }
       }
     }
-  ])
+  ]
+
+  # published to SSM (ssm.tf) — migrate.yml reads it, swaps in the image tag,
+  # registers a revision, run-tasks it. No taskRoleArn (migrator has none).
+  migrator_register_task_definition_input = {
+    family                  = "${var.name_prefix}-migrator"
+    executionRoleArn        = aws_iam_role.migrator_execution.arn
+    networkMode             = "awsvpc"
+    requiresCompatibilities = ["FARGATE"]
+    cpu                     = "256"
+    memory                  = "512"
+    containerDefinitions    = local.migrator_container_definitions
+  }
+}
+
+resource "aws_ecs_task_definition" "migrator" {
+  family                   = "${var.name_prefix}-migrator"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = "256"
+  memory                   = "512"
+  execution_role_arn       = aws_iam_role.migrator_execution.arn
+
+  container_definitions = jsonencode(local.migrator_container_definitions)
 
   # the Migrate workflow registers a new revision per run, pinned to the
   # deployed image tag (run-task --overrides can't change the image) — this
