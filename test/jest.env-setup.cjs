@@ -16,6 +16,7 @@ Object.assign(process.env, {
   MERCHANT_WEB_URL: 'http://localhost:5000',
   STRIPE_SECRET_KEY: 'sk_test_x',
   STRIPE_ACCOUNT_WEBHOOK_SECRET: 'whsec_x',
+  STRIPE_CHECKOUT_WEBHOOK_SECRET: 'whsec_x',
   SHIPPO_API_KEY: 'shippo_test_x',
   MINIO_ENDPOINT: 'http://localhost:9000',
   MINIO_BUCKET: 'ordersail-product-images',
@@ -24,7 +25,6 @@ Object.assign(process.env, {
   // storefront-api
   CUSTOMER_JWT_SECRET: 'test-customer-secret',
   STOREFRONT_WEB_URL: 'http://localhost:3002',
-  STRIPE_CHECKOUT_WEBHOOK_SECRET: 'whsec_x',
 
   // worker
   SMTP_HOST: 'localhost',

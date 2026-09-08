@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from 'node:crypto';
+import { createHash } from 'node:crypto';
 import {
   BadRequestException,
   Inject,
@@ -6,11 +6,6 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectQueue } from '@nestjs/bullmq';
-import type { Queue } from 'bullmq';
-import { QUEUE_NAMES, type OrderJobData } from 'queue';
-import { getCorrelationId } from 'logging';
-import { env } from '../../env';
 import { DRIZZLE } from '../../database/database.constants';
 import {
   and,
@@ -19,7 +14,6 @@ import {
   eq,
   isNotNull,
   locationsTable,
-  orderPaymentsTable,
   productVariantsTable,
   stripeAccountsTable,
   type db as Db,
@@ -33,7 +27,6 @@ import { CheckoutConfig } from './entities/checkout-config.entity';
 import { CheckoutSessionStatus } from './entities/checkout-session-status.entity';
 import { ShippingOptionsResult } from './entities/shipping-options-result.entity';
 import type Stripe from 'stripe';
-import { constructWebhookEvent } from 'payments';
 import type { Shippo } from 'shippo';
 import { SHIPPO, STRIPE } from './checkout.constants';
 
@@ -52,8 +45,6 @@ export class CheckoutService {
     @Inject(STRIPE) private readonly stripe: Stripe,
     @Inject(SHIPPO) private readonly shippo: Shippo,
     private readonly cartService: CartService,
-    @InjectQueue(QUEUE_NAMES.ORDERS)
-    private readonly ordersQueue: Queue<OrderJobData>,
   ) {}
 
   async getConfig(accountId: number): Promise<CheckoutConfig> {
@@ -354,88 +345,6 @@ export class CheckoutService {
       status: session.status ?? 'open',
       customerEmail: session.customer_details?.email ?? null,
     };
-  }
-
-  // triggered by Stripe, not the browser — the redirect back from Checkout
-  // isn't reliable (the tab can close), this webhook is the source of truth
-  async handleWebhookEvent(
-    rawBody: Buffer | undefined,
-    signature: string | string[] | undefined,
-  ): Promise<void> {
-    // verifies the signature or throws a 400 (see packages/payments)
-    const event = constructWebhookEvent(
-      this.stripe,
-      rawBody,
-      signature,
-      env.STRIPE_CHECKOUT_WEBHOOK_SECRET,
-    );
-
-    if (event.type !== 'checkout.session.completed') return;
-
-    const session = event.data.object;
-    if (session.payment_status !== 'paid') return;
-
-    const accountId = Number(session.metadata?.accountId);
-    const cartToken = session.metadata?.cartToken;
-    if (!accountId || !cartToken) return;
-
-    // idempotency — Stripe retries webhooks on non-2xx/timeouts. The
-    // checkout session id lives on the order's payment row now.
-    const [existing] = await this.db
-      .select({ id: orderPaymentsTable.id })
-      .from(orderPaymentsTable)
-      .where(eq(orderPaymentsTable.stripeCheckoutSessionId, session.id));
-    if (existing) return;
-
-    // the cart, not Stripe's line items, is the source of truth for what
-    // was ordered — avoids round-tripping product data through metadata
-    const cart = await this.cartService.getCart(cartToken, accountId);
-    if (!cart || cart.items.length === 0) return;
-
-    const shipping = session.collected_information?.shipping_details;
-    const customer = session.customer_details;
-
-    // Order creation (order + order items + inventory decrement + cart
-    // delete) happens in apps/worker, not here — this handler's job is just
-    // to validate the webhook and hand off a fully-resolved payload.
-    //
-    // Unlike EmailService, a failure to enqueue here is deliberately NOT
-    // caught and swallowed: losing a paid order silently would be far worse
-    // than a slow/failed webhook response, so letting this throw returns a
-    // non-2xx to Stripe, which redelivers the webhook — Stripe's own retry
-    // is the safety net if Redis is down, not a log line.
-    await this.ordersQueue.add('checkout-completed', {
-      type: 'checkout-completed',
-      correlationId: getCorrelationId() ?? randomUUID(),
-      accountId,
-      cartToken,
-      stripeCheckoutSessionId: session.id,
-      stripePaymentIntentId:
-        typeof session.payment_intent === 'string'
-          ? session.payment_intent
-          : null,
-      customerEmail: customer?.email ?? '',
-      customerName: customer?.name ?? shipping?.name ?? '',
-      shippingLine1: shipping?.address.line1 ?? '',
-      shippingLine2: shipping?.address.line2 ?? null,
-      shippingCity: shipping?.address.city ?? '',
-      shippingState: shipping?.address.state ?? null,
-      shippingPostalCode: shipping?.address.postal_code ?? '',
-      shippingCountry: shipping?.address.country ?? '',
-      subtotalCents: cart.subtotalCents,
-      amountTotalCents: session.amount_total ?? cart.subtotalCents,
-      shippingCents: session.shipping_cost?.amount_total ?? 0,
-      shippingLocationId: Number(session.metadata?.shippingLocationId) || null,
-      storefrontUrl: env.STOREFRONT_WEB_URL,
-      items: cart.items.map((item) => ({
-        variantId: item.variantId,
-        productName: item.productName,
-        sku: item.sku,
-        optionsLabel: optionsLabel(item) || null,
-        priceCents: item.priceCents,
-        quantity: item.quantity,
-      })),
-    });
   }
 }
 

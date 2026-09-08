@@ -9,7 +9,6 @@
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "generate:openapi": "ts-node scripts/generate-openapi.ts",
-    "stripe:listen": "stripe listen --events checkout.session.completed --forward-connect-to localhost:3001/checkout/webhook",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "dev": "npm run start:dev",
