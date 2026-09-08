@@ -1,0 +1,244 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { signupUrl } from '../lib/urls';
+
+const setup = [
+	{
+		title: 'Create your account',
+		body: 'Sign up with an email address. Free while in beta, no card. You land in the dashboard with an empty catalog and one location.',
+	},
+	{
+		title: 'Add your products',
+		body: 'Enter products, variants, and prices, and set opening stock for each location. Do it in the dashboard, or script it against the API if you have a lot to load.',
+	},
+	{
+		title: 'Connect Stripe',
+		body: 'Link a Stripe account — or create one in the flow. This is what switches on checkout and sends payouts straight to your bank. A few minutes, once.',
+	},
+	{
+		title: 'Share your storefront',
+		body: 'Point customers at your OrderSail storefront and start taking orders — or build your own storefront on the API and keep the dashboard for running the shop.',
+	},
+];
+
+const journey = [
+	{ title: 'Browse', body: 'Your storefront, fast and mobile-friendly — always in sync with real stock.' },
+	{ title: 'Add to cart', body: 'Guest or signed in — their cart follows them either way.' },
+	{ title: 'Checkout', body: 'Stripe-hosted checkout with live shipping rates, done in seconds.' },
+	{ title: 'Shipped', body: "A label's purchased, and tracking goes out automatically." },
+	{ title: 'Delivered', body: 'Tracking updates land right on the order — no guessing where it is.' },
+];
+---
+
+<Layout
+	title="How it works — OrderSail"
+	description="From signup to first order: create an account, add products, connect Stripe, share your storefront — and what a customer sees when they buy."
+>
+	<section class="head">
+		<p class="eyebrow">How it works</p>
+		<h1>From signup to your first order.</h1>
+		<p class="lede">
+			Four steps to open the shop, then OrderSail runs the sale from the
+			customer's first click through to a delivered package.
+		</p>
+	</section>
+
+	<section class="block">
+		<h2 class="block-title">Getting set up</h2>
+		<ol class="steps">
+			{
+				setup.map((s, i) => (
+					<li class="step">
+						<span class="step-n">{String(i + 1).padStart(2, '0')}</span>
+						<div>
+							<h3>{s.title}</h3>
+							<p>{s.body}</p>
+						</div>
+					</li>
+				))
+			}
+		</ol>
+		<p class="aside">
+			Building your own storefront? Everything above is also available through a
+			documented REST API — see <a href="/features">the developer API</a>.
+		</p>
+	</section>
+
+	<hr class="rule" />
+
+	<section class="block">
+		<h2 class="block-title">What a customer sees</h2>
+		<ol class="journey">
+			{
+				journey.map((j, i) => (
+					<li class={`jstep${i === journey.length - 1 ? ' jstep-last' : ''}`}>
+						<span class="jstep-dot" />
+						<div class="jstep-body">
+							<h3>{j.title}</h3>
+							<p>{j.body}</p>
+						</div>
+					</li>
+				))
+			}
+		</ol>
+	</section>
+
+	<section class="cta">
+		<h2>Open your shop.</h2>
+		<p>Free while in beta. No credit card.</p>
+		<a class="btn-primary" href={signupUrl}>Create your account →</a>
+	</section>
+</Layout>
+
+<style>
+	.head {
+		padding: 40px 0 56px;
+	}
+	.head h1 {
+		font-family: Georgia, serif;
+		font-size: clamp(2rem, 5vw, 3.4rem);
+		line-height: 1.08;
+		font-weight: 400;
+		letter-spacing: -0.02em;
+		margin: 0 0 22px;
+		max-width: 18ch;
+	}
+	.lede {
+		font-family: system-ui, sans-serif;
+		font-size: 1.08rem;
+		line-height: 1.6;
+		color: var(--ink-dim);
+		max-width: 54ch;
+		margin: 0;
+	}
+
+	.block {
+		padding: 40px 0;
+	}
+	.block-title {
+		font-family: ui-monospace, monospace;
+		font-size: 0.82rem;
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		font-weight: 400;
+		color: var(--ink-dim);
+		margin: 0 0 40px;
+	}
+
+	.steps {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 32px;
+	}
+	.step {
+		display: flex;
+		gap: 26px;
+	}
+	.step-n {
+		font-family: ui-monospace, monospace;
+		font-size: 1.3rem;
+		color: var(--ink-dim);
+		flex-shrink: 0;
+	}
+	.step h3 {
+		font-family: Georgia, serif;
+		font-size: 1.2rem;
+		font-weight: 400;
+		margin: 0 0 8px;
+	}
+	.step p {
+		font-family: system-ui, sans-serif;
+		font-size: 0.98rem;
+		line-height: 1.6;
+		color: var(--ink-dim);
+		margin: 0;
+		max-width: 56ch;
+	}
+	.aside {
+		font-family: system-ui, sans-serif;
+		font-size: 0.95rem;
+		line-height: 1.6;
+		color: var(--ink-dim);
+		margin: 40px 0 0;
+		padding-top: 24px;
+		border-top: 1px solid color-mix(in srgb, var(--line) 20%, transparent);
+		max-width: 56ch;
+	}
+
+	.journey {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+	}
+	.jstep {
+		display: flex;
+		gap: 22px;
+		position: relative;
+	}
+	.jstep-dot {
+		width: 9px;
+		height: 9px;
+		border-radius: 50%;
+		background: var(--ink);
+		flex-shrink: 0;
+		margin-top: 8px;
+	}
+	.jstep:not(.jstep-last)::before {
+		content: '';
+		position: absolute;
+		top: 22px;
+		bottom: 0;
+		left: 4px;
+		width: 1px;
+		background: color-mix(in srgb, var(--line) 35%, transparent);
+	}
+	.jstep-body {
+		padding-bottom: 30px;
+	}
+	.jstep-last .jstep-body {
+		padding-bottom: 0;
+	}
+	.jstep h3 {
+		font-family: Georgia, serif;
+		font-size: 1.1rem;
+		font-weight: 400;
+		margin: 0 0 6px;
+	}
+	.jstep p {
+		font-family: system-ui, sans-serif;
+		font-size: 0.95rem;
+		line-height: 1.5;
+		color: var(--ink-dim);
+		margin: 0;
+	}
+
+	.cta {
+		padding: 80px 0 90px;
+		text-align: center;
+		border-top: 1px solid var(--line);
+		margin-top: 24px;
+	}
+	.cta h2 {
+		font-family: Georgia, serif;
+		font-size: clamp(1.8rem, 4vw, 2.6rem);
+		font-weight: 400;
+		letter-spacing: -0.01em;
+		margin: 0 0 12px;
+	}
+	.cta p {
+		font-family: system-ui, sans-serif;
+		color: var(--ink-dim);
+		margin: 0 0 28px;
+	}
+
+	@media (max-width: 720px) {
+		.step {
+			gap: 18px;
+		}
+	}
+</style>
