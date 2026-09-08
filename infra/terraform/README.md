@@ -78,6 +78,44 @@ The two numeric ids live in `terraform.tfvars` as `github_owner_id` /
 change only on a GitHub owner/repo **transfer** — update the tfvars and re-apply
 `module.deploy_role_*` if that ever happens.
 
+## Pre-launch frontend gate (OS-363)
+
+`ordersail.com` and `merchant.ordersail.com` sit behind one shared HTTP Basic
+credential, enforced by a CloudFront Function on `viewer-request` over each
+distribution's default cache behavior (`/api/*` on merchant-web is **not**
+gated). The credential lives in an SSM `SecureString`, created out of band —
+never in git or tfvars.
+
+**Prerequisite — the parameter must exist before `terraform apply`:**
+
+```bash
+aws ssm put-parameter --region us-east-1 \
+  --name /ordersail/production/frontend/basic-auth \
+  --type SecureString \
+  --value 'crew:<long-passphrase>'         # comma-separate for more: 'crew:pw1,noel:pw2'
+```
+
+The `plan` for a first-time enable is: 2 new `aws_cloudfront_function`, 2
+in-place distribution updates (one `function_association` each), no
+replacements. Each distribution update takes ~15–20 min.
+
+**Rotate:** `put-parameter … --overwrite --value '…'`, then `terraform apply`
+(re-renders + re-publishes the functions).
+
+**Lift at launch:** PR that deletes `envs/production/frontend-auth.tf` and the
+two `basic_auth_credentials` lines in `main.tf`, then `terraform apply`.
+Emergency: detach the `viewer-request` function on both distributions in the
+CloudFront console (~5 min to propagate), reconcile Terraform after.
+
+**Verify:**
+
+```bash
+curl -sI https://ordersail.com                              # 401
+curl -sI -u 'crew:<pass>' https://ordersail.com             # 200
+curl -sI -u 'crew:<pass>' https://merchant.ordersail.com    # 200
+curl -sI https://merchant.ordersail.com/api/                # not the Basic realm
+```
+
 ## Runbooks
 
 ### Changing an RDS identity attribute (`db_name`, `identifier`, `engine`, …)

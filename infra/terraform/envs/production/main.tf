@@ -345,6 +345,9 @@ module "frontend_merchant_web" {
   acm_certificate_arn    = aws_acm_certificate_validation.frontends.certificate_arn
   enable_api_routing     = true
   api_origin_domain_name = module.alb_merchant_api.dns_name
+
+  # pre-launch gate (OS-363) — /api/* stays ungated (see the module)
+  basic_auth_credentials = local.frontend_basic_auth_credentials
 }
 
 module "frontend_website" {
@@ -353,4 +356,7 @@ module "frontend_website" {
   name                = "website"
   aliases             = [var.domain_name]
   acm_certificate_arn = aws_acm_certificate_validation.frontends.certificate_arn
+
+  # pre-launch gate (OS-363)
+  basic_auth_credentials = local.frontend_basic_auth_credentials
 }
