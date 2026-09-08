@@ -1,0 +1,258 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { signupUrl } from '../lib/urls';
+
+const included = [
+	'Full catalog — unlimited products, variants, and images',
+	'Per-location inventory with movement history',
+	'Unlimited orders and customer accounts',
+	'Stripe Connect payouts and refunds',
+	'Crew accounts for your team',
+	'The full REST API',
+];
+
+const faq = [
+	{
+		q: 'Is there really no catch?',
+		a: 'During the beta, no. We’re trading a low price for your feedback and your patience with the occasional rough edge.',
+	},
+	{
+		q: 'Will my price jump when the beta ends?',
+		a: 'You’ll get at least 30 days’ notice and a choice — no beta merchant is moved onto a paid plan without agreeing to it first.',
+	},
+	{
+		q: 'Are there contracts or minimums?',
+		a: 'No. It’s month-to-month once pricing exists, cancel anytime. More in the <a href="/faq">FAQ</a>.',
+	},
+	{
+		q: 'Do you take a percentage of my sales?',
+		a: 'No. OrderSail never touches your money — Stripe pays you directly, and we don’t add a transaction fee.',
+	},
+	{
+		q: 'What happens to my data if I stop?',
+		a: 'Export your catalog, orders, and customers through the API, then close the account. See the <a href="/faq">FAQ</a>.',
+	},
+];
+---
+
+<Layout
+	title="Pricing — OrderSail"
+	description="OrderSail is free while in beta — no card, no per-transaction fee. Stripe's processing fees are separate and passed through. Post-beta pricing is not set yet."
+>
+	<section class="head">
+		<p class="eyebrow">Pricing</p>
+		<h1>Free while we’re in beta.</h1>
+		<p class="lede">
+			No card to sign up, and no per-transaction fee from us. You pay Stripe’s
+			standard processing fee on each sale — nothing else.
+		</p>
+	</section>
+
+	<section class="card">
+		<div class="card-head">
+			<span class="price">$0</span>
+			<span class="per">/ month during beta</span>
+		</div>
+		<ul class="included">
+			{included.map((i) => <li>{i}</li>)}
+		</ul>
+		<a class="btn-primary" href={signupUrl}>Create your account →</a>
+		<p class="fine">No feature gates during the beta — every account gets everything above.</p>
+	</section>
+
+	<section class="note">
+		<h2>After the beta</h2>
+		<p>
+			We haven’t set pricing yet. When we do, every beta merchant gets at least
+			30 days’ notice before anything takes effect, and you won’t be moved onto a
+			plan without agreeing to it.
+		</p>
+		<h2>Payment processing</h2>
+		<p>
+			Stripe charges its standard processing fee on each sale, billed by Stripe.
+			That’s separate from OrderSail and we don’t mark it up. Connect your own
+			Stripe account and payouts go straight to your bank.
+		</p>
+	</section>
+
+	<section class="group">
+		<h2 class="group-title">Common questions</h2>
+		<dl>
+			{
+				faq.map((item) => (
+					<div class="qa">
+						<dt>{item.q}</dt>
+						<dd set:html={item.a} />
+					</div>
+				))
+			}
+		</dl>
+	</section>
+
+	<section class="cta">
+		<h2>Start selling — free.</h2>
+		<p>Beta pricing, everything included. No credit card.</p>
+		<a class="btn-primary" href={signupUrl}>Create your account →</a>
+	</section>
+</Layout>
+
+<style>
+	.head {
+		padding: 40px 0 40px;
+	}
+	.head h1 {
+		font-family: Georgia, serif;
+		font-size: clamp(2rem, 5vw, 3.4rem);
+		line-height: 1.08;
+		font-weight: 400;
+		letter-spacing: -0.02em;
+		margin: 0 0 22px;
+		max-width: 18ch;
+	}
+	.lede {
+		font-family: system-ui, sans-serif;
+		font-size: 1.08rem;
+		line-height: 1.6;
+		color: var(--ink-dim);
+		max-width: 54ch;
+		margin: 0;
+	}
+
+	.card {
+		border: 1px solid var(--line);
+		padding: 36px;
+		max-width: 520px;
+		margin: 16px 0 56px;
+	}
+	.card-head {
+		display: flex;
+		align-items: baseline;
+		gap: 10px;
+		margin-bottom: 24px;
+	}
+	.price {
+		font-family: Georgia, serif;
+		font-size: 2.6rem;
+		letter-spacing: -0.02em;
+	}
+	.per {
+		font-family: ui-monospace, monospace;
+		font-size: 0.8rem;
+		text-transform: uppercase;
+		letter-spacing: 0.1em;
+		color: var(--ink-dim);
+	}
+	.included {
+		list-style: none;
+		margin: 0 0 28px;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+	}
+	.included li {
+		font-family: system-ui, sans-serif;
+		font-size: 0.95rem;
+		color: var(--ink-dim);
+		padding-left: 22px;
+		position: relative;
+	}
+	.included li::before {
+		content: '→';
+		position: absolute;
+		left: 0;
+		color: var(--ink);
+	}
+	.fine {
+		font-family: system-ui, sans-serif;
+		font-size: 0.85rem;
+		color: var(--ink-dim);
+		margin: 18px 0 0;
+	}
+
+	.note {
+		padding: 8px 0 40px;
+		max-width: 60ch;
+	}
+	.note h2 {
+		font-family: ui-monospace, monospace;
+		font-size: 0.82rem;
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		font-weight: 400;
+		color: var(--ink-dim);
+		margin: 32px 0 12px;
+	}
+	.note p {
+		font-family: system-ui, sans-serif;
+		font-size: 0.98rem;
+		line-height: 1.6;
+		color: var(--ink-dim);
+		margin: 0;
+	}
+
+	.group {
+		padding: 32px 0;
+		border-top: 1px solid color-mix(in srgb, var(--line) 20%, transparent);
+	}
+	.group-title {
+		font-family: ui-monospace, monospace;
+		font-size: 0.82rem;
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		font-weight: 400;
+		color: var(--ink-dim);
+		margin: 0 0 24px;
+	}
+	dl {
+		margin: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 24px;
+	}
+	.qa {
+		max-width: 62ch;
+	}
+	dt {
+		font-family: Georgia, serif;
+		font-size: 1.1rem;
+		margin: 0 0 6px;
+	}
+	dd {
+		font-family: system-ui, sans-serif;
+		font-size: 0.98rem;
+		line-height: 1.6;
+		color: var(--ink-dim);
+		margin: 0;
+	}
+	dd :global(a) {
+		color: inherit;
+		text-decoration: underline;
+		text-underline-offset: 2px;
+	}
+
+	.cta {
+		padding: 72px 0 90px;
+		text-align: center;
+		border-top: 1px solid var(--line);
+		margin-top: 24px;
+	}
+	.cta h2 {
+		font-family: Georgia, serif;
+		font-size: clamp(1.8rem, 4vw, 2.6rem);
+		font-weight: 400;
+		letter-spacing: -0.01em;
+		margin: 0 0 12px;
+	}
+	.cta p {
+		font-family: system-ui, sans-serif;
+		color: var(--ink-dim);
+		margin: 0 0 28px;
+	}
+
+	@media (max-width: 720px) {
+		.card {
+			padding: 28px;
+		}
+	}
+</style>

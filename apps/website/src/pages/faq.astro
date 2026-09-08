@@ -1,0 +1,209 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { signupUrl } from '../lib/urls';
+
+type QA = { q: string; a: string };
+type Group = { title: string; items: QA[] };
+
+const groups: Group[] = [
+	{
+		title: 'Getting started',
+		items: [
+			{
+				q: 'What do I need to start?',
+				a: 'An email address. Signup is free while we’re in beta and doesn’t ask for a card. To take payments you’ll connect a Stripe account, which you can create during <a href="/how-it-works">setup</a>.',
+			},
+			{
+				q: 'Is there a contract or a minimum?',
+				a: 'No. It’s free during beta, and month-to-month with no minimum after that. Close your account whenever you want. See <a href="/pricing">pricing</a>.',
+			},
+			{
+				q: 'Can I import my existing products?',
+				a: 'Not with a one-click importer yet. For now it’s the dashboard or the API; a CSV import is on the roadmap.',
+			},
+		],
+	},
+	{
+		title: 'Payments & payouts',
+		items: [
+			{
+				q: 'How do payouts work?',
+				a: 'You connect a Stripe account, and Stripe pays out to your bank on its normal schedule. OrderSail records which payout covers which orders. More in <a href="/features">Payments</a>.',
+			},
+			{
+				q: 'What does it cost to take a payment?',
+				a: 'Stripe’s standard processing fee, charged by Stripe. OrderSail doesn’t add a per-transaction fee — see <a href="/pricing">pricing</a>.',
+			},
+			{
+				q: 'Do you hold my money?',
+				a: 'No. Payments go into your own Stripe account, never through OrderSail. Card details go straight to Stripe too.',
+			},
+			{
+				q: 'How do refunds work?',
+				a: 'Issue a refund from the order and it goes back to the customer’s original payment method through Stripe.',
+			},
+		],
+	},
+	{
+		title: 'Storefront & API',
+		items: [
+			{
+				q: 'Can I use my own domain or storefront?',
+				a: 'You can send customers to the OrderSail storefront today. Custom domains for the hosted storefront are on the roadmap; for full control now, build your own front end on the <a href="/features">API</a>.',
+			},
+			{
+				q: 'Is the API documented?',
+				a: 'Yes — a REST API covering the catalog, carts, and checkout, running on the same data as the dashboard. A full reference is being written.',
+			},
+			{
+				q: 'Can I keep my current website and just use OrderSail for orders?',
+				a: 'Yes. Use the API for products and checkout and keep the dashboard for running the shop.',
+			},
+		],
+	},
+	{
+		title: 'Point of sale',
+		items: [
+			{
+				q: 'Can I sell in person too?',
+				a: 'A point-of-sale companion app is in progress, working from the same catalog and stock as your online store. It isn’t generally available yet.',
+			},
+		],
+	},
+	{
+		title: 'Account & data',
+		items: [
+			{
+				q: 'Can I invite my staff?',
+				a: 'Yes — invite crew by email and each person gets their own login instead of sharing yours. See <a href="/features">Crew</a>.',
+			},
+			{
+				q: 'Is my data portable?',
+				a: 'You can pull your catalog, orders, and customers through the API at any time. A one-click export is on the roadmap.',
+			},
+			{
+				q: 'What happens to my data if I leave?',
+				a: 'Export it through the API before you close the account. If you need a hand, reach out and we’ll help.',
+			},
+		],
+	},
+];
+---
+
+<Layout
+	title="FAQ — OrderSail"
+	description="Answers to the common questions before signing up: what you need to start, how payouts and fees work, storefront and API options, point of sale, and your data."
+>
+	<section class="head">
+		<p class="eyebrow">FAQ</p>
+		<h1>Questions worth asking before you sign up.</h1>
+		<p class="lede">
+			Short, honest answers. We’re in beta, so a few things are still on the
+			way — those are called out.
+		</p>
+	</section>
+
+	{
+		groups.map((g) => (
+			<section class="group">
+				<h2 class="group-title">{g.title}</h2>
+				<dl>
+					{g.items.map((item) => (
+						<div class="qa">
+							<dt>{item.q}</dt>
+							<dd set:html={item.a} />
+						</div>
+					))}
+				</dl>
+			</section>
+		))
+	}
+
+	<section class="cta">
+		<h2>Still deciding?</h2>
+		<p>Signup is free while in beta — you can look around before committing.</p>
+		<a class="btn-primary" href={signupUrl}>Create your account →</a>
+	</section>
+</Layout>
+
+<style>
+	.head {
+		padding: 40px 0 40px;
+	}
+	.head h1 {
+		font-family: Georgia, serif;
+		font-size: clamp(2rem, 5vw, 3.4rem);
+		line-height: 1.08;
+		font-weight: 400;
+		letter-spacing: -0.02em;
+		margin: 0 0 22px;
+		max-width: 20ch;
+	}
+	.lede {
+		font-family: system-ui, sans-serif;
+		font-size: 1.08rem;
+		line-height: 1.6;
+		color: var(--ink-dim);
+		max-width: 54ch;
+		margin: 0;
+	}
+
+	.group {
+		padding: 32px 0;
+		border-top: 1px solid color-mix(in srgb, var(--line) 20%, transparent);
+	}
+	.group-title {
+		font-family: ui-monospace, monospace;
+		font-size: 0.82rem;
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		font-weight: 400;
+		color: var(--ink-dim);
+		margin: 0 0 24px;
+	}
+	dl {
+		margin: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 24px;
+	}
+	.qa {
+		max-width: 62ch;
+	}
+	dt {
+		font-family: Georgia, serif;
+		font-size: 1.1rem;
+		margin: 0 0 6px;
+	}
+	dd {
+		font-family: system-ui, sans-serif;
+		font-size: 0.98rem;
+		line-height: 1.6;
+		color: var(--ink-dim);
+		margin: 0;
+	}
+	dd :global(a) {
+		color: inherit;
+		text-decoration: underline;
+		text-underline-offset: 2px;
+	}
+
+	.cta {
+		padding: 72px 0 90px;
+		text-align: center;
+		border-top: 1px solid var(--line);
+		margin-top: 24px;
+	}
+	.cta h2 {
+		font-family: Georgia, serif;
+		font-size: clamp(1.8rem, 4vw, 2.6rem);
+		font-weight: 400;
+		letter-spacing: -0.01em;
+		margin: 0 0 12px;
+	}
+	.cta p {
+		font-family: system-ui, sans-serif;
+		color: var(--ink-dim);
+		margin: 0 0 28px;
+	}
+</style>

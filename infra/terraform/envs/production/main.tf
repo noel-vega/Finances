@@ -359,4 +359,7 @@ module "frontend_website" {
 
   # pre-launch gate (OS-363)
   basic_auth_credentials = local.frontend_basic_auth_credentials
+
+  # multi-page Astro site — serve a real 404, not index.html with a 200 (OS-292)
+  spa_fallback = false
 }

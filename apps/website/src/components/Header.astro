@@ -1,0 +1,269 @@
+---
+import { signupUrl, signinUrl } from '../lib/urls';
+
+const links = [
+	{ href: '/features', label: 'Features' },
+	{ href: '/pricing', label: 'Pricing' },
+	{ href: '/how-it-works', label: 'How it works' },
+	{ href: '/faq', label: 'FAQ' },
+];
+
+// Normalize away any trailing slash so `/features/` still matches `/features`.
+const current = Astro.url.pathname.replace(/(.)\/$/, '$1');
+---
+
+<header class="top">
+	<a class="mark" href="/">
+		<svg class="mark-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true">
+			<path d="M12 3v11" stroke-linecap="round"></path>
+			<circle cx="12" cy="4.6" r="1.6"></circle>
+			<path d="M4 14c1.6 3.6 5 5.6 8 5.6s6.4-2 8-5.6" stroke-linecap="round"></path>
+			<path d="M4 14l2.2 4.4M20 14l-2.2 4.4" stroke-linecap="round"></path>
+		</svg>
+		OrderSail
+	</a>
+
+	<nav class="nav" aria-label="Primary">
+		{
+			links.map((l) => (
+				<a href={l.href} aria-current={current === l.href ? 'page' : undefined}>
+					{l.label}
+				</a>
+			))
+		}
+	</nav>
+
+	<div class="top-actions">
+		<a class="signin-top" href={signinUrl}>Sign in</a>
+		<a class="cta-top" href={signupUrl}>Start selling</a>
+	</div>
+
+	<button
+		class="menu-toggle"
+		type="button"
+		aria-expanded="false"
+		aria-controls="mobile-menu"
+		aria-label="Open menu"
+	>
+		<span class="menu-bars" aria-hidden="true"></span>
+	</button>
+</header>
+
+<div id="mobile-menu" class="mobile-menu" hidden>
+	<nav aria-label="Site">
+		{
+			links.map((l) => (
+				<a href={l.href} aria-current={current === l.href ? 'page' : undefined}>
+					{l.label}
+				</a>
+			))
+		}
+		<a href={signinUrl}>Sign in</a>
+		<a class="btn-primary" href={signupUrl}>Start selling</a>
+	</nav>
+</div>
+
+<style>
+	.top {
+		max-width: 980px;
+		margin: 0 auto;
+		padding: 18px 28px;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		font-family: ui-monospace, monospace;
+	}
+	.mark {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		font-weight: 700;
+		font-size: 1rem;
+		letter-spacing: -0.01em;
+		text-decoration: none;
+	}
+	.mark-icon {
+		width: 15px;
+		height: 15px;
+		flex-shrink: 0;
+	}
+	.nav {
+		display: flex;
+		gap: 28px;
+		font-size: 0.82rem;
+		text-transform: uppercase;
+		letter-spacing: 0.1em;
+	}
+	.nav a {
+		text-decoration: none;
+	}
+	.nav a:hover {
+		text-decoration: underline;
+	}
+	.nav a[aria-current='page'] {
+		text-decoration: underline;
+		text-underline-offset: 4px;
+	}
+	.top-actions {
+		display: flex;
+		align-items: center;
+		gap: 22px;
+	}
+	.signin-top {
+		text-decoration: none;
+		font-size: 0.82rem;
+		text-transform: uppercase;
+		letter-spacing: 0.1em;
+		color: var(--ink-dim);
+	}
+	.signin-top:hover {
+		text-decoration: underline;
+	}
+	.cta-top {
+		text-decoration: none;
+		font-size: 0.82rem;
+		text-transform: uppercase;
+		letter-spacing: 0.1em;
+		border-bottom: 1px solid var(--line);
+		padding-bottom: 2px;
+	}
+
+	/* Hamburger — hidden on desktop. */
+	.menu-toggle {
+		display: none;
+		width: 40px;
+		height: 40px;
+		margin: -8px -8px -8px 0;
+		padding: 0;
+		border: none;
+		background: none;
+		color: var(--ink);
+		cursor: pointer;
+	}
+	.menu-bars,
+	.menu-bars::before,
+	.menu-bars::after {
+		display: block;
+		width: 20px;
+		height: 1.5px;
+		background: currentColor;
+		transition: transform 0.15s ease, opacity 0.15s ease;
+	}
+	.menu-bars {
+		margin: 0 auto;
+		position: relative;
+	}
+	.menu-bars::before,
+	.menu-bars::after {
+		content: '';
+		position: absolute;
+		left: 0;
+	}
+	.menu-bars::before {
+		top: -6px;
+	}
+	.menu-bars::after {
+		top: 6px;
+	}
+	.menu-toggle[aria-expanded='true'] .menu-bars {
+		background: transparent;
+	}
+	.menu-toggle[aria-expanded='true'] .menu-bars::before {
+		transform: translateY(6px) rotate(45deg);
+	}
+	.menu-toggle[aria-expanded='true'] .menu-bars::after {
+		transform: translateY(-6px) rotate(-45deg);
+	}
+
+	/* Full-viewport panel — display toggled off [hidden] by the reset. */
+	.mobile-menu {
+		position: fixed;
+		inset: 0;
+		z-index: 50;
+		background: var(--bg);
+		padding: 88px 28px 40px;
+		overflow-y: auto;
+	}
+	.mobile-menu nav {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		font-family: ui-monospace, monospace;
+	}
+	.mobile-menu nav a {
+		text-decoration: none;
+		text-transform: uppercase;
+		letter-spacing: 0.1em;
+		font-size: 0.95rem;
+		padding: 16px 0;
+		border-bottom: 1px solid color-mix(in srgb, var(--line) 20%, transparent);
+	}
+	.mobile-menu nav a[aria-current='page'] {
+		text-decoration: underline;
+		text-underline-offset: 4px;
+	}
+	.mobile-menu nav a.btn-primary {
+		margin-top: 24px;
+		border-bottom: none;
+		text-align: center;
+	}
+
+	@media (max-width: 720px) {
+		.nav,
+		.top-actions {
+			display: none;
+		}
+		.menu-toggle {
+			display: block;
+		}
+	}
+
+	@media (min-width: 721px) {
+		/* Never show the panel on desktop even if a stale state lingers. */
+		.mobile-menu {
+			display: none !important;
+		}
+	}
+</style>
+
+<script>
+	const toggle = document.querySelector<HTMLButtonElement>('.menu-toggle');
+	const menu = document.getElementById('mobile-menu');
+
+	if (toggle && menu) {
+		const isOpen = () => toggle.getAttribute('aria-expanded') === 'true';
+
+		const open = () => {
+			menu.hidden = false;
+			toggle.setAttribute('aria-expanded', 'true');
+			toggle.setAttribute('aria-label', 'Close menu');
+			document.documentElement.style.overflow = 'hidden';
+			menu.querySelector<HTMLAnchorElement>('a')?.focus();
+		};
+
+		const close = ({ restoreFocus = true } = {}) => {
+			menu.hidden = true;
+			toggle.setAttribute('aria-expanded', 'false');
+			toggle.setAttribute('aria-label', 'Open menu');
+			document.documentElement.style.overflow = '';
+			if (restoreFocus) toggle.focus();
+		};
+
+		toggle.addEventListener('click', () => (isOpen() ? close() : open()));
+
+		// A tap on a link (navigation) or on the panel's own empty area closes it.
+		menu.addEventListener('click', (e) => {
+			const target = e.target as HTMLElement;
+			if (target === menu || target.closest('a')) close({ restoreFocus: false });
+		});
+
+		document.addEventListener('keydown', (e) => {
+			if (e.key === 'Escape' && isOpen()) close();
+		});
+
+		// Crossing back to desktop width drops the panel + scroll lock.
+		window.matchMedia('(min-width: 721px)').addEventListener('change', (e) => {
+			if (e.matches && isOpen()) close({ restoreFocus: false });
+		});
+	}
+</script>

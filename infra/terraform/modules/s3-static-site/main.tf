@@ -139,19 +139,28 @@ resource "aws_cloudfront_distribution" "this" {
     }
   }
 
-  # SPA client-side routing: unknown paths (e.g. a deep link into a Vite
-  # router route) get index.html with a 200, not CloudFront/S3's native
-  # 403/404. Harmless no-op for website's (Astro) multi-page output too.
-  custom_error_response {
-    error_code         = 403
-    response_code      = 200
-    response_page_path = "/index.html"
+  # spa_fallback = true (default): unknown paths (a deep link into a Vite
+  # router route) get index.html with a 200 — client-side routing then takes
+  # over. spa_fallback = false (the multi-page marketing site): serve the
+  # real /404.html with a 404 status instead of a soft 404. S3 + OAC returns
+  # 403 for a missing key, so the 403 mapping is the one that actually fires;
+  # 404 is mapped too for completeness.
+  dynamic "custom_error_response" {
+    for_each = var.spa_fallback ? [403, 404] : []
+    content {
+      error_code         = custom_error_response.value
+      response_code      = 200
+      response_page_path = "/index.html"
+    }
   }
 
-  custom_error_response {
-    error_code         = 404
-    response_code      = 200
-    response_page_path = "/index.html"
+  dynamic "custom_error_response" {
+    for_each = var.spa_fallback ? [] : [403, 404]
+    content {
+      error_code         = custom_error_response.value
+      response_code      = 404
+      response_page_path = "/404.html"
+    }
   }
 
   restrictions {
