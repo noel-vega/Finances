@@ -126,11 +126,30 @@ order is never silently lost.
 ## Production (Stripe Dashboard)
 
 **One** event destination, "Events from: Connected accounts", **Snapshot (v1) events**,
-Stripe API version **`2026-08-26.dahlia`** (matches the `packages/payments` SDK pin):
+Stripe API version **`2026-08-26.dahlia`** — this must match the `packages/payments`
+SDK pin: the controller reads `session.collected_information.shipping_details`, which
+only exists on `2025-03-31.basil`+ event payloads (on older versions the shipping
+address sits at `session.shipping_details` and would be dropped). `api_version` is
+fixed at endpoint-create time and cannot be edited — to change it, create a new
+endpoint and delete the old one.
 
-| URL | Events | Secret |
-|---|---|---|
-| `https://merchant.ordersail.com/api/webhooks/stripe` | `account.updated`, `checkout.session.completed`, `checkout.session.async_payment_succeeded` (later: `expired`, `async_payment_failed` — OS-115) | `ordersail/production/merchant-api` → `STRIPE_WEBHOOK_SECRET` |
+| Endpoint | URL | Events | Secret |
+|---|---|---|---|
+| `we_1UDH0NPv6bBCGBTQqZL0Gjo5` (test mode, Connect app `ca_RXxGu0lk85WkvPTQEbF7LP7hJzSBrWoD`) | `https://merchant.ordersail.com/api/webhooks/stripe` | `account.updated`, `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired` (last two are `{received:true}` no-ops until OS-115) | `ordersail/production/merchant-api` → `STRIPE_WEBHOOK_SECRET` |
+
+Recreate recipe (`stripe` CLI, platform account key):
+
+```
+stripe webhook_endpoints create --connect=true -d "api_version=2026-08-26.dahlia" \
+  --url=https://merchant.ordersail.com/api/webhooks/stripe \
+  --enabled-events=account.updated \
+  --enabled-events=checkout.session.completed \
+  --enabled-events=checkout.session.async_payment_succeeded \
+  --enabled-events=checkout.session.async_payment_failed \
+  --enabled-events=checkout.session.expired
+# → put the returned `secret` into ordersail/production/merchant-api : STRIPE_WEBHOOK_SECRET,
+#   then `aws ecs update-service --cluster ordersail --service ordersail-merchant-api --force-new-deployment`
+```
 
 `account.updated` → `StripeConnectService.handleAccountUpdated`; `checkout.session.*` →
 the `checkout.session.paid` domain event → `sales`. `/api/` is stripped by the
