@@ -107,13 +107,14 @@ jobs:
           CLUSTER=$(aws ssm get-parameter --name /ordersail/production/ecs/cluster-name --query 'Parameter.Value' --output text)
           SERVICE=$(aws ssm get-parameter --name /ordersail/production/ecs/${{ matrix.app }}-service --query 'Parameter.Value' --output text)
           IMAGE_URI=$(aws ssm get-parameter --name /ordersail/production/ecr/${{ matrix.app }}-uri --query 'Parameter.Value' --output text)
-          FAMILY="ordersail-${{ matrix.app }}"
 
-          CURRENT=$(aws ecs describe-task-definition --task-definition "$FAMILY" --query 'taskDefinition')
-          NEW=$(echo "$CURRENT" | jq --arg IMAGE "$IMAGE_URI:${{ github.sha }}" '
-            .containerDefinitions[0].image = $IMAGE
-            | {family, taskRoleArn, executionRoleArn, networkMode, containerDefinitions, requiresCompatibilities, cpu, memory}
-          ')
+          # The task definition (env vars + secrets + roles) is rendered by
+          # Terraform (envs/production) and published to SSM — the single source
+          # of truth. Read it, swap in the freshly-built image tag, register.
+          # Env/secret changes committed to main.tf reach production here, with
+          # no manual register-task-definition (OS-361).
+          NEW=$(aws ssm get-parameter --name /ordersail/production/ecs/${{ matrix.app }}-taskdef --query 'Parameter.Value' --output text \
+            | jq --arg IMAGE "$IMAGE_URI:${{ github.sha }}" '.containerDefinitions[0].image = $IMAGE')
 
           NEW_REVISION_ARN=$(aws ecs register-task-definition --cli-input-json "$NEW" --query 'taskDefinition.taskDefinitionArn' --output text)
 
