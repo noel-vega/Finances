@@ -343,6 +343,7 @@ export class CheckoutService {
 
     return {
       status: session.status ?? 'open',
+      paymentStatus: session.payment_status ?? 'unpaid',
       customerEmail: session.customer_details?.email ?? null,
     };
   }

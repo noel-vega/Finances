@@ -4,7 +4,12 @@ import { storefrontApi } from "../lib/storefront-api-client";
 import { setStoredCartToken } from "../lib/cart-token";
 import { Button } from "ui/button";
 
-type Status = "loading" | "open" | "complete" | "error";
+// - complete    : paid — the order is on its way (webhook creates it)
+// - unconfirmed : checkout finished but the payment hasn't settled (a delayed
+//                 method still pending, or one that failed) — cart kept
+// - unfinished  : the session expired or was abandoned before paying
+// - error       : no session id, or the status lookup itself failed
+type Status = "loading" | "unfinished" | "unconfirmed" | "complete" | "error";
 
 export function CheckoutReturnPage() {
   const [searchParams] = useSearchParams();
@@ -20,18 +25,27 @@ export function CheckoutReturnPage() {
       setStatus("error");
       return;
     }
-    storefrontApi.checkout.getSessionStatus(sessionId).then((result) => {
-      if (!result) {
-        setStatus("error");
-        return;
-      }
-      if (result.status === "complete") {
-        storefrontApi.cartToken = undefined;
-        setStoredCartToken(undefined);
-      }
-      setCustomerEmail(result.customerEmail);
-      setStatus(result.status === "complete" ? "complete" : "open");
-    });
+    storefrontApi.checkout
+      .getSessionStatus(sessionId)
+      .then((result) => {
+        if (!result) {
+          setStatus("error");
+          return;
+        }
+        setCustomerEmail(result.customerEmail);
+        if (result.status === "complete" && result.paymentStatus === "paid") {
+          // only a confirmed-paid checkout empties the cart — an unsettled
+          // async payment might still fail, so the customer keeps it to retry
+          storefrontApi.cartToken = undefined;
+          setStoredCartToken(undefined);
+          setStatus("complete");
+        } else if (result.status === "complete") {
+          setStatus("unconfirmed");
+        } else {
+          setStatus("unfinished");
+        }
+      })
+      .catch(() => setStatus("error"));
   }, [sessionId]);
 
   if (status === "loading") {
@@ -42,7 +56,7 @@ export function CheckoutReturnPage() {
     );
   }
 
-  if (status === "open") {
+  if (status === "unfinished") {
     return (
       <div className="mx-auto max-w-3xl px-6 py-12 text-center">
         <h1 className="text-2xl font-medium">Checkout wasn't completed</h1>
@@ -51,6 +65,26 @@ export function CheckoutReturnPage() {
         </p>
         <Link to="/checkout">
           <Button className="mt-6">Return to checkout</Button>
+        </Link>
+      </div>
+    );
+  }
+
+  if (status === "unconfirmed") {
+    return (
+      <div className="mx-auto max-w-3xl px-6 py-12 text-center">
+        <h1 className="text-2xl font-medium">
+          We couldn't confirm your payment
+        </h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {customerEmail
+            ? `We'll email ${customerEmail} as soon as it clears. If it doesn't go through, your cart is still saved so you can try another method.`
+            : "We'll confirm by email as soon as it clears. If it doesn't go through, your cart is still saved so you can try another method."}
+        </p>
+        <Link to="/checkout">
+          <Button variant="outline" className="mt-6">
+            Back to checkout
+          </Button>
         </Link>
       </div>
     );
