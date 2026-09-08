@@ -19,6 +19,8 @@ const steps = [
 // Overridable so preview/staging builds can retarget the funnel.
 const signupUrl =
 	import.meta.env.PUBLIC_MERCHANT_SIGNUP_URL ?? 'https://merchant.ordersail.com/signup';
+// Existing merchants sign in on the same app, same origin as signup.
+const signinUrl = new URL('/signin', signupUrl).href;
 
 const year = new Date().getFullYear();
 ---
@@ -52,7 +54,10 @@ const year = new Date().getFullYear();
 					<a href="#index">Index</a>
 					<a href="#route">Process</a>
 				</nav>
-				<a class="cta-top" href={signupUrl}>Start selling</a>
+				<div class="top-actions">
+					<a class="signin-top" href={signinUrl}>Sign in</a>
+					<a class="cta-top" href={signupUrl}>Start selling</a>
+				</div>
 			</header>
 
 			<section class="hero">
@@ -254,6 +259,21 @@ const year = new Date().getFullYear();
 		text-decoration: none;
 	}
 	.nav a:hover {
+		text-decoration: underline;
+	}
+	.top-actions {
+		display: flex;
+		align-items: center;
+		gap: 22px;
+	}
+	.signin-top {
+		text-decoration: none;
+		font-size: 0.82rem;
+		text-transform: uppercase;
+		letter-spacing: 0.1em;
+		color: var(--ink-dim);
+	}
+	.signin-top:hover {
 		text-decoration: underline;
 	}
 	.cta-top {
