@@ -83,29 +83,36 @@ change only on a GitHub owner/repo **transfer** — update the tfvars and re-app
 `ordersail.com` and `merchant.ordersail.com` sit behind one shared HTTP Basic
 credential, enforced by a CloudFront Function on `viewer-request` over each
 distribution's default cache behavior (`/api/*` on merchant-web is **not**
-gated). The credential lives in an SSM `SecureString`, created out of band —
+gated). The credential lives in a Secrets Manager secret, created out of band —
 never in git or tfvars.
 
-**Prerequisite — the parameter must exist before `terraform apply`:**
+**Prerequisite — the secret must exist before `terraform apply`** (same as the
+per-app secrets in `modules/secrets`; a plan run before it exists fails on the
+data source):
 
 ```bash
-aws ssm put-parameter --region us-east-1 \
-  --name /ordersail/production/frontend/basic-auth \
-  --type SecureString \
-  --value 'crew:<long-passphrase>'         # comma-separate for more: 'crew:pw1,noel:pw2'
+aws secretsmanager create-secret --region us-east-1 \
+  --name ordersail/production/frontend/basic-auth \
+  --secret-string '{"crew":"<long-passphrase>"}'      # add keys for more logins
 ```
+
+Terraform turns the `{"user":"pass"}` map into a `["user:pass"]` allow-list baked
+into the function. An empty `{}` (or no secret) means the gate is off — plan and
+apply are unaffected.
 
 The `plan` for a first-time enable is: 2 new `aws_cloudfront_function`, 2
 in-place distribution updates (one `function_association` each), no
 replacements. Each distribution update takes ~15–20 min.
 
-**Rotate:** `put-parameter … --overwrite --value '…'`, then `terraform apply`
-(re-renders + re-publishes the functions).
+**Rotate:** `aws secretsmanager put-secret-value --secret-id
+ordersail/production/frontend/basic-auth --secret-string '{"crew":"…"}'`, then
+`terraform apply` (re-renders + re-publishes the functions).
 
-**Lift at launch:** PR that deletes `envs/production/frontend-auth.tf` and the
-two `basic_auth_credentials` lines in `main.tf`, then `terraform apply`.
-Emergency: detach the `viewer-request` function on both distributions in the
-CloudFront console (~5 min to propagate), reconcile Terraform after.
+**Lift at launch:** set the secret to `{}` and `terraform apply`, or open a PR
+that deletes `envs/production/frontend-auth.tf` and the two
+`basic_auth_credentials` lines in `main.tf`. Emergency: detach the
+`viewer-request` function on both distributions in the CloudFront console (~5 min
+to propagate), reconcile Terraform after.
 
 **Verify:**
 
