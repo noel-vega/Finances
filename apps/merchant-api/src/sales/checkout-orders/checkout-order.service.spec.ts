@@ -1,8 +1,12 @@
+import { getQueueToken } from '@nestjs/bullmq';
 import { Test } from '@nestjs/testing';
+import { QUEUE_NAMES, type OrderJobData } from 'queue';
 import {
   insertAccount,
   insertCart,
   insertLocation,
+  insertOrder,
+  insertOrderPayment,
   insertProductWithVariants,
   useTestDb,
 } from 'test-support';
@@ -14,16 +18,19 @@ import { CheckoutOrderService } from './checkout-order.service';
 const db = useTestDb();
 
 async function build() {
+  const ordersQueue = { add: jest.fn() };
   const ref = await Test.createTestingModule({
     providers: [
       CheckoutOrderService,
       CartsService,
       { provide: DRIZZLE, useValue: db },
+      { provide: getQueueToken(QUEUE_NAMES.ORDERS), useValue: ordersQueue },
     ],
   }).compile();
   return {
     service: ref.get(CheckoutOrderService),
     carts: ref.get(CartsService),
+    ordersQueue,
   };
 }
 
@@ -222,5 +229,75 @@ describe('CheckoutOrderService.resolveOrderPayload', () => {
         event({ accountId: emptyAccount.id, cartToken: 'empty-cart' }),
       ),
     ).toBeNull();
+  });
+});
+
+function payload(over: Partial<OrderJobData> = {}): OrderJobData {
+  return {
+    type: 'checkout-completed',
+    correlationId: 'corr-1',
+    accountId: 1,
+    cartToken: 'cart-tok',
+    stripeCheckoutSessionId: 'cs_test_1',
+    stripePaymentIntentId: 'pi_test_1',
+    customerEmail: 'buyer@test.com',
+    customerName: 'Test Buyer',
+    shippingLine1: '1 Market St',
+    shippingLine2: null,
+    shippingCity: 'San Francisco',
+    shippingState: 'CA',
+    shippingPostalCode: '94105',
+    shippingCountry: 'US',
+    subtotalCents: 26000,
+    amountTotalCents: 26845,
+    shippingCents: 845,
+    shippingLocationId: null,
+    storefrontUrl: 'http://localhost:3002',
+    items: [
+      {
+        variantId: 10,
+        productName: 'Sneakers',
+        sku: 'AF1-8',
+        optionsLabel: 'Size: 8',
+        priceCents: 11500,
+        quantity: 2,
+      },
+    ],
+    ...over,
+  };
+}
+
+describe('CheckoutOrderService.enqueue', () => {
+  it('adds one checkout-completed job with the payload and no options arg', async () => {
+    const { service, ordersQueue } = await build();
+
+    await service.enqueue(payload());
+
+    expect(ordersQueue.add).toHaveBeenCalledTimes(1);
+    expect(ordersQueue.add.mock.calls[0]).toEqual([
+      'checkout-completed',
+      payload(),
+    ]);
+  });
+
+  it('skips the enqueue when an order_payments row already exists for the session', async () => {
+    const account = await insertAccount(db);
+    const order = await insertOrder(db, { accountId: account.id });
+    await insertOrderPayment(db, {
+      orderId: order.id,
+      stripeCheckoutSessionId: 'cs_test_1',
+    });
+    const { service, ordersQueue } = await build();
+
+    await service.enqueue(payload({ accountId: account.id }));
+
+    expect(ordersQueue.add).not.toHaveBeenCalled();
+  });
+
+  it('lets an enqueue failure propagate (a lost paid order must not be swallowed)', async () => {
+    const { service, ordersQueue } = await build();
+    ordersQueue.add.mockRejectedValue(new Error('redis down'));
+
+    await expect(service.enqueue(payload())).rejects.toThrow('redis down');
   });
 });
