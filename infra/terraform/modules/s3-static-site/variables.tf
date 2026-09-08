@@ -37,3 +37,24 @@ variable "api_path_pattern" {
   type        = string
   default     = "/api/*"
 }
+
+variable "basic_auth_credentials" {
+  description = <<-EOT
+    "user:password" pairs that unlock the site via HTTP Basic auth, enforced by a
+    CloudFront Function on viewer-request over default_cache_behavior only (the
+    api_path_pattern behavior is never gated). Empty (default) = no gate.
+
+    NOTE: the values are base64-embedded in the published CloudFront Function and
+    recoverable by anyone with cloudfront:GetFunction — this is a keep-the-public-
+    out gate for a pre-launch site, not a real secret boundary.
+  EOT
+  type        = list(string)
+  default     = []
+  sensitive   = true
+}
+
+variable "basic_auth_realm" {
+  description = "Realm shown in the browser's Basic-auth prompt. ASCII only (it lands in a WWW-Authenticate header). Ignored when basic_auth_credentials is empty."
+  type        = string
+  default     = "ordersail - under construction"
+}

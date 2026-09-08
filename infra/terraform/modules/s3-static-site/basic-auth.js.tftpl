@@ -1,0 +1,24 @@
+// Rendered by Terraform (modules/s3-static-site) from basic-auth.js.tftpl.
+// Pre-launch gate: reject anything without a recognised HTTP Basic credential.
+// Runs on viewer-request over default_cache_behavior only — the /api/* behavior
+// is never associated with this function.
+function handler(event) {
+    var request = event.request;
+    var headers = request.headers;
+
+    var expected = ${allowed_tokens};
+    var provided = headers.authorization && headers.authorization.value;
+
+    if (provided && expected.indexOf(provided) !== -1) {
+        return request;
+    }
+
+    return {
+        statusCode: 401,
+        statusDescription: "Unauthorized",
+        headers: {
+            "www-authenticate": { value: ${realm_header} },
+            "cache-control": { value: "no-store" }
+        }
+    };
+}
