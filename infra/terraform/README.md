@@ -102,14 +102,36 @@ Creating or destroying a distribution takes ~15–20 min each (Terraform waits f
 `Deployed`). A rename touches two distributions serially — budget 30–45 min for
 that apply.
 
+### Changing a container env var or secret
+
+The task definition's `environment` / `secrets` (and roles / cpu / memory) are
+authored **once**, in the `module "ecs_service_*"` blocks in
+`envs/production/main.tf` (migrator: `migrator.tf`). Each module renders the full
+`register-task-definition` payload as its `register_task_definition_input` output;
+`ssm.tf` publishes those to `/ordersail/production/ecs/<app>-taskdef`.
+
+To change one:
+
+1. Edit the `module "ecs_service_<app>"` block (or `migrator.tf`).
+2. `terraform apply` in `envs/production/` — the only diff is the
+   `aws_ssm_parameter.ecs_taskdef["…"]` value. **No ECS resource churn**
+   (`ignore_changes = [container_definitions]` still suppresses the rev-1 def).
+3. Merge to `main`. `cd.yml`'s `deploy-services` reads the SSM contract, swaps in
+   the built image tag, and registers a new revision — the change is live after
+   the next deploy. No manual `aws ecs register-task-definition` (OS-361).
+
+For a Secrets Manager **key** rename: rename it in the JSON
+(`aws secretsmanager put-secret-value`) *and* update the `valueFrom` suffix in
+`main.tf` in the same change, so the next deploy's task def points at the new key.
+
 ### First-time image bootstrap
 
 ECR is `IMMUTABLE` and `cd.yml` only pushes `:<git-sha>` — there is no `:latest`.
 The Terraform-owned rev-1 task definitions (the `ecs_service_*` modules +
 `aws_ecs_task_definition.migrator`) reference `:${var.bootstrap_image_tag}`
-(default `bootstrap`); `ignore_changes = [container_definitions]` hands authority
-to `cd.yml` the moment the first deploy runs, so this tag is **never** the
-running image.
+(default `bootstrap`); `ignore_changes = [container_definitions]` means Terraform
+owns only that rev-1 baseline — every running revision is registered by `cd.yml`
+from the SSM contract — so this tag is **never** the running image.
 
 For an already-applied stack: nothing to do (rev-1 task defs already exist and
 are ignored).

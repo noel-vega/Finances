@@ -74,16 +74,8 @@ resource "aws_iam_role_policy" "task_extra" {
   policy = var.task_role_policy_json
 }
 
-resource "aws_ecs_task_definition" "this" {
-  family                   = "${var.name_prefix}-${var.name}"
-  requires_compatibilities = ["FARGATE"]
-  network_mode             = "awsvpc"
-  cpu                      = var.cpu
-  memory                   = var.memory
-  execution_role_arn       = aws_iam_role.execution.arn
-  task_role_arn            = aws_iam_role.task.arn
-
-  container_definitions = jsonencode([
+locals {
+  container_definitions = [
     {
       name      = var.name
       image     = var.image
@@ -109,12 +101,41 @@ resource "aws_ecs_task_definition" "this" {
         startPeriod = 20
       }
     }
-  ])
+  ]
+
+  # The exact `aws ecs register-task-definition --cli-input-json` payload for
+  # this service. Published to SSM by envs/production (see `register_task_definition_input`
+  # output) — cd.yml reads it, swaps in the freshly-built image tag, and
+  # registers a revision. This is the single source of truth for env vars and
+  # secrets; a change here reaches production on the next deploy (see OS-361).
+  register_task_definition_input = {
+    family                  = "${var.name_prefix}-${var.name}"
+    taskRoleArn             = aws_iam_role.task.arn
+    executionRoleArn        = aws_iam_role.execution.arn
+    networkMode             = "awsvpc"
+    requiresCompatibilities = ["FARGATE"]
+    cpu                     = var.cpu
+    memory                  = var.memory
+    containerDefinitions    = local.container_definitions
+  }
+}
+
+resource "aws_ecs_task_definition" "this" {
+  family                   = "${var.name_prefix}-${var.name}"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = var.cpu
+  memory                   = var.memory
+  execution_role_arn       = aws_iam_role.execution.arn
+  task_role_arn            = aws_iam_role.task.arn
+
+  container_definitions = jsonencode(local.container_definitions)
 
   lifecycle {
-    # the CD workflow registers new revisions and updates the service
-    # directly (docker/deploy_services.md) — don't fight it by reverting
-    # the image tag to whatever's in this file on every `terraform apply`
+    # Terraform owns only this rev-1 bootstrap definition. Every running
+    # revision is registered by cd.yml from the SSM-published contract above
+    # (which Terraform also renders from the same locals), so `terraform apply`
+    # must not churn the image tag or the def on every run.
     ignore_changes = [container_definitions]
   }
 }

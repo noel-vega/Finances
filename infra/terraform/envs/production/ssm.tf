@@ -35,6 +35,19 @@ locals {
     "ecs/migrator-task-family"   = aws_ecs_task_definition.migrator.family
   }
 
+  # The Terraform-rendered `register-task-definition` payload per app — the
+  # single source of truth for container env vars + secrets. cd.yml /
+  # migrate.yml read these, swap in the built image tag, and register a
+  # revision (OS-361). One aggregated map (like ssm_ecs above); a `-target`
+  # apply of one service still evaluates all five outputs.
+  ssm_ecs_taskdef = {
+    "ecs/merchant-api-taskdef"   = module.ecs_service_merchant_api.register_task_definition_input
+    "ecs/storefront-api-taskdef" = module.ecs_service_storefront_api.register_task_definition_input
+    "ecs/worker-taskdef"         = module.ecs_service_worker.register_task_definition_input
+    "ecs/pos-api-taskdef"        = module.ecs_service_pos_api.register_task_definition_input
+    "ecs/migrator-taskdef"       = jsonencode(local.migrator_register_task_definition_input)
+  }
+
   ssm_network = {
     "network/private-subnet-ids"       = join(",", module.network.private_subnet_ids)
     "network/ecs-tasks-security-group" = module.ecs_cluster.ecs_tasks_security_group_id
@@ -73,6 +86,16 @@ resource "aws_ssm_parameter" "ecs" {
   name     = "/${var.name_prefix}/production/${each.key}"
   type     = "String"
   value    = each.value
+}
+
+resource "aws_ssm_parameter" "ecs_taskdef" {
+  for_each = local.ssm_ecs_taskdef
+  name     = "/${var.name_prefix}/production/${each.key}"
+  type     = "String"
+  # merchant-api's payload is a few KB — Intelligent-Tiering promotes to
+  # Advanced only if it ever crosses the 4 KB Standard limit.
+  tier  = "Intelligent-Tiering"
+  value = each.value
 }
 
 resource "aws_ssm_parameter" "network" {
