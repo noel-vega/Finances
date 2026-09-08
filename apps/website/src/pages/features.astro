@@ -1,0 +1,205 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { signupUrl } from '../lib/urls';
+
+const capabilities = [
+	{
+		n: '01',
+		title: 'Products & inventory',
+		body: 'Build a catalog with categories, brands, variants, and images. Stock is counted per location with a full movement history, so the number on the screen is the number on the shelf — and you can see every sale, restock, and adjustment that moved it.',
+		who: 'Anyone who has watched a single stock count drift out of sync.',
+	},
+	{
+		n: '02',
+		title: 'Orders & carts',
+		body: 'Every order and every open cart in one list, from the first click to delivery. Line items, stock allocations, payments, and shipping all hang off the order — no stitching three tools together to see what happened to a sale.',
+		who: 'Merchants who want one screen that tells the whole story of an order.',
+	},
+	{
+		n: '03',
+		title: 'Ports',
+		body: 'Run one store or a chain. Each location — a shop floor, a stockroom, a pop-up — keeps its own inventory, and counts stay correct at every port as you sell across them.',
+		who: 'Multi-location retailers, and anyone planning a second spot.',
+	},
+	{
+		n: '04',
+		title: 'Customers',
+		body: 'Shoppers get self-serve signup and sign-in on your storefront. Their cart follows them from guest to signed-in and back, and their order history is theirs to look up without emailing you.',
+		who: 'Stores that want repeat buyers, not just one-time checkouts.',
+	},
+	{
+		n: '05',
+		title: 'Crew',
+		body: 'Invite the people who help you run the shop by email. Each gets their own login instead of sharing yours, so you can see who did what.',
+		who: "Owners who don't want the whole team on one password.",
+	},
+	{
+		n: '06',
+		title: 'Payments',
+		body: 'Connect Stripe once. Payouts land in your bank account, refunds go back the way they came, and every payment is tied to its order. Card details go straight to Stripe — OrderSail never handles them.',
+		who: 'Merchants who want to get paid without becoming a payments expert.',
+	},
+	{
+		n: '07',
+		title: 'Developer API',
+		body: 'A documented REST API covering the catalog, carts, and checkout — the same data the dashboard runs on. Build your own storefront or wire OrderSail into the tools you already use.',
+		who: 'Teams with a developer and a specific idea of how their storefront should work.',
+	},
+];
+---
+
+<Layout
+	title="Features — OrderSail"
+	description="What OrderSail does: catalog and per-location inventory, orders and carts, multi-location, customer accounts, crew, Stripe payouts, and a REST API."
+>
+	<section class="head">
+		<p class="eyebrow">Features</p>
+		<h1>Everything a small store runs on, in one system.</h1>
+		<p class="lede">
+			OrderSail keeps your catalog, stock, orders, customers, payments, and
+			shipping in one place — so the pieces stay in sync instead of drifting
+			apart across half a dozen tools.
+		</p>
+	</section>
+
+	<div class="features">
+		{
+			capabilities.map((c) => (
+				<section class="feature">
+					<span class="feature-n">{c.n}</span>
+					<div class="feature-body">
+						<h2>{c.title}</h2>
+						<p>{c.body}</p>
+						<p class="who">
+							<span>For</span>
+							{c.who}
+						</p>
+					</div>
+					<figure class="shot" aria-hidden="true">
+						<span>Screenshot</span>
+					</figure>
+				</section>
+			))
+		}
+	</div>
+
+	<section class="cta">
+		<h2>Start selling with OrderSail.</h2>
+		<p>Free while in beta. No credit card.</p>
+		<a class="btn-primary" href={signupUrl}>Create your account →</a>
+	</section>
+</Layout>
+
+<style>
+	.head {
+		padding: 40px 0 56px;
+	}
+	.head h1 {
+		font-family: Georgia, serif;
+		font-size: clamp(2rem, 5vw, 3.4rem);
+		line-height: 1.08;
+		font-weight: 400;
+		letter-spacing: -0.02em;
+		margin: 0 0 22px;
+		max-width: 20ch;
+	}
+	.lede {
+		font-family: system-ui, sans-serif;
+		font-size: 1.08rem;
+		line-height: 1.6;
+		color: var(--ink-dim);
+		max-width: 56ch;
+		margin: 0;
+	}
+
+	.features {
+		display: flex;
+		flex-direction: column;
+	}
+	.feature {
+		display: grid;
+		grid-template-columns: 48px 1fr 220px;
+		gap: 28px;
+		padding: 40px 0;
+		border-top: 1px solid color-mix(in srgb, var(--line) 20%, transparent);
+	}
+	.feature-n {
+		font-family: ui-monospace, monospace;
+		font-size: 0.85rem;
+		color: var(--ink-dim);
+		padding-top: 4px;
+	}
+	.feature-body h2 {
+		font-family: Georgia, serif;
+		font-size: 1.35rem;
+		font-weight: 400;
+		letter-spacing: -0.01em;
+		margin: 0 0 12px;
+	}
+	.feature-body p {
+		font-family: system-ui, sans-serif;
+		font-size: 0.98rem;
+		line-height: 1.6;
+		color: var(--ink-dim);
+		margin: 0;
+		max-width: 54ch;
+	}
+	.who {
+		margin-top: 14px !important;
+		font-size: 0.9rem !important;
+	}
+	.who span {
+		font-family: ui-monospace, monospace;
+		font-size: 0.7rem;
+		text-transform: uppercase;
+		letter-spacing: 0.12em;
+		color: var(--ink);
+		margin-right: 10px;
+	}
+	.shot {
+		margin: 0;
+		aspect-ratio: 4 / 3;
+		border: 1px solid color-mix(in srgb, var(--line) 20%, transparent);
+		display: grid;
+		place-items: center;
+	}
+	.shot span {
+		font-family: ui-monospace, monospace;
+		font-size: 0.7rem;
+		text-transform: uppercase;
+		letter-spacing: 0.12em;
+		color: color-mix(in srgb, var(--ink-dim) 60%, transparent);
+	}
+
+	.cta {
+		padding: 80px 0 90px;
+		text-align: center;
+		border-top: 1px solid var(--line);
+		margin-top: 24px;
+	}
+	.cta h2 {
+		font-family: Georgia, serif;
+		font-size: clamp(1.8rem, 4vw, 2.6rem);
+		font-weight: 400;
+		letter-spacing: -0.01em;
+		margin: 0 0 12px;
+	}
+	.cta p {
+		font-family: system-ui, sans-serif;
+		color: var(--ink-dim);
+		margin: 0 0 28px;
+	}
+
+	@media (max-width: 720px) {
+		.feature {
+			grid-template-columns: 1fr;
+			gap: 12px;
+		}
+		.feature-n {
+			padding-top: 0;
+		}
+		.shot {
+			max-width: 320px;
+		}
+	}
+</style>
