@@ -62,10 +62,10 @@ jobs:
             --workspace=ui
 
       - name: Test
-        # storefront-api + worker boot a throwaway Postgres via Testcontainers
-        # in jest globalSetup (packages/test-support) and run their specs
-        # against real SQL — ubuntu-latest has Docker. merchant-api + pos-api
-        # still mock the DB; test/jest.env-setup.cjs gives them a dummy
+        # merchant-api + storefront-api + worker boot a throwaway Postgres via
+        # Testcontainers in jest globalSetup (packages/test-support) and run
+        # their specs against real SQL — ubuntu-latest has Docker. pos-api
+        # still mocks the DB; test/jest.env-setup.cjs gives it a dummy
         # DATABASE_URL so packages/db's import-time pool string parses.
         run: |
           npm run test --workspace=merchant-api \
