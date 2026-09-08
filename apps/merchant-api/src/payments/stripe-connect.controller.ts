@@ -1,30 +1,16 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Query,
-  Req,
-  type RawBodyRequest,
-} from '@nestjs/common';
-import type { FastifyRequest } from 'fastify';
-import {
-  ApiBearerAuth,
-  ApiExcludeEndpoint,
-  ApiOkResponse,
-  ApiQuery,
-} from '@nestjs/swagger';
-import { env } from 'src/shared/env';
+import { Controller, Get, Post, Query } from '@nestjs/common';
+import { ApiBearerAuth, ApiOkResponse, ApiQuery } from '@nestjs/swagger';
 import { StripeConnectService } from './stripe-connect.service';
 import { StripeConnectStatus } from './entities/stripe-connect-status.entity';
 import { AccountSessionResponse } from './entities/account-session.entity';
 import {
   CurrentUser,
-  Public,
   type AuthenticatedUser,
 } from 'src/shared/auth/decorators';
-import { constructWebhookEvent } from 'payments';
-import { stripe } from './stripe.client';
 
+// merchant-facing Connect routes. The `account.updated` webhook that keeps
+// charges_enabled / details_submitted in sync lives in StripeWebhookController
+// (the one Stripe webhook endpoint) and calls StripeConnectService directly.
 @Controller('stripe-connect')
 export class StripeConnectController {
   constructor(private readonly stripeConnectService: StripeConnectService) {}
@@ -48,29 +34,5 @@ export class StripeConnectController {
       user.accountId,
       refresh === 'true',
     );
-  }
-
-  // subscribed in the Stripe dashboard to "events on connected accounts",
-  // separate endpoint/secret from storefront-api's checkout webhook
-  @Public()
-  @Post('webhook')
-  @ApiExcludeEndpoint()
-  async webhook(@Req() req: RawBodyRequest<FastifyRequest>) {
-    const event = constructWebhookEvent(
-      stripe,
-      req.rawBody,
-      req.headers['stripe-signature'],
-      env.STRIPE_ACCOUNT_WEBHOOK_SECRET,
-    );
-
-    if (event.type === 'account.updated' && event.account) {
-      const account = event.data.object;
-      await this.stripeConnectService.handleAccountUpdated(event.account, {
-        charges_enabled: account.charges_enabled,
-        details_submitted: account.details_submitted,
-      });
-    }
-
-    return { received: true };
   }
 }

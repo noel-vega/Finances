@@ -16,11 +16,9 @@ export const env = parseEnv(
 
     // one platform-owned Stripe/Shippo account, shared with storefront-api
     STRIPE_SECRET_KEY: z.string().startsWith('sk_'),
-    // Connect `account.updated` → POST /stripe-connect/webhook
-    STRIPE_ACCOUNT_WEBHOOK_SECRET: z.string().startsWith('whsec_'),
-    // Checkout `checkout.session.*` → POST /checkout/webhook (its own Stripe
-    // Dashboard endpoint + secret; M9 moved this here from storefront-api)
-    STRIPE_CHECKOUT_WEBHOOK_SECRET: z.string().startsWith('whsec_'),
+    // the one Stripe Dashboard event destination → POST /webhooks/stripe
+    // (account.updated + checkout.session.*); see StripeWebhookController
+    STRIPE_WEBHOOK_SECRET: z.string().startsWith('whsec_'),
     SHIPPO_API_KEY: z.string().min(1),
 
     // MinIO locally; real S3 in prod, where creds come from the ECS task role
