@@ -100,6 +100,9 @@ export class CheckoutOrderService {
     }
 
     await this.ordersQueue.add('checkout-completed', payload);
+    this.logger.log(
+      `checkout ${payload.stripeCheckoutSessionId}: order job enqueued`,
+    );
   }
 }
 
