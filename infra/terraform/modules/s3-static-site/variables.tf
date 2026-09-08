@@ -53,6 +53,17 @@ variable "basic_auth_credentials" {
   sensitive   = true
 }
 
+variable "spa_fallback" {
+  description = <<-EOT
+    true (default): serve /index.html with a 200 for unknown paths, so a
+    client-side router (Vite SPA) can handle the route. false: serve the real
+    /404.html with a 404 status — correct for a multi-page static site like the
+    marketing site, where a soft 404 (200 + homepage) hurts SEO.
+  EOT
+  type        = bool
+  default     = true
+}
+
 variable "basic_auth_realm" {
   description = "Realm shown in the browser's Basic-auth prompt. ASCII only (it lands in a WWW-Authenticate header). Ignored when basic_auth_credentials is empty."
   type        = string
