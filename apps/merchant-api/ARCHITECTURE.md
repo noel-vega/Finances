@@ -19,8 +19,8 @@ root.
 | **identity** | `identity/` | auth, users, roles, permissions, api-keys, account | `accounts`, `users`, `user_invites`, `account_api_keys`, `roles`, `permissions`, `role_permissions`, `user_roles` |
 | **catalog** | `catalog/` | products, brands, categories | `products`, `brands`, `categories`, `product_options`, `product_option_values`, `product_variants`, `variant_option_values`, `product_categories`, `product_images`, `product_barcodes` |
 | **stock** | `stock/` | inventory, locations | `locations`, `inventory`, `inventory_movements` |
-| **sales** | `sales/` | orders, fulfillments, carts, customers | `orders`, `order_shipping`, `order_payments`, `order_items`, `fulfillments`, `fulfillment_items`, `carts`, `cart_items`, `customers` |
-| **payments** | `payments/` (flat) | stripe-connect | `stripe_accounts` |
+| **sales** | `sales/` | orders, fulfillments, carts, customers, checkout-orders | `orders`, `order_shipping`, `order_payments`, `order_items`, `fulfillments`, `fulfillment_items`, `carts`, `cart_items`, `customers` |
+| **payments** | `payments/` (flat) | stripe-connect, checkout-webhook | `stripe_accounts` |
 | **platform** | `platform/` | dashboard, health, pos-devices | `pos_devices` |
 
 **Shared kernel** — `src/shared/`. Pure cross-cutting infra, importable from
@@ -95,8 +95,10 @@ Adding a new cross-context edge = update the table above **and** the
   idempotent). An event does not cross the boundary lint (`payments` never
   imports `sales`); only `shared/events` is shared.
 
-  Live events: **`checkout.session.paid`** — owner `payments` (the checkout
-  webhook), consumed by `sales` to create the order. See M9.
+  Live events: **`checkout.session.paid`** — `payments/checkout-webhook.controller`
+  verifies the Stripe checkout webhook and emits it; `sales/checkout-orders`
+  resolves the cart into an order-job payload and enqueues it on the `orders`
+  queue (owned here — `apps/worker` consumes it and writes the order). See M9.
 - The shared kernel — for pure infra only.
 
 ## Data access (read-graph)
@@ -144,13 +146,16 @@ access.
 
 Ordered by how clean the cut is:
 
-1. **`payments`** — 1 module (`stripe-connect`), owns only `stripe_accounts`,
-   depends on `identity` alone. The Stripe surface is also duplicated in
-   storefront-api / worker → `packages/payments` (OS-347) is the shared core.
-   Cut: `stripe_accounts.accountId → accounts.id` FK becomes a soft reference.
+1. **`payments`** — `stripe-connect` + `checkout-webhook`, owns only
+   `stripe_accounts`, depends on `identity` alone (its only link to `sales` is
+   the `checkout.session.paid` event, not an import). The Stripe surface is also
+   used by storefront-api / worker → `packages/payments` (OS-347) is the shared
+   core. Cut: `stripe_accounts.accountId → accounts.id` FK becomes a soft
+   reference.
 2. **`sales` + fulfillment** — larger, but a natural service boundary (order
-   lifecycle). Cuts: `order_items.variantId → product_variants.id`,
-   `inventory_movements.orderItemId → order_items.id`,
+   lifecycle). Owns the `orders` BullMQ producer (`checkout-orders`);
+   `apps/worker` is the consumer. Cuts: `order_items.variantId →
+   product_variants.id`, `inventory_movements.orderItemId → order_items.id`,
    `order_shipping.locationId → locations.id` become soft references; the
    `dashboard` read-model moves to a query API or a projection.
 
@@ -168,9 +173,13 @@ down. What keeps that bounded (OS-346 audit):
   default is 80 s). Shippo: `timeoutMs: 20_000`
   (`sales/fulfillments/shippo.client.ts`). S3: `requestTimeout: 10_000`
   (`packages/storage`). **Add a timeout to any new client.**
-- **Webhooks fail as 4xx, not 5xx, on bad input** —
-  `stripe-connect.controller.ts` catches `constructEvent` → `BadRequestException`
-  so Stripe stops retrying (same as storefront-api's checkout webhook).
+- **Webhooks fail as 4xx, not 5xx, on bad input** — both Stripe webhook
+  controllers (`payments/stripe-connect.controller.ts`,
+  `payments/checkout-webhook.controller.ts`) use `constructWebhookEvent` from
+  `packages/payments`, which turns a bad/missing signature into a
+  `BadRequestException` so Stripe stops retrying. A *processing* failure
+  (checkout webhook → `sales` can't enqueue) is deliberately a 5xx so Stripe
+  **does** retry — a paid order must not be lost.
 - **No unbounded in-process work** — no module-level mutable caches,
   `setInterval`, `while(true)`, or unbounded recursion. `onModuleInit` hooks
   either fail-fast (`permissions` — don't serve without the catalog) or are
