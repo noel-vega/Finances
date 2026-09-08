@@ -19,6 +19,8 @@ const steps = [
 // Overridable so preview/staging builds can retarget the funnel.
 const signupUrl =
 	import.meta.env.PUBLIC_MERCHANT_SIGNUP_URL ?? 'https://merchant.ordersail.com/signup';
+// Existing merchants sign in on the same app, same origin as signup.
+const signinUrl = new URL('/signin', signupUrl).href;
 
 const year = new Date().getFullYear();
 ---
@@ -52,15 +54,18 @@ const year = new Date().getFullYear();
 					<a href="#index">Index</a>
 					<a href="#route">Process</a>
 				</nav>
-				<a class="cta-top" href={signupUrl}>Start selling</a>
+				<div class="top-actions">
+					<a class="signin-top" href={signinUrl}>Sign in</a>
+					<a class="cta-top" href={signupUrl}>Start selling</a>
+				</div>
 			</header>
 
 			<section class="hero">
 				<p class="eyebrow">Charting commerce for small business — Est. 2026</p>
 				<h1>Set sail with your store.</h1>
 				<p class="lede">
-					Products, orders, inventory, and payouts — smooth sailing from cart
-					to doorstep. No separate tools, no duct-taped integrations.
+					One system for your products, storefront, point of sale, orders, and
+					payouts — no separate tools, no duct-taped integrations.
 				</p>
 				<div class="actions">
 					<a class="btn-primary" href={signupUrl}>Sign up — free</a>
@@ -227,7 +232,7 @@ const year = new Date().getFullYear();
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 30px 0;
+		padding: 18px 0;
 		font-family: ui-monospace, monospace;
 	}
 	.mark {
@@ -256,6 +261,21 @@ const year = new Date().getFullYear();
 	.nav a:hover {
 		text-decoration: underline;
 	}
+	.top-actions {
+		display: flex;
+		align-items: center;
+		gap: 22px;
+	}
+	.signin-top {
+		text-decoration: none;
+		font-size: 0.82rem;
+		text-transform: uppercase;
+		letter-spacing: 0.1em;
+		color: var(--ink-dim);
+	}
+	.signin-top:hover {
+		text-decoration: underline;
+	}
 	.cta-top {
 		text-decoration: none;
 		font-size: 0.82rem;
@@ -266,7 +286,7 @@ const year = new Date().getFullYear();
 	}
 
 	.hero {
-		padding: 40px 0 70px;
+		padding: 24px 0 64px;
 	}
 	.eyebrow {
 		font-family: ui-monospace, monospace;
@@ -276,21 +296,24 @@ const year = new Date().getFullYear();
 		color: var(--ink-dim);
 		margin: 0 0 26px;
 	}
+	.hero .eyebrow {
+		margin: 0 0 18px;
+	}
 	.hero h1 {
-		font-size: clamp(2.6rem, 7vw, 5.2rem);
-		line-height: 1;
+		font-size: clamp(2.2rem, 6vw, 4.4rem);
+		line-height: 1.05;
 		font-weight: 400;
 		letter-spacing: -0.02em;
-		margin: 0 0 30px;
+		margin: 0 0 20px;
 		max-width: 15ch;
 	}
 	.lede {
 		font-family: system-ui, sans-serif;
-		font-size: 1.15rem;
-		line-height: 1.6;
+		font-size: 1.08rem;
+		line-height: 1.55;
 		color: var(--ink-dim);
 		max-width: 48ch;
-		margin: 0 0 36px;
+		margin: 0 0 28px;
 	}
 	.actions {
 		display: flex;
