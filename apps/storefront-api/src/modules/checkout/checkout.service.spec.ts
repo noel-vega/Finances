@@ -428,6 +428,95 @@ describe('CheckoutService.getShippingOptions', () => {
   });
 });
 
+describe('CheckoutService.getSessionStatus', () => {
+  function stripeReturning(
+    session: Record<string, unknown> | null,
+  ): StripeMock {
+    const stripe = newStripeMock();
+    stripe.checkout.sessions.retrieve.mockResolvedValue(session);
+    return stripe;
+  }
+
+  it('passes through status, payment_status and the customer email', async () => {
+    const { accountId, connected } = await seedConnected();
+    const { service, stripe } = await build({
+      stripe: stripeReturning({
+        status: 'complete',
+        payment_status: 'paid',
+        customer_details: { email: 'buyer@test.com' },
+      }),
+    });
+
+    await expect(
+      service.getSessionStatus(accountId, 'cs_test_1'),
+    ).resolves.toEqual({
+      status: 'complete',
+      paymentStatus: 'paid',
+      customerEmail: 'buyer@test.com',
+    });
+    // scoped to this account's connected Stripe account
+    expect(stripe.checkout.sessions.retrieve).toHaveBeenCalledWith(
+      'cs_test_1',
+      undefined,
+      { stripeAccount: connected },
+    );
+  });
+
+  it('reports an unpaid complete session (async payment pending / failed)', async () => {
+    const { accountId } = await seedConnected();
+    const { service } = await build({
+      stripe: stripeReturning({
+        status: 'complete',
+        payment_status: 'unpaid',
+        customer_details: { email: null },
+      }),
+    });
+
+    await expect(
+      service.getSessionStatus(accountId, 'cs_test_2'),
+    ).resolves.toEqual({
+      status: 'complete',
+      paymentStatus: 'unpaid',
+      customerEmail: null,
+    });
+  });
+
+  it('falls back to open/unpaid when Stripe omits the fields', async () => {
+    const { accountId } = await seedConnected();
+    const { service } = await build({ stripe: stripeReturning({}) });
+
+    await expect(
+      service.getSessionStatus(accountId, 'cs_test_3'),
+    ).resolves.toEqual({
+      status: 'open',
+      paymentStatus: 'unpaid',
+      customerEmail: null,
+    });
+  });
+
+  it('404s when the account has no connected Stripe account', async () => {
+    const account = await insertAccount(db);
+    const { service } = await build({});
+
+    await expect(
+      service.getSessionStatus(account.id, 'cs_test_4'),
+    ).rejects.toThrow();
+  });
+
+  it('404s when the session cannot be retrieved', async () => {
+    const { accountId } = await seedConnected();
+    const stripe = newStripeMock();
+    stripe.checkout.sessions.retrieve.mockRejectedValue(
+      new Error('no such session'),
+    );
+    const { service } = await build({ stripe });
+
+    await expect(
+      service.getSessionStatus(accountId, 'cs_missing'),
+    ).rejects.toThrow();
+  });
+});
+
 function rate(amount: number, displayName: string) {
   return {
     shipping_rate_data: {

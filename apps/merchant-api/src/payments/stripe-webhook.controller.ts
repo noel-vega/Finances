@@ -59,7 +59,6 @@ export class StripeWebhookController {
 
       // async_payment_succeeded = a delayed payment method settled after the
       // session first "completed" unpaid — same paid path as completed.
-      // OS-115 adds checkout.session.expired / .async_payment_failed here.
       case 'checkout.session.completed':
       case 'checkout.session.async_payment_succeeded': {
         const payload = toPaidPayload(event.data.object);
@@ -76,6 +75,35 @@ export class StripeWebhookController {
             `${event.type} ${event.data.object.id}: not paid or missing accountId/cartToken metadata — ignored`,
           );
         }
+        break;
+      }
+
+      // A delayed payment method (some bank debits) failed to settle after
+      // the session first "completed" unpaid. No order was ever created, so
+      // there's nothing to unwind — log it and move on. The specific failure
+      // reason lives on the PaymentIntent, not the session; surfacing a
+      // provisional order as `payment_failed` waits on the order-status model
+      // (OS-118 / M2).
+      case 'checkout.session.async_payment_failed': {
+        const session = event.data.object;
+        const paymentIntentId =
+          typeof session.payment_intent === 'string'
+            ? session.payment_intent
+            : (session.payment_intent?.id ?? 'none');
+        this.logger.warn(
+          `${event.type} ${session.id}: async payment did not settle ` +
+            `(payment_status=${session.payment_status}, payment_intent=${paymentIntentId}) — no order created`,
+        );
+        break;
+      }
+
+      // The customer opened checkout and never paid; the session TTL lapsed.
+      // The cart is untouched, so they can start over — nothing to do beyond
+      // recording that it happened.
+      case 'checkout.session.expired': {
+        this.logger.log(
+          `${event.type} ${event.data.object.id}: session expired unpaid — cart left intact`,
+        );
         break;
       }
     }

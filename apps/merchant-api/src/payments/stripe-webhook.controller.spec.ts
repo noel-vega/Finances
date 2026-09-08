@@ -3,6 +3,7 @@ import type { RawBodyRequest } from '@nestjs/common';
 import type { FastifyRequest } from 'fastify';
 import { Test } from '@nestjs/testing';
 import type Stripe from 'stripe';
+import { Logger } from 'logging';
 import { constructWebhookEvent } from 'payments';
 import { DOMAIN_EVENTS, DomainEventBus } from 'src/shared/events';
 import { StripeConnectService } from './stripe-connect.service';
@@ -263,6 +264,37 @@ describe('StripeWebhookController', () => {
           shippingAddress: null,
         },
       );
+    });
+
+    it('logs async_payment_failed at warn and creates no order', async () => {
+      const warn = jest
+        .spyOn(Logger.prototype, 'warn')
+        .mockImplementation(() => undefined);
+      mockedConstruct.mockReturnValue(
+        checkoutEvent('checkout.session.async_payment_failed', {
+          payment_status: 'unpaid',
+          payment_intent: 'pi_test_1',
+        }),
+      );
+      const { controller, emitAsync } = await build();
+
+      await expect(controller.handle(REQ)).resolves.toEqual({ received: true });
+      expect(emitAsync).not.toHaveBeenCalled();
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('cs_test_1'));
+      warn.mockRestore();
+    });
+
+    it('acknowledges an expired session without creating an order', async () => {
+      mockedConstruct.mockReturnValue(
+        checkoutEvent('checkout.session.expired', {
+          status: 'expired',
+          payment_status: 'unpaid',
+        }),
+      );
+      const { controller, emitAsync } = await build();
+
+      await expect(controller.handle(REQ)).resolves.toEqual({ received: true });
+      expect(emitAsync).not.toHaveBeenCalled();
     });
   });
 
