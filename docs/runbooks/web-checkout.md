@@ -1,8 +1,10 @@
 # Runbook: web checkout, end to end (local, Stripe test mode)
 
 How to run one real storefront purchase locally and verify every downstream write.
-Verified working 2026-09-02 (OS-111); **path changed by M9** (checkout webhook +
-order resolution moved storefront-api → merchant-api) — re-verify after M9 deploys.
+Verified working 2026-09-08 (OS-358) on the post-M9 path — checkout from the demo
+storefront-web, `payments/StripeWebhookController` → `checkout.session.paid` domain
+event → `sales` → worker. (Originally OS-111, 2026-09-02, before M9 moved the
+webhook + order resolution storefront-api → merchant-api.)
 
 ```
 storefront-web /checkout                         [storefront-api :3001]
