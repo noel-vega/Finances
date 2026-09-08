@@ -1,5 +1,6 @@
 import {
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   text,
@@ -201,7 +202,52 @@ export const fulfillmentItemsTable = pgTable("fulfillment_items", {
   createdAt: timestampAt("created_at"),
 });
 
-export const SelectFulfillmentItemSchema = createSelectSchema(fulfillmentItemsTable);
+export const SelectFulfillmentItemSchema = createSelectSchema(
+  fulfillmentItemsTable,
+);
 export type SelectFulfillmentItem = z.infer<typeof SelectFulfillmentItemSchema>;
-export const InsertFulfillmentItemSchema = createInsertSchema(fulfillmentItemsTable);
+export const InsertFulfillmentItemSchema = createInsertSchema(
+  fulfillmentItemsTable,
+);
 export type InsertFulfillmentItem = z.infer<typeof InsertFulfillmentItemSchema>;
+
+// a checkout that paid but whose order the worker could not write, even after
+// exhausting every retry (ORDER_JOB_OPTIONS.attempts). The BullMQ job stays in
+// Redis, but that's invisible to anyone not reading worker logs — this row is
+// the first-class surface: a paid customer with no order is the worst failure
+// this system has. apps/worker upserts it from its 'failed' handler; the
+// merchant-api sales context lists it and replays it (re-enqueues `payload`).
+export const failedOrdersTable = pgTable("failed_orders", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  // the Stripe checkout session — unique, so a replay that fails again updates
+  // this row instead of piling up duplicates. Same key the worker dedupes on
+  // (order_payments.stripeCheckoutSessionId), so a later successful write for
+  // this session can resolve the row.
+  stripeCheckoutSessionId: text().notNull().unique(),
+  stripePaymentIntentId: text(),
+  accountId: integer()
+    .notNull()
+    .references(() => accountsTable.id, { onDelete: "cascade" }),
+  // BullMQ job id of the last failed attempt — for cross-referencing worker
+  // logs / Redis
+  jobId: text(),
+  // the fully-resolved order-job payload (queue's OrderJobData) the worker was
+  // trying to write. Stored verbatim so a replay re-enqueues it without
+  // re-deriving anything from Stripe or the (by now possibly deleted) cart.
+  payload: jsonb().notNull(),
+  errorMessage: text().notNull(),
+  attempts: integer().notNull(),
+  // set once the order is finally created — by a manual replay, or by any
+  // later job that writes the order for this session
+  resolvedAt: timestamp("resolved_at"),
+  // 'worker' (a later job succeeded on its own) or the staff user id that
+  // triggered the replay
+  resolvedBy: text(),
+  createdAt: timestampAt("created_at"),
+  updatedAt: timestampAt("updated_at"),
+});
+
+export const SelectFailedOrderSchema = createSelectSchema(failedOrdersTable);
+export type SelectFailedOrder = z.infer<typeof SelectFailedOrderSchema>;
+export const InsertFailedOrderSchema = createInsertSchema(failedOrdersTable);
+export type InsertFailedOrder = z.infer<typeof InsertFailedOrderSchema>;

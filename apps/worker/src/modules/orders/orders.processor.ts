@@ -14,8 +14,10 @@ import {
   cartsTable,
   desc,
   eq,
+  failedOrdersTable,
   inventoryMovementsTable,
   inventoryTable,
+  isNull,
   orderItemsTable,
   orderPaymentsTable,
   orderShippingTable,
@@ -306,32 +308,81 @@ export class OrdersProcessor extends WorkerHost {
 
   // BullMQ emits worker events outside of process()'s own async chain, so
   // its ambient correlation ID can't be relied on here — re-establish it
-  // explicitly from job.data, same id either way
+  // explicitly from job.data, same id either way. These handlers are
+  // fire-and-forget from BullMQ's side; the try/catch keeps a DB hiccup in
+  // the bookkeeping from turning into an unhandled rejection.
   @OnWorkerEvent('failed')
-  onFailed(job: Job<OrderJobData>, err: Error) {
-    runWithCorrelationId(job.data.correlationId, () => {
+  async onFailed(job: Job<OrderJobData>, err: Error) {
+    await runWithCorrelationId(job.data.correlationId, async () => {
       const attempts = job.opts.attempts ?? 1;
       const exhausted = job.attemptsMade >= attempts;
 
-      if (exhausted) {
-        // all retries used up — this represents a paid customer with no
-        // order created, and (per ORDER_JOB_OPTIONS) this job is NOT
-        // auto-removed from Redis, so it stays visible until someone acts on it
+      if (!exhausted) {
+        this.logger.warn(
+          `Job ${job.id} (${job.name}) failed on attempt ${job.attemptsMade}/${attempts}: ${err.message}`,
+        );
+        return;
+      }
+
+      const data = job.data;
+      if (data.type !== 'checkout-completed') {
         this.logger.error(
           `Job ${job.id} (${job.name}) failed permanently after ${job.attemptsMade} attempts — needs manual review: ${err.message}`,
         );
         return;
       }
 
-      this.logger.warn(
-        `Job ${job.id} (${job.name}) failed on attempt ${job.attemptsMade}/${attempts}: ${err.message}`,
-      );
+      // All retries used up — a paid customer with no order, the worst
+      // failure this system has. Record it as a first-class row (keyed on the
+      // checkout session, so a replay that fails again updates rather than
+      // duplicates) and emit one [alert]-shaped line carrying the unresolved
+      // count. Real alert transport is OS-73. The BullMQ job itself also
+      // stays in Redis (ORDER_JOB_OPTIONS has no removeOnFail).
+      try {
+        await this.db
+          .insert(failedOrdersTable)
+          .values({
+            stripeCheckoutSessionId: data.stripeCheckoutSessionId,
+            stripePaymentIntentId: data.stripePaymentIntentId,
+            accountId: data.accountId,
+            jobId: job.id ?? null,
+            payload: data,
+            errorMessage: err.message,
+            attempts: job.attemptsMade,
+          })
+          .onConflictDoUpdate({
+            target: failedOrdersTable.stripeCheckoutSessionId,
+            set: {
+              jobId: job.id ?? null,
+              payload: data,
+              errorMessage: err.message,
+              attempts: job.attemptsMade,
+              updatedAt: new Date(),
+            },
+          });
+
+        const [row] = await this.db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(failedOrdersTable)
+          .where(isNull(failedOrdersTable.resolvedAt));
+
+        this.logger.error(
+          `[alert] Job ${job.id} (${job.name}) failed permanently after ${job.attemptsMade} attempts — ` +
+            `order NOT created for checkout ${data.stripeCheckoutSessionId}: ${err.message}. ` +
+            `${row?.count ?? '?'} unresolved failed order(s).`,
+        );
+      } catch (recordErr) {
+        this.logger.error(
+          `Job ${job.id}: order creation failed AND recording the failed_orders row failed: ` +
+            `${recordErr instanceof Error ? recordErr.message : recordErr} (original: ${err.message})`,
+        );
+      }
     });
   }
 
   @OnWorkerEvent('completed')
-  onCompleted(job: Job<OrderJobData>) {
-    runWithCorrelationId(job.data.correlationId, () => {
+  async onCompleted(job: Job<OrderJobData>) {
+    await runWithCorrelationId(job.data.correlationId, async () => {
       const sessionId =
         job.data.type === 'checkout-completed'
           ? job.data.stripeCheckoutSessionId
@@ -339,6 +390,38 @@ export class OrdersProcessor extends WorkerHost {
       this.logger.log(
         `Job ${job.id} (${job.name}) created order for session ${sessionId}`,
       );
+
+      if (!sessionId) return;
+      // A job for this session finally succeeded (a manual replay, or even
+      // the idempotent short-circuit once the order exists) — clear any
+      // failed_orders row it left behind. A no-op for a normal first-time
+      // order: there's no matching row.
+      try {
+        const [resolved] = await this.db
+          .update(failedOrdersTable)
+          .set({
+            resolvedAt: new Date(),
+            resolvedBy: 'worker',
+            updatedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(failedOrdersTable.stripeCheckoutSessionId, sessionId),
+              isNull(failedOrdersTable.resolvedAt),
+            ),
+          )
+          .returning({ id: failedOrdersTable.id });
+        if (resolved) {
+          this.logger.log(
+            `Resolved failed_orders row ${resolved.id} — checkout ${sessionId} now has an order`,
+          );
+        }
+      } catch (err) {
+        this.logger.error(
+          `Job ${job.id}: order created but failed to resolve the failed_orders row for ${sessionId}: ` +
+            `${err instanceof Error ? err.message : err}`,
+        );
+      }
     });
   }
 }
