@@ -1,4 +1,6 @@
 ---
+import Layout from '../layouts/Layout.astro';
+
 const features = [
 	{ n: '01', title: 'Products & inventory', desc: 'Catalog, categories, brands, and stock tracked per location.' },
 	{ n: '02', title: 'Orders & carts', desc: 'Every order and open cart — smooth sailing from click to delivery.' },
@@ -25,209 +27,165 @@ const signinUrl = new URL('/signin', signupUrl).href;
 const year = new Date().getFullYear();
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<meta name="generator" content={Astro.generator} />
-		<meta
-			name="description"
-			content="OrderSail — charting commerce for small business. Products, orders, inventory, and payouts."
-		/>
-		<title>OrderSail</title>
-	</head>
-	<body>
-		<div class="wrap">
-			<header class="top">
-				<span class="mark">
-					<svg class="mark-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true">
-						<path d="M12 3v11" stroke-linecap="round" />
-						<circle cx="12" cy="4.6" r="1.6" />
-						<path d="M4 14c1.6 3.6 5 5.6 8 5.6s6.4-2 8-5.6" stroke-linecap="round" />
-						<path d="M4 14l2.2 4.4M20 14l-2.2 4.4" stroke-linecap="round" />
-					</svg>
-					OrderSail
-				</span>
-				<nav class="nav">
-					<a href="#index">Index</a>
-					<a href="#route">Process</a>
-				</nav>
-				<div class="top-actions">
-					<a class="signin-top" href={signinUrl}>Sign in</a>
-					<a class="cta-top" href={signupUrl}>Start selling</a>
-				</div>
-			</header>
+<Layout>
+	<div class="wrap">
+		<header class="top">
+			<span class="mark">
+				<svg class="mark-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true">
+					<path d="M12 3v11" stroke-linecap="round" />
+					<circle cx="12" cy="4.6" r="1.6" />
+					<path d="M4 14c1.6 3.6 5 5.6 8 5.6s6.4-2 8-5.6" stroke-linecap="round" />
+					<path d="M4 14l2.2 4.4M20 14l-2.2 4.4" stroke-linecap="round" />
+				</svg>
+				OrderSail
+			</span>
+			<nav class="nav">
+				<a href="#index">Index</a>
+				<a href="#route">Process</a>
+			</nav>
+			<div class="top-actions">
+				<a class="signin-top" href={signinUrl}>Sign in</a>
+				<a class="cta-top" href={signupUrl}>Start selling</a>
+			</div>
+		</header>
 
-			<section class="hero">
-				<p class="eyebrow">Charting commerce for small business — Est. 2026</p>
-				<h1>Set sail with your store.</h1>
-				<p class="lede">
-					One system for your products, storefront, point of sale, orders, and
-					payouts — no separate tools, no duct-taped integrations.
+		<section class="hero">
+			<p class="eyebrow">Charting commerce for small business — Est. 2026</p>
+			<h1>Set sail with your store.</h1>
+			<p class="lede">
+				One system for your products, storefront, point of sale, orders, and
+				payouts — no separate tools, no duct-taped integrations.
+			</p>
+			<div class="actions">
+				<a class="btn-primary" href={signupUrl}>Sign up — free</a>
+				<a class="btn-line" href="#index">View the index</a>
+			</div>
+		</section>
+
+		<section class="problem" id="problem">
+			<p class="eyebrow">Rough waters</p>
+			<h2 class="problem-title">Running a store shouldn't feel like this.</h2>
+			<div class="problem-grid">
+				<div class="problem-item">
+					<h3>Too many disconnected tools</h3>
+					<p>Inventory in one app, orders in another, payments somewhere else — nothing talks to each other.</p>
+				</div>
+				<div class="problem-item">
+					<h3>Inventory that doesn't reflect reality</h3>
+					<p>A single stock number that drifts out of sync the moment you sell somewhere else.</p>
+				</div>
+				<div class="problem-item">
+					<h3>Payouts you can't trace</h3>
+					<p>Money moves, but connecting an order to what actually landed in your account takes a spreadsheet.</p>
+				</div>
+				<div class="problem-item">
+					<h3>Shipping bolted on as an afterthought</h3>
+					<p>Buying a label means leaving your order screen — and hoping the tracking number makes it back.</p>
+				</div>
+			</div>
+			<div class="solution">
+				<h2 class="solution-title">One deck. Everything in view.</h2>
+				<p>
+					OrderSail brings your catalog, inventory, orders, payments, and shipping into a
+					single system. Real per-location stock with a full history, Stripe Connect payouts
+					that go straight to you, and shipping labels purchased right from the order — so
+					nothing drifts out of sync, and nothing gets lost overboard.
 				</p>
-				<div class="actions">
-					<a class="btn-primary" href={signupUrl}>Sign up — free</a>
-					<a class="btn-line" href="#index">View the index</a>
-				</div>
-			</section>
+			</div>
+		</section>
 
-			<section class="problem" id="problem">
-				<p class="eyebrow">Rough waters</p>
-				<h2 class="problem-title">Running a store shouldn't feel like this.</h2>
-				<div class="problem-grid">
-					<div class="problem-item">
-						<h3>Too many disconnected tools</h3>
-						<p>Inventory in one app, orders in another, payments somewhere else — nothing talks to each other.</p>
-					</div>
-					<div class="problem-item">
-						<h3>Inventory that doesn't reflect reality</h3>
-						<p>A single stock number that drifts out of sync the moment you sell somewhere else.</p>
-					</div>
-					<div class="problem-item">
-						<h3>Payouts you can't trace</h3>
-						<p>Money moves, but connecting an order to what actually landed in your account takes a spreadsheet.</p>
-					</div>
-					<div class="problem-item">
-						<h3>Shipping bolted on as an afterthought</h3>
-						<p>Buying a label means leaving your order screen — and hoping the tracking number makes it back.</p>
+		<hr class="rule" />
+
+		<section class="index" id="index">
+			<h2>Index</h2>
+			<div class="list">
+				{
+					features.map((f) => (
+						<div class="row">
+							<span class="row-n">{f.n}</span>
+							<h3>{f.title}</h3>
+							<p>{f.desc}</p>
+						</div>
+					))
+				}
+			</div>
+		</section>
+
+		<section class="journey" id="journey">
+			<p class="eyebrow">The customer's voyage</p>
+			<h2>A smooth trip, every time.</h2>
+			<div class="journey-list">
+				<div class="jstep">
+					<span class="jstep-dot"></span>
+					<div class="jstep-body">
+						<h4>Browse</h4>
+						<p>Your storefront, fast and mobile-friendly — always in sync with real stock.</p>
 					</div>
 				</div>
-				<div class="solution">
-					<h2 class="solution-title">One deck. Everything in view.</h2>
-					<p>
-						OrderSail brings your catalog, inventory, orders, payments, and shipping into a
-						single system. Real per-location stock with a full history, Stripe Connect payouts
-						that go straight to you, and shipping labels purchased right from the order — so
-						nothing drifts out of sync, and nothing gets lost overboard.
-					</p>
+				<div class="jstep">
+					<span class="jstep-dot"></span>
+					<div class="jstep-body">
+						<h4>Add to cart</h4>
+						<p>Guest or signed in — their cart follows them either way.</p>
+					</div>
 				</div>
-			</section>
+				<div class="jstep">
+					<span class="jstep-dot"></span>
+					<div class="jstep-body">
+						<h4>Checkout</h4>
+						<p>Stripe-hosted checkout with live shipping rates, done in seconds.</p>
+					</div>
+				</div>
+				<div class="jstep">
+					<span class="jstep-dot"></span>
+					<div class="jstep-body">
+						<h4>Shipped</h4>
+						<p>A label's purchased, and tracking goes out automatically.</p>
+					</div>
+				</div>
+				<div class="jstep jstep-last">
+					<span class="jstep-dot"></span>
+					<div class="jstep-body">
+						<h4>Delivered</h4>
+						<p>Tracking updates land right on the order — no guessing where it is.</p>
+					</div>
+				</div>
+			</div>
+		</section>
 
-			<hr class="rule" />
+		<hr class="rule" />
 
-			<section class="index" id="index">
-				<h2>Index</h2>
-				<div class="list">
-					{
-						features.map((f) => (
-							<div class="row">
-								<span class="row-n">{f.n}</span>
-								<h3>{f.title}</h3>
-								<p>{f.desc}</p>
+		<section class="route" id="route">
+			<h2>Process</h2>
+			<div class="route-list">
+				{
+					steps.map((s, i) => (
+						<div class="rstep">
+							<span class="rstep-n">{String(i + 1).padStart(2, '0')}</span>
+							<div>
+								<h4>{s.title}</h4>
+								<p>{s.desc}</p>
 							</div>
-						))
-					}
-				</div>
-			</section>
-
-			<section class="journey" id="journey">
-				<p class="eyebrow">The customer's voyage</p>
-				<h2>A smooth trip, every time.</h2>
-				<div class="journey-list">
-					<div class="jstep">
-						<span class="jstep-dot"></span>
-						<div class="jstep-body">
-							<h4>Browse</h4>
-							<p>Your storefront, fast and mobile-friendly — always in sync with real stock.</p>
 						</div>
-					</div>
-					<div class="jstep">
-						<span class="jstep-dot"></span>
-						<div class="jstep-body">
-							<h4>Add to cart</h4>
-							<p>Guest or signed in — their cart follows them either way.</p>
-						</div>
-					</div>
-					<div class="jstep">
-						<span class="jstep-dot"></span>
-						<div class="jstep-body">
-							<h4>Checkout</h4>
-							<p>Stripe-hosted checkout with live shipping rates, done in seconds.</p>
-						</div>
-					</div>
-					<div class="jstep">
-						<span class="jstep-dot"></span>
-						<div class="jstep-body">
-							<h4>Shipped</h4>
-							<p>A label's purchased, and tracking goes out automatically.</p>
-						</div>
-					</div>
-					<div class="jstep jstep-last">
-						<span class="jstep-dot"></span>
-						<div class="jstep-body">
-							<h4>Delivered</h4>
-							<p>Tracking updates land right on the order — no guessing where it is.</p>
-						</div>
-					</div>
-				</div>
-			</section>
+					))
+				}
+			</div>
+		</section>
 
-			<hr class="rule" />
+		<section class="final" id="get-started">
+			<h2>Set sail today.</h2>
+			<p>Free while in beta. No credit card.</p>
+			<a class="btn-primary" href={signupUrl}>Create your account →</a>
+		</section>
 
-			<section class="route" id="route">
-				<h2>Process</h2>
-				<div class="route-list">
-					{
-						steps.map((s, i) => (
-							<div class="rstep">
-								<span class="rstep-n">{String(i + 1).padStart(2, '0')}</span>
-								<div>
-									<h4>{s.title}</h4>
-									<p>{s.desc}</p>
-								</div>
-							</div>
-						))
-					}
-				</div>
-			</section>
-
-			<section class="final" id="get-started">
-				<h2>Set sail today.</h2>
-				<p>Free while in beta. No credit card.</p>
-				<a class="btn-primary" href={signupUrl}>Create your account →</a>
-			</section>
-
-			<footer class="foot">
-				<span>OrderSail</span>
-				<span>&copy; {year}</span>
-			</footer>
-		</div>
-	</body>
-</html>
+		<footer class="foot">
+			<span>OrderSail</span>
+			<span>&copy; {year}</span>
+		</footer>
+	</div>
+</Layout>
 
 <style>
-	:root {
-		--bg: #f6f3ec;
-		--ink: #14213d;
-		--ink-dim: #5c6b7a;
-		--line: #14213d;
-	}
-
-	:global(html) {
-		background: var(--bg);
-	}
-	:global(body) {
-		margin: 0;
-		background: var(--bg);
-		color: var(--ink);
-		font-family: Georgia, 'Times New Roman', serif;
-	}
-	:global(a) {
-		color: inherit;
-	}
-	:global(:focus-visible) {
-		outline: 2px solid var(--ink);
-		outline-offset: 3px;
-	}
-
-	.wrap {
-		max-width: 980px;
-		margin: 0 auto;
-		padding: 0 28px;
-	}
-
 	.top {
 		display: flex;
 		align-items: center;
@@ -288,14 +246,6 @@ const year = new Date().getFullYear();
 	.hero {
 		padding: 24px 0 64px;
 	}
-	.eyebrow {
-		font-family: ui-monospace, monospace;
-		font-size: 0.78rem;
-		text-transform: uppercase;
-		letter-spacing: 0.14em;
-		color: var(--ink-dim);
-		margin: 0 0 26px;
-	}
 	.hero .eyebrow {
 		margin: 0 0 18px;
 	}
@@ -320,37 +270,6 @@ const year = new Date().getFullYear();
 		gap: 24px;
 		align-items: center;
 		flex-wrap: wrap;
-	}
-	.btn-primary {
-		text-decoration: none;
-		font-family: ui-monospace, monospace;
-		font-size: 0.86rem;
-		text-transform: uppercase;
-		letter-spacing: 0.1em;
-		padding: 15px 26px;
-		background: var(--ink);
-		color: var(--bg);
-	}
-	.btn-line {
-		text-decoration: none;
-		font-family: ui-monospace, monospace;
-		font-size: 0.86rem;
-		text-transform: uppercase;
-		letter-spacing: 0.1em;
-		border-bottom: 1px solid var(--line);
-		padding-bottom: 3px;
-	}
-
-	.rule {
-		height: 1px;
-		border: none;
-		background-image: repeating-linear-gradient(
-			to right,
-			var(--line) 0,
-			var(--line) 1px,
-			transparent 1px,
-			transparent 12px
-		);
 	}
 
 	.problem {

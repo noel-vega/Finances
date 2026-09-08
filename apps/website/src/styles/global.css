@@ -1,0 +1,81 @@
+/* Design tokens + cross-page primitives. Page- and component-specific rules
+   stay in their own scoped <style> blocks. */
+
+:root {
+	--bg: #f6f3ec;
+	--ink: #14213d;
+	--ink-dim: #5c6b7a;
+	--line: #14213d;
+}
+
+html {
+	background: var(--bg);
+}
+
+body {
+	margin: 0;
+	background: var(--bg);
+	color: var(--ink);
+	font-family: Georgia, 'Times New Roman', serif;
+}
+
+a {
+	color: inherit;
+}
+
+:focus-visible {
+	outline: 2px solid var(--ink);
+	outline-offset: 3px;
+}
+
+/* Centered content column — used by the header, every page section, and the footer. */
+.wrap {
+	max-width: 980px;
+	margin: 0 auto;
+	padding: 0 28px;
+}
+
+/* Monospace kicker above a section heading. */
+.eyebrow {
+	font-family: ui-monospace, monospace;
+	font-size: 0.78rem;
+	text-transform: uppercase;
+	letter-spacing: 0.14em;
+	color: var(--ink-dim);
+	margin: 0 0 26px;
+}
+
+/* Dotted horizontal divider. */
+.rule {
+	height: 1px;
+	border: none;
+	background-image: repeating-linear-gradient(
+		to right,
+		var(--line) 0,
+		var(--line) 1px,
+		transparent 1px,
+		transparent 12px
+	);
+}
+
+/* Call-to-action buttons. */
+.btn-primary {
+	text-decoration: none;
+	font-family: ui-monospace, monospace;
+	font-size: 0.86rem;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+	padding: 15px 26px;
+	background: var(--ink);
+	color: var(--bg);
+}
+
+.btn-line {
+	text-decoration: none;
+	font-family: ui-monospace, monospace;
+	font-size: 0.86rem;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+	border-bottom: 1px solid var(--line);
+	padding-bottom: 3px;
+}
