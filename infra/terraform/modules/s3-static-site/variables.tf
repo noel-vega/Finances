@@ -69,3 +69,16 @@ variable "basic_auth_realm" {
   type        = string
   default     = "ordersail - under construction"
 }
+
+variable "directory_index" {
+  description = <<-EOT
+    true: a viewer-request CloudFront Function rewrites directory-style URIs to
+    "<uri>/index.html" (or "<uri>index.html" for a trailing slash), so a
+    multi-page static site (Astro's default `directory` build) resolves
+    "/features" -> "/features/index.html". CloudFront's default_root_object only
+    covers "/". Leave false for a SPA that relies on the index.html
+    error-response fallback (spa_fallback = true) instead.
+  EOT
+  type        = bool
+  default     = false
+}

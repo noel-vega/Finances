@@ -41,24 +41,31 @@ resource "aws_cloudfront_function" "strip_api_prefix" {
   EOT
 }
 
-# Pre-launch gate. When basic_auth_credentials is non-empty, every viewer
-# request to default_cache_behavior must carry a matching HTTP Basic header or
-# it gets a 401. The api_path_pattern behavior is deliberately left ungated —
-# merchant-sdk sends `Authorization: Bearer …` on every API call, which would
-# fail this check, and the API origin (an ALB) is publicly reachable anyway.
+# One viewer-request CloudFront Function on default_cache_behavior, doing (in
+# order): the pre-launch Basic gate (when basic_auth_credentials is non-empty),
+# then the directory-index rewrite (when directory_index is true). The
+# api_path_pattern behavior is never associated with it — merchant-sdk sends
+# `Authorization: Bearer …` on every API call, which would fail the Basic check,
+# and the API origin (an ALB) is publicly reachable anyway.
+#
+# Kept the resource / function name `basic-auth` even though it now also rewrites
+# — renaming would force a destroy/recreate of the function on every distribution.
 locals {
   # nonsensitive(): whether the gate is on is not itself a secret, and count /
   # for_each reject values derived from a sensitive variable.
   basic_auth_enabled = nonsensitive(length(var.basic_auth_credentials) > 0)
   basic_auth_tokens  = [for c in var.basic_auth_credentials : "Basic ${base64encode(trimspace(c))}"]
+  viewer_fn_enabled  = local.basic_auth_enabled || var.directory_index
 }
 
 resource "aws_cloudfront_function" "basic_auth" {
-  count   = local.basic_auth_enabled ? 1 : 0
+  count   = local.viewer_fn_enabled ? 1 : 0
   name    = "${var.name_prefix}-${var.name}-basic-auth"
   runtime = "cloudfront-js-2.0"
   publish = true
   code = templatefile("${path.module}/basic-auth.js.tftpl", {
+    basic_auth      = local.basic_auth_enabled
+    directory_index = var.directory_index
     # nonsensitive(): the token is embedded in the published function and
     # recoverable via cloudfront:GetFunction regardless; templatefile() also
     # rejects sensitive inputs.
@@ -131,7 +138,7 @@ resource "aws_cloudfront_distribution" "this" {
     }
 
     dynamic "function_association" {
-      for_each = local.basic_auth_enabled ? [1] : []
+      for_each = local.viewer_fn_enabled ? [1] : []
       content {
         event_type   = "viewer-request"
         function_arn = aws_cloudfront_function.basic_auth[0].arn
