@@ -12,6 +12,11 @@ variable "cluster_id" {
   type = string
 }
 
+variable "cluster_name" {
+  description = "ECS cluster name — the ContainerInsights metric dimension (OS-76 alarm)."
+  type        = string
+}
+
 variable "private_subnet_ids" {
   type = list(string)
 }
@@ -72,4 +77,16 @@ variable "task_role_policy_json" {
   description = "Optional extra IAM policy JSON attached to the task role (e.g. merchant-api's S3 access to the product-images bucket)."
   type        = string
   default     = null
+}
+
+variable "alarm_critical_topic_arns" {
+  description = "SNS topic ARNs for the running-below-desired alarm (OS-76). Empty = alarm still created, just no notification."
+  type        = list(string)
+  default     = []
+}
+
+variable "alarm_running_below_desired_minutes" {
+  description = "Consecutive minutes RunningTaskCount must stay below desired before the alarm fires."
+  type        = number
+  default     = 3
 }

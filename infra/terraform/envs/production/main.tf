@@ -185,6 +185,8 @@ module "ecs_service_merchant_api" {
   name_prefix                 = var.name_prefix
   name                        = "merchant-api"
   cluster_id                  = module.ecs_cluster.cluster_id
+  cluster_name                = module.ecs_cluster.cluster_name
+  alarm_critical_topic_arns   = [aws_sns_topic.alerts_critical.arn]
   private_subnet_ids          = module.network.private_subnet_ids
   ecs_tasks_security_group_id = module.ecs_cluster.ecs_tasks_security_group_id
   container_port              = 3000
@@ -233,6 +235,8 @@ module "ecs_service_storefront_api" {
   name_prefix                 = var.name_prefix
   name                        = "storefront-api"
   cluster_id                  = module.ecs_cluster.cluster_id
+  cluster_name                = module.ecs_cluster.cluster_name
+  alarm_critical_topic_arns   = [aws_sns_topic.alerts_critical.arn]
   private_subnet_ids          = module.network.private_subnet_ids
   ecs_tasks_security_group_id = module.ecs_cluster.ecs_tasks_security_group_id
   container_port              = 3001
@@ -274,6 +278,8 @@ module "ecs_service_worker" {
   name_prefix                 = var.name_prefix
   name                        = "worker"
   cluster_id                  = module.ecs_cluster.cluster_id
+  cluster_name                = module.ecs_cluster.cluster_name
+  alarm_critical_topic_arns   = [aws_sns_topic.alerts_critical.arn]
   private_subnet_ids          = module.network.private_subnet_ids
   ecs_tasks_security_group_id = module.ecs_cluster.ecs_tasks_security_group_id
   container_port              = 3003
@@ -310,6 +316,8 @@ module "ecs_service_pos_api" {
   name_prefix                 = var.name_prefix
   name                        = "pos-api"
   cluster_id                  = module.ecs_cluster.cluster_id
+  cluster_name                = module.ecs_cluster.cluster_name
+  alarm_critical_topic_arns   = [aws_sns_topic.alerts_critical.arn]
   private_subnet_ids          = module.network.private_subnet_ids
   ecs_tasks_security_group_id = module.ecs_cluster.ecs_tasks_security_group_id
   container_port              = 3004
