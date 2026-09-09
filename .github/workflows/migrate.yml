@@ -24,6 +24,17 @@ permissions:
   id-token: write
   contents: read
 
+# Inside a reusable workflow `github.workflow` is the CALLER's name, so this is
+# "CD" when cd.yml calls us and "Migrate" on a standalone `gh workflow run`.
+#   - standalone  -> join the shared "production-deploy" lock, so a manual
+#     migration queues behind an in-flight deploy / rollback instead of racing it.
+#   - called by CD -> a per-run group that never blocks: cd.yml already holds
+#     "production-deploy" for the whole pipeline, and a called workflow that reuses
+#     its caller's concurrency group deadlocks.
+concurrency:
+  group: ${{ github.workflow == 'Migrate' && 'production-deploy' || format('migrate-run-{0}', github.run_id) }}
+  cancel-in-progress: false
+
 jobs:
   migrate:
     runs-on: ubuntu-latest

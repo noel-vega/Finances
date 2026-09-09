@@ -173,7 +173,7 @@ Each NestJS API exposes Swagger/OpenAPI at runtime and has a `generate:openapi` 
 ## Deployment
 
 AWS (ECS Fargate + CloudFront), provisioned with Terraform and shipped by GitHub
-Actions (`.github/workflows/cd.yml`, `deploy-website.yml`). See
+Actions (`.github/workflows/cd.yml`). See
 [infra/terraform/README.md](./infra/terraform/README.md) for the layer layout,
 the required repo/environment configuration, and the RDS / CloudFront runbooks.
 

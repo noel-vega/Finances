@@ -37,6 +37,13 @@ permissions:
   id-token: write
   contents: read
 
+# Shares the CD / standalone-Migrate lock: a rollback dispatched while a deploy is
+# running queues behind it rather than pre-empting (cancelling a half-done deploy
+# is worse than waiting for it to reach steady state first).
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
 jobs:
   rollback:
     runs-on: ubuntu-latest
