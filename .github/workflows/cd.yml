@@ -80,6 +80,13 @@ jobs:
           file: ${{ matrix.dockerfile }}
           push: true
           tags: ${{ steps.ecr-uri.outputs.uri }}:${{ github.sha }}
+          # GHA layer cache, per-image scope. This runs on main (the default
+          # branch), so it restores from the previous CD run — one cold build
+          # right after each merge, warm thereafter. A durable ECR-backed
+          # cache (type=registry) is deferred: the ECR repos are IMMUTABLE so
+          # a moving :buildcache tag needs its own MUTABLE repo (OS-372 note).
+          cache-from: type=gha,scope=${{ matrix.app }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.app }}
 
   migrate:
     needs: build-and-push
