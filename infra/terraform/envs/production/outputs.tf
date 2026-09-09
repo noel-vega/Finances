@@ -32,6 +32,14 @@ output "ecr_repository_urls" {
   value = module.ecr.repository_urls
 }
 
+output "alerts_critical_topic_arn" {
+  value = aws_sns_topic.alerts_critical.arn
+}
+
+output "alerts_warning_topic_arn" {
+  value = aws_sns_topic.alerts_warning.arn
+}
+
 output "app_secret_arns" {
   description = "Populate these via `aws secretsmanager put-secret-value` before the first deploy."
   value       = module.secrets.app_secret_arns
