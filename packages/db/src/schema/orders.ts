@@ -1,4 +1,5 @@
 import {
+  type AnyPgColumn,
   index,
   integer,
   jsonb,
@@ -120,17 +121,19 @@ export type SelectOrderShipping = z.infer<typeof SelectOrderShippingSchema>;
 export const InsertOrderShippingSchema = createInsertSchema(orderShippingTable);
 export type InsertOrderShipping = z.infer<typeof InsertOrderShippingSchema>;
 
-// one tender against an order. A web order gets a single 'stripe' row
-// carrying the checkout session (still the webhook idempotency key) + payment
-// intent. A POS order gets a 'cash' or 'card' row; cash also records
-// amountTenderedCents so change due can be reconstructed. Modelled 1:many for
-// future split tender; today every order has exactly one.
+// one tender against an order, or a refund of one. A web order gets a single
+// positive 'stripe' row carrying the checkout session (still the webhook
+// idempotency key) + payment intent. A POS order gets a positive 'cash' or
+// 'card' row; cash also records amountTenderedCents so change due can be
+// reconstructed. A refund is a **negative** row pointing at the tender it
+// reverses via parentPaymentId (M2); net collected = SUM(amountCents).
 export const orderPaymentsTable = pgTable("order_payments", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   orderId: integer()
     .notNull()
     .references(() => ordersTable.id, { onDelete: "cascade" }),
   method: orderPaymentMethodEnum().notNull(),
+  // positive on a tender, negative on a refund row
   amountCents: integer().notNull(),
   // cash tenders only — what the customer handed over (>= amountCents);
   // null for card / stripe
@@ -138,6 +141,15 @@ export const orderPaymentsTable = pgTable("order_payments", {
   // Stripe checkout only — doubles as the webhook's idempotency key
   stripeCheckoutSessionId: text().unique(),
   stripePaymentIntentId: text(),
+  // refund rows only — the Stripe refund id (unique, so a redelivered
+  // charge.refunded webhook can't write a duplicate row) + a free-text reason
+  stripeRefundId: text().unique(),
+  reason: text(),
+  // refund rows only — the tender this refund reverses
+  parentPaymentId: integer().references(
+    (): AnyPgColumn => orderPaymentsTable.id,
+    { onDelete: "set null" },
+  ),
   createdAt: timestampAt("created_at"),
 });
 
