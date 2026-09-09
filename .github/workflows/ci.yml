@@ -2,13 +2,31 @@ name: CI
 
 on:
   workflow_dispatch:
+    inputs:
+      run_all:
+        description: "Run every project, not just those affected by the diff"
+        type: boolean
+        default: false
   pull_request:
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build-lint-test:
+  verify:
+    # Nx runs only the projects affected by the diff and restores unchanged
+    # task outputs from the Nx Cloud remote cache. Replaces the old
+    # build-lint-test + typecheck jobs, which each rebuilt every shared
+    # package from scratch, every run.
     runs-on: ubuntu-latest
+    env:
+      NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          # nx-set-shas walks history to find the PR merge-base
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -21,91 +39,20 @@ jobs:
 
       - run: npm ci
 
-      # shared packages first — apps' `tsc`/`nest build` resolve workspace
-      # imports (e.g. `import ... from 'db'`) via each package's compiled
-      # dist/, so it has to exist before the apps that depend on it build.
-      # packages/ui has no build script (Vite consumes its raw .tsx
-      # directly) — deliberately excluded here.
-      - name: Build shared packages
+      # sets NX_BASE / NX_HEAD — on pull_request, NX_BASE is the merge-base
+      # with the target branch
+      - uses: nrwl/nx-set-shas@v4
+
+      - name: Verify (build, lint, typecheck, test)
+        # `test` boots a throwaway Postgres via Testcontainers (jest
+        # globalSetup in packages/test-support) — ubuntu-latest has Docker.
+        # pos-api still mocks the DB. pos (Expo toolchain) has its own job.
         run: |
-          npm run build --workspace=config \
-            --workspace=db \
-            --workspace=payments \
-            --workspace=logging \
-            --workspace=queue \
-            --workspace=storage \
-            --workspace=email \
-            --workspace=email-templates \
-            --workspace=merchant-sdk \
-            --workspace=storefront-sdk
-
-      - name: Build apps
-        run: |
-          npm run build --workspace=merchant-api \
-            --workspace=storefront-api \
-            --workspace=pos-api \
-            --workspace=worker \
-            --workspace=merchant-web \
-            --workspace=storefront-web \
-            --workspace=website
-
-      - name: Lint
-        # explicit list rather than --workspaces: `pos` (Expo) is a
-        # different toolchain and runs in its own `pos` job below
-        run: |
-          npm run lint --workspace=merchant-api \
-            --workspace=storefront-api \
-            --workspace=pos-api \
-            --workspace=worker \
-            --workspace=merchant-web \
-            --workspace=storefront-web \
-            --workspace=ui
-
-      - name: Test
-        # merchant-api + storefront-api + worker boot a throwaway Postgres via
-        # Testcontainers in jest globalSetup (packages/test-support) and run
-        # their specs against real SQL — ubuntu-latest has Docker. pos-api
-        # still mocks the DB; test/jest.env-setup.cjs gives it a dummy
-        # DATABASE_URL so packages/db's import-time pool string parses.
-        run: |
-          npm run test --workspace=merchant-api \
-            --workspace=storefront-api \
-            --workspace=pos-api \
-            --workspace=worker
-
-  typecheck:
-    # `tsc --noEmit` per workspace — catches type errors the build steps
-    # miss (test/ specs, packages/ui, packages/seed, website .astro).
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-
-      - run: npm install -g npm@11
-
-      - run: npm ci
-
-      # shared packages' dist/ + .d.ts feed cross-workspace type imports —
-      # same list as build-lint-test plus pos-sdk (apps/pos imports it)
-      - name: Build shared packages
-        run: |
-          npm run build --workspace=config \
-            --workspace=db \
-            --workspace=payments \
-            --workspace=logging \
-            --workspace=queue \
-            --workspace=storage \
-            --workspace=email \
-            --workspace=email-templates \
-            --workspace=merchant-sdk \
-            --workspace=storefront-sdk \
-            --workspace=pos-sdk
-
-      - run: npm run typecheck --workspaces --if-present
+          if [ "${{ inputs.run_all }}" = "true" ]; then
+            npx nx run-many -t build lint:ci typecheck test --exclude=pos
+          else
+            npx nx affected -t build lint:ci typecheck test --exclude=pos
+          fi
 
   pos:
     # apps/pos (Expo): its own toolchain — eslint-config-expo (flat), no
