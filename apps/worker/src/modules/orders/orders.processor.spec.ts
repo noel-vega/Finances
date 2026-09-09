@@ -26,20 +26,23 @@ import {
   type TestDb,
 } from 'test-support';
 import { DRIZZLE } from '../../database/database.constants';
+import { AlertsService, type CriticalAlert } from '../alerts/alerts.service';
 import { OrdersProcessor } from './orders.processor';
 
 const db = useTestDb();
 
 async function build() {
   const emailQueue = { add: jest.fn() };
+  const alerts = { publishCritical: jest.fn(), enabled: false };
   const ref: TestingModule = await Test.createTestingModule({
     providers: [
       OrdersProcessor,
       { provide: DRIZZLE, useValue: db },
       { provide: getQueueToken(QUEUE_NAMES.EMAIL), useValue: emailQueue },
+      { provide: AlertsService, useValue: alerts },
     ],
   }).compile();
-  return { processor: ref.get(OrdersProcessor), emailQueue };
+  return { processor: ref.get(OrdersProcessor), emailQueue, alerts };
 }
 
 interface Scenario {
@@ -526,7 +529,7 @@ describe('OrdersProcessor.onFailed', () => {
       .spyOn(Logger.prototype, 'warn')
       .mockImplementation(() => undefined);
     const s = await seedScenario();
-    const { processor } = await build();
+    const { processor, alerts } = await build();
 
     await processor.onFailed(jobAt(s, 2), new Error('boom'));
 
@@ -534,6 +537,7 @@ describe('OrdersProcessor.onFailed', () => {
       expect.stringContaining('failed on attempt 2/8'),
     );
     expect(await db.select().from(failedOrdersTable)).toEqual([]);
+    expect(alerts.publishCritical).not.toHaveBeenCalled();
     warnSpy.mockRestore();
   });
 
@@ -542,10 +546,14 @@ describe('OrdersProcessor.onFailed', () => {
       .spyOn(Logger.prototype, 'error')
       .mockImplementation(() => undefined);
     const s = await seedScenario();
-    const { processor } = await build();
+    const { processor, alerts } = await build();
     const j = jobAt(s, 8);
 
     await processor.onFailed(j, new Error('db exploded'));
+
+    const [[alert]] = alerts.publishCritical.mock.calls as CriticalAlert[][];
+    expect(alert.subject).toContain(j.data.stripeCheckoutSessionId);
+    expect(alert.message).toContain('A customer has paid and has no order');
 
     const [row] = await db.select().from(failedOrdersTable);
     expect(row).toMatchObject({
@@ -582,7 +590,7 @@ describe('OrdersProcessor.onFailed', () => {
     const errSpy = jest
       .spyOn(Logger.prototype, 'error')
       .mockImplementation(() => undefined);
-    const { processor } = await build();
+    const { processor, alerts } = await build();
     // accountId 999999 → FK violation on the failed_orders insert
     const j = jobAt({ ...(await seedScenario()), accountId: 999_999 }, 8);
 
@@ -592,6 +600,9 @@ describe('OrdersProcessor.onFailed', () => {
     expect(errSpy).toHaveBeenCalledWith(
       expect.stringContaining('recording the failed_orders row failed'),
     );
+    // a failed row write makes the page more urgent, not less
+    const [[alert]] = alerts.publishCritical.mock.calls as CriticalAlert[][];
+    expect(alert.message).toContain('failed_orders write also failed');
     errSpy.mockRestore();
   });
 
@@ -599,7 +610,7 @@ describe('OrdersProcessor.onFailed', () => {
     const errSpy = jest
       .spyOn(Logger.prototype, 'error')
       .mockImplementation(() => undefined);
-    const { processor } = await build();
+    const { processor, alerts } = await build();
 
     await processor.onFailed(
       {
@@ -616,6 +627,7 @@ describe('OrdersProcessor.onFailed', () => {
       expect.stringContaining('failed permanently'),
     );
     expect(await db.select().from(failedOrdersTable)).toEqual([]);
+    expect(alerts.publishCritical).not.toHaveBeenCalled();
     errSpy.mockRestore();
   });
 });

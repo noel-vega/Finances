@@ -180,6 +180,17 @@ data "aws_iam_policy_document" "merchant_api_task" {
   }
 }
 
+# worker's task role: publish the dead-letter page when an order job exhausts
+# its retries (OS-73). Scoped to the critical topic only — the worker never
+# touches the warning topic.
+data "aws_iam_policy_document" "worker_task" {
+  statement {
+    effect    = "Allow"
+    actions   = ["sns:Publish"]
+    resources = [aws_sns_topic.alerts_critical.arn]
+  }
+}
+
 module "ecs_service_merchant_api" {
   source                      = "../../modules/ecs-service"
   name_prefix                 = var.name_prefix
@@ -279,12 +290,16 @@ module "ecs_service_worker" {
   container_port              = 3003
   image                       = "${module.ecr.repository_urls["worker"]}:${var.bootstrap_image_tag}"
   target_group_arn            = null # no ALB — pure BullMQ consumer
+  task_role_policy_json       = data.aws_iam_policy_document.worker_task.json
 
   environment = [
     { name = "NODE_ENV", value = "production" },
     { name = "PORT", value = "3003" },
     { name = "REDIS_HOST", value = module.elasticache.primary_endpoint_address },
     { name = "REDIS_PORT", value = tostring(module.elasticache.port) },
+    # dead-letter pager for permanently-failed order jobs (OS-73); unset ⇒
+    # AlertsService is a no-op and only the [alert] log line fires
+    { name = "ALERTS_CRITICAL_TOPIC_ARN", value = aws_sns_topic.alerts_critical.arn },
     # interim SES SMTP config (Phase 9) — sandbox mode until AWS approves
     # production access; SMTP_FROM must exactly match the verified identity
     { name = "SMTP_HOST", value = "email-smtp.${var.region}.amazonaws.com" },

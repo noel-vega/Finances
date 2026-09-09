@@ -27,6 +27,7 @@ import {
   type db as Db,
 } from 'db';
 import { DRIZZLE } from '../../database/database.constants';
+import { AlertsService } from '../alerts/alerts.service';
 
 // order creation, relocated verbatim from storefront-api's CheckoutService
 // (which used to run this inline inside the Stripe webhook request) — see
@@ -40,6 +41,7 @@ export class OrdersProcessor extends WorkerHost {
     @Inject(DRIZZLE) private readonly db: typeof Db,
     @InjectQueue(QUEUE_NAMES.EMAIL)
     private readonly emailQueue: Queue<EmailJobData>,
+    private readonly alerts: AlertsService,
   ) {
     super();
   }
@@ -335,9 +337,10 @@ export class OrdersProcessor extends WorkerHost {
       // All retries used up — a paid customer with no order, the worst
       // failure this system has. Record it as a first-class row (keyed on the
       // checkout session, so a replay that fails again updates rather than
-      // duplicates) and emit one [alert]-shaped line carrying the unresolved
-      // count. Real alert transport is OS-73. The BullMQ job itself also
-      // stays in Redis (ORDER_JOB_OPTIONS has no removeOnFail).
+      // duplicates), emit one [alert]-shaped line carrying the unresolved
+      // count, and page out-of-band via SNS (OS-73). The BullMQ job itself
+      // also stays in Redis (ORDER_JOB_OPTIONS has no removeOnFail).
+      let unresolvedCount: number | undefined;
       try {
         await this.db
           .insert(failedOrdersTable)
@@ -365,11 +368,12 @@ export class OrdersProcessor extends WorkerHost {
           .select({ count: sql<number>`count(*)::int` })
           .from(failedOrdersTable)
           .where(isNull(failedOrdersTable.resolvedAt));
+        unresolvedCount = row?.count;
 
         this.logger.error(
           `[alert] Job ${job.id} (${job.name}) failed permanently after ${job.attemptsMade} attempts — ` +
             `order NOT created for checkout ${data.stripeCheckoutSessionId}: ${err.message}. ` +
-            `${row?.count ?? '?'} unresolved failed order(s).`,
+            `${unresolvedCount ?? '?'} unresolved failed order(s).`,
         );
       } catch (recordErr) {
         this.logger.error(
@@ -377,6 +381,33 @@ export class OrdersProcessor extends WorkerHost {
             `${recordErr instanceof Error ? recordErr.message : recordErr} (original: ${err.message})`,
         );
       }
+
+      // Page regardless of whether the row write above succeeded — a failed
+      // write makes the alert *more* urgent, not less. AlertsService is a
+      // no-op with no topic configured (local/tests/CI) and never throws.
+      // TODO(OS-69): also Sentry.captureException(err, { level: 'fatal' })
+      // here once the Sentry SDK is wired into the worker.
+      await this.alerts.publishCritical({
+        subject: `[ordersail] Order NOT created — checkout ${data.stripeCheckoutSessionId}`,
+        message: [
+          'An order job exhausted all retries. A customer has paid and has no order.',
+          '',
+          `Job:              ${job.id} (${job.name})`,
+          `Attempts:         ${job.attemptsMade}`,
+          `Checkout session: ${data.stripeCheckoutSessionId}`,
+          `Payment intent:   ${data.stripePaymentIntentId}`,
+          `Account:          ${data.accountId}`,
+          `Customer:         ${data.customerEmail}`,
+          `Amount:           ${(data.amountTotalCents / 100).toFixed(2)}`,
+          `Error:            ${err.message}`,
+          `Failed at:        ${new Date().toISOString()}`,
+          unresolvedCount === undefined
+            ? 'Unresolved failed orders: unknown (failed_orders write also failed)'
+            : `Unresolved failed orders: ${unresolvedCount}`,
+          '',
+          'Replay: docs/runbooks/alerts.md → "When \'order-job dead-letter\' fires".',
+        ].join('\n'),
+      });
     });
   }
 
