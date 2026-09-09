@@ -13,12 +13,15 @@ import {
 import { ApiBearerAuth, ApiOkResponse } from '@nestjs/swagger';
 import { OrdersService } from './orders.service';
 import { RefundsService } from './refunds.service';
+import { CancelService } from './cancel.service';
 import { PaginatedOrders } from './entities/paginated-orders.entity';
 import { OrderDetail } from './entities/order-detail.entity';
 import { OrderStatusChange } from './entities/order-status-change.entity';
 import { OrderRefund } from './entities/order-refund.entity';
+import { OrderCancellation } from './entities/order-cancellation.entity';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { RefundOrderDto } from './dto/refund-order.dto';
+import { CancelOrderDto } from './dto/cancel-order.dto';
 import {
   CurrentUser,
   RequirePermissions,
@@ -30,6 +33,7 @@ export class OrdersController {
   constructor(
     private readonly ordersService: OrdersService,
     private readonly refundsService: RefundsService,
+    private readonly cancelService: CancelService,
   ) {}
 
   @Get()
@@ -83,5 +87,19 @@ export class OrdersController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.refundsService.refundOrder(id, user.accountId, dto, user.sub);
+  }
+
+  // Cancel an un-fulfilled order: refund (paid web orders) + restock + mark
+  // canceled, one transaction. Rejected once anything has shipped.
+  @Post(':id/cancel')
+  @RequirePermissions('orders:cancel')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOkResponse({ type: OrderCancellation })
+  cancel(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: CancelOrderDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.cancelService.cancelOrder(id, user.accountId, dto, user.sub);
   }
 }

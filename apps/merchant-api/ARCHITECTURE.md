@@ -113,6 +113,28 @@ Adding a new cross-context edge = update the table above **and** the
   queue (owned here — `apps/worker` consumes it and writes the order). See M9.
 - The shared kernel — for pure infra only.
 
+## Write model — plain services, not CQRS (OS-359)
+
+M9 (`checkout.session.paid` handoff) chose `@nestjs/event-emitter` over
+`@nestjs/cqrs`; M2 (OS-359) re-evaluated that with the order-lifecycle write
+model — status transitions, refunds, cancel — actually in hand.
+
+**Decision: stay on plain NestJS services.** The M2 flows
+(`RefundsService.refundOrder`, `CancelService.cancelOrder`) are each *one*
+guarded method: an external call (Stripe) followed by a *single* DB transaction
+composed from small executor-taking helpers (`transitionOrderStatus`,
+`recordRefund` / `applyRestock` / `resolveRestockTargets` in
+`sales/orders/`). Their failure mode — Stripe succeeded, the commit didn't — is
+handled by an **idempotency key + the `charge.refunded` webhook reconciliation**
+(OS-127), not by an in-process compensating saga.
+
+`@nestjs/cqrs`'s value is command routing and long-running process managers
+(Sagas). Neither applies here: there's one caller per operation and no
+multi-step orchestration to manage. The `CommandBus` / `@CommandHandler` /
+`@Saga` ceremony would wrap a linear method without buying anything. Revisit if
+a genuine multi-transaction process manager appears (e.g. a returns/RMA flow
+that spans customer action → inspection → restock → refund over days).
+
 ## Data access (read-graph)
 
 One Postgres, one Drizzle schema (`packages/db`), **cross-domain FKs kept** (real
