@@ -68,14 +68,14 @@ resource "aws_cloudwatch_metric_alarm" "engine_cpu" {
 
 resource "aws_cloudwatch_metric_alarm" "swap" {
   alarm_name        = "${var.name_prefix}-redis-swap"
-  alarm_description = "Redis ${local.cache_id}: SwapUsage above ${var.swap_threshold_mb} MB — under memory pressure."
+  alarm_description = "Redis ${local.cache_id}: SwapUsage above ${var.swap_threshold_mb} MB for 15 min — under memory pressure."
 
   namespace           = "AWS/ElastiCache"
   metric_name         = "SwapUsage"
   dimensions          = { CacheClusterId = local.cache_id }
   statistic           = "Maximum"
   period              = 300
-  evaluation_periods  = 2
+  evaluation_periods  = 3
   comparison_operator = "GreaterThanThreshold"
   threshold           = var.swap_threshold_mb * 1000 * 1000
   treat_missing_data  = "ignore"
