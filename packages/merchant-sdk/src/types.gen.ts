@@ -1356,6 +1356,8 @@ export interface components {
             reason?: string;
             /** @default true */
             restock: boolean;
+            amountCents?: number;
+            lines?: components["schemas"]["RefundLineDto"][];
         };
         OrderRefund: {
             id: number;
@@ -1364,6 +1366,10 @@ export interface components {
             stripeRefundId: string;
             /** @enum {string} */
             status: "pending" | "paid" | "partially_refunded" | "refunded" | "canceled" | "payment_failed";
+        };
+        RefundLineDto: {
+            orderItemId: number;
+            quantity: number;
         };
     };
     responses: never;

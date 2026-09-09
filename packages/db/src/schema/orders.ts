@@ -332,3 +332,30 @@ export const SelectOrderEventSchema = createSelectSchema(orderEventsTable);
 export type SelectOrderEvent = z.infer<typeof SelectOrderEventSchema>;
 export const InsertOrderEventSchema = createInsertSchema(orderEventsTable);
 export type InsertOrderEvent = z.infer<typeof InsertOrderEventSchema>;
+
+// which order items + quantities a line-item refund covered — only written for
+// `lines`-mode refunds (an ad-hoc amount refund has no rows here). Makes the
+// per-line "how much of this item is still refundable" cap a simple SUM. (M2)
+export const orderRefundLinesTable = pgTable(
+  "order_refund_lines",
+  {
+    id: integer().primaryKey().generatedAlwaysAsIdentity(),
+    // the negative order_payments row this line belongs to
+    refundPaymentId: integer()
+      .notNull()
+      .references(() => orderPaymentsTable.id, { onDelete: "cascade" }),
+    orderItemId: integer()
+      .notNull()
+      .references(() => orderItemsTable.id, { onDelete: "cascade" }),
+    quantity: integer().notNull(),
+    createdAt: timestampAt("created_at"),
+  },
+  (t) => [index().on(t.refundPaymentId)],
+);
+
+export const SelectOrderRefundLineSchema =
+  createSelectSchema(orderRefundLinesTable);
+export type SelectOrderRefundLine = z.infer<typeof SelectOrderRefundLineSchema>;
+export const InsertOrderRefundLineSchema =
+  createInsertSchema(orderRefundLinesTable);
+export type InsertOrderRefundLine = z.infer<typeof InsertOrderRefundLineSchema>;
