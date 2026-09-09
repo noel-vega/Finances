@@ -4,21 +4,15 @@ import type { FastifyRequest } from 'fastify';
 import { Test } from '@nestjs/testing';
 import type Stripe from 'stripe';
 import { Logger } from 'logging';
-import { constructWebhookEvent } from 'payments';
 import { DOMAIN_EVENTS, DomainEventBus } from 'src/shared/events';
+import { STRIPE } from './payments.constants';
 import { StripeConnectService } from './stripe-connect.service';
 import { StripeWebhookController } from './stripe-webhook.controller';
 
-// payments is mocked so the module singleton in stripe.client.ts doesn't build
-// a real client, and so the signature check is controllable
-jest.mock('payments', () => ({
-  createStripeClient: jest.fn(() => ({})),
-  constructWebhookEvent: jest.fn(),
-}));
-
-const mockedConstruct = constructWebhookEvent as jest.MockedFunction<
-  typeof constructWebhookEvent
->;
+// the injected Stripe client's only job in this controller is signature
+// verification (via `constructWebhookEvent`), so a stub of `webhooks.constructEvent`
+// is the whole surface — returning an event, or throwing on a bad signature.
+const constructEvent = jest.fn();
 
 const baseSession = {
   id: 'cs_test_1',
@@ -83,6 +77,7 @@ async function build() {
   const ref = await Test.createTestingModule({
     controllers: [StripeWebhookController],
     providers: [
+      { provide: STRIPE, useValue: { webhooks: { constructEvent } } },
       { provide: DomainEventBus, useValue: { emitAsync } },
       { provide: StripeConnectService, useValue: { handleAccountUpdated } },
     ],
@@ -94,12 +89,12 @@ async function build() {
   };
 }
 
-beforeEach(() => mockedConstruct.mockReset());
+beforeEach(() => constructEvent.mockReset());
 
 describe('StripeWebhookController', () => {
   it('rejects with a 400 when the signature does not verify', async () => {
-    mockedConstruct.mockImplementation(() => {
-      throw new BadRequestException('bad sig');
+    constructEvent.mockImplementation(() => {
+      throw new Error('bad sig');
     });
     const { controller, emitAsync, handleAccountUpdated } = await build();
 
@@ -112,7 +107,7 @@ describe('StripeWebhookController', () => {
 
   describe('account.updated', () => {
     it('syncs the connected account status', async () => {
-      mockedConstruct.mockReturnValue(
+      constructEvent.mockReturnValue(
         accountUpdatedEvent({
           charges_enabled: true,
           details_submitted: false,
@@ -128,7 +123,7 @@ describe('StripeWebhookController', () => {
     });
 
     it('ignores the event when it carries no connected account id', async () => {
-      mockedConstruct.mockReturnValue(accountUpdatedEvent({ account: null }));
+      constructEvent.mockReturnValue(accountUpdatedEvent({ account: null }));
       const { controller, handleAccountUpdated } = await build();
 
       await controller.handle(REQ);
@@ -139,7 +134,7 @@ describe('StripeWebhookController', () => {
 
   describe('checkout.session.*', () => {
     it('emits checkout.session.paid for a paid completed session', async () => {
-      mockedConstruct.mockReturnValue(
+      constructEvent.mockReturnValue(
         checkoutEvent('checkout.session.completed'),
       );
       const { controller, emitAsync } = await build();
@@ -172,7 +167,7 @@ describe('StripeWebhookController', () => {
     });
 
     it('also emits for async_payment_succeeded', async () => {
-      mockedConstruct.mockReturnValue(
+      constructEvent.mockReturnValue(
         checkoutEvent('checkout.session.async_payment_succeeded'),
       );
       const { controller, emitAsync } = await build();
@@ -186,7 +181,7 @@ describe('StripeWebhookController', () => {
     });
 
     it('propagates a handler failure so Stripe redelivers', async () => {
-      mockedConstruct.mockReturnValue(
+      constructEvent.mockReturnValue(
         checkoutEvent('checkout.session.completed'),
       );
       const { controller, emitAsync } = await build();
@@ -196,7 +191,7 @@ describe('StripeWebhookController', () => {
     });
 
     it('does not emit when the session is not paid', async () => {
-      mockedConstruct.mockReturnValue(
+      constructEvent.mockReturnValue(
         checkoutEvent('checkout.session.completed', {
           payment_status: 'unpaid',
         }),
@@ -211,7 +206,7 @@ describe('StripeWebhookController', () => {
     it('does not emit when accountId or cartToken metadata is missing', async () => {
       const { controller, emitAsync } = await build();
       for (const metadata of [{ cartToken: 'x' }, { accountId: '1' }, {}]) {
-        mockedConstruct.mockReturnValue(
+        constructEvent.mockReturnValue(
           checkoutEvent('checkout.session.completed', { metadata }),
         );
         await controller.handle(REQ);
@@ -220,7 +215,7 @@ describe('StripeWebhookController', () => {
     });
 
     it('records no payment intent id when Stripe expands payment_intent to an object', async () => {
-      mockedConstruct.mockReturnValue(
+      constructEvent.mockReturnValue(
         checkoutEvent('checkout.session.completed', {
           payment_intent: { id: 'pi_x' },
         }),
@@ -236,7 +231,7 @@ describe('StripeWebhookController', () => {
     });
 
     it('falls back to nulls when the session omits amounts and shipping', async () => {
-      mockedConstruct.mockReturnValue(
+      constructEvent.mockReturnValue(
         checkoutEvent('checkout.session.completed', {
           amount_total: null,
           shipping_cost: undefined,
@@ -270,7 +265,7 @@ describe('StripeWebhookController', () => {
       const warn = jest
         .spyOn(Logger.prototype, 'warn')
         .mockImplementation(() => undefined);
-      mockedConstruct.mockReturnValue(
+      constructEvent.mockReturnValue(
         checkoutEvent('checkout.session.async_payment_failed', {
           payment_status: 'unpaid',
           payment_intent: 'pi_test_1',
@@ -285,7 +280,7 @@ describe('StripeWebhookController', () => {
     });
 
     it('acknowledges an expired session without creating an order', async () => {
-      mockedConstruct.mockReturnValue(
+      constructEvent.mockReturnValue(
         checkoutEvent('checkout.session.expired', {
           status: 'expired',
           payment_status: 'unpaid',
@@ -299,7 +294,7 @@ describe('StripeWebhookController', () => {
   });
 
   it('ignores unrelated event types', async () => {
-    mockedConstruct.mockReturnValue(checkoutEvent('payment_intent.succeeded'));
+    constructEvent.mockReturnValue(checkoutEvent('payment_intent.succeeded'));
     const { controller, emitAsync, handleAccountUpdated } = await build();
 
     await expect(controller.handle(REQ)).resolves.toEqual({ received: true });

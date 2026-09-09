@@ -1,4 +1,10 @@
-import { Controller, Post, Req, type RawBodyRequest } from '@nestjs/common';
+import {
+  Controller,
+  Inject,
+  Post,
+  Req,
+  type RawBodyRequest,
+} from '@nestjs/common';
 import type { FastifyRequest } from 'fastify';
 import { ApiExcludeEndpoint } from '@nestjs/swagger';
 import { constructWebhookEvent } from 'payments';
@@ -11,8 +17,8 @@ import {
   DomainEventBus,
   type CheckoutSessionPaidPayload,
 } from 'src/shared/events';
+import { STRIPE } from './payments.constants';
 import { StripeConnectService } from './stripe-connect.service';
-import { stripe } from './stripe.client';
 
 // The one Stripe webhook endpoint — a Stripe event destination is a single URL
 // + a single signing secret, so both the Connect (`account.updated`) and
@@ -27,6 +33,7 @@ export class StripeWebhookController {
   private readonly logger = new Logger(StripeWebhookController.name);
 
   constructor(
+    @Inject(STRIPE) private readonly stripe: Stripe,
     private readonly stripeConnect: StripeConnectService,
     private readonly events: DomainEventBus,
   ) {}
@@ -37,7 +44,7 @@ export class StripeWebhookController {
   async handle(@Req() req: RawBodyRequest<FastifyRequest>) {
     // verifies the signature or throws a 400 (see packages/payments)
     const event = constructWebhookEvent(
-      stripe,
+      this.stripe,
       req.rawBody,
       req.headers['stripe-signature'],
       env.STRIPE_WEBHOOK_SECRET,

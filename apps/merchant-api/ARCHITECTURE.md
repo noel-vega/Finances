@@ -169,8 +169,9 @@ down. What keeps that bounded (OS-346 audit):
 
 - **Every external SDK client sets a timeout.** Redis: `commandTimeout: 5_000`
   (`app.module.ts` via `createRedisConnection`). Stripe:
-  `timeout: 20_000, maxNetworkRetries: 1` (`payments/stripe.client.ts` — the SDK
-  default is 80 s). Shippo: `timeoutMs: 20_000`
+  `timeout: 20_000, maxNetworkRetries: 1` (the `STRIPE` provider in
+  `payments/payments.module.ts`, via `packages/payments` — the SDK default is
+  80 s). Shippo: `timeoutMs: 20_000`
   (`sales/fulfillments/shippo.client.ts`). S3: `requestTimeout: 10_000`
   (`packages/storage`). **Add a timeout to any new client.**
 - **Webhooks fail as 4xx, not 5xx, on bad input** — `payments/stripe-webhook.controller.ts`

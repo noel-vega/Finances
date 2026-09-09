@@ -1,20 +1,24 @@
 import { Inject, Injectable } from '@nestjs/common';
+import type Stripe from 'stripe';
 import { type db as Db, eq, stripeAccountsTable } from 'db/payments';
 import { DRIZZLE } from 'src/shared/database/database.constants';
-import { stripe } from './stripe.client';
+import { STRIPE } from './payments.constants';
 import { StripeConnectStatus } from './entities/stripe-connect-status.entity';
 import { AccountSessionResponse } from './entities/account-session.entity';
 
 @Injectable()
 export class StripeConnectService {
-  constructor(@Inject(DRIZZLE) private readonly db: typeof Db) {}
+  constructor(
+    @Inject(DRIZZLE) private readonly db: typeof Db,
+    @Inject(STRIPE) private readonly stripe: Stripe,
+  ) {}
 
   async createAccountSession(
     accountId: number,
   ): Promise<AccountSessionResponse> {
     const stripeAccountId = await this.ensureConnectedAccount(accountId);
 
-    const session = await stripe.accountSessions.create({
+    const session = await this.stripe.accountSessions.create({
       account: stripeAccountId,
       components: {
         account_onboarding: { enabled: true },
@@ -52,7 +56,7 @@ export class StripeConnectService {
       };
     }
 
-    const account = await stripe.accounts.retrieve(
+    const account = await this.stripe.accounts.retrieve(
       stripeAccount.stripeAccountId,
     );
     await this.syncAccountStatus(stripeAccount.stripeAccountId, {
@@ -102,7 +106,7 @@ export class StripeConnectService {
 
     if (existing) return existing.stripeAccountId;
 
-    const stripeAccount = await stripe.accounts.create({
+    const stripeAccount = await this.stripe.accounts.create({
       type: 'express',
       country: 'US',
       capabilities: {
