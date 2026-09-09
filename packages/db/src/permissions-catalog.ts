@@ -17,6 +17,7 @@ export const PERMISSIONS_CATALOG: PermissionDef[] = [
 
   { key: "orders:read", resource: "orders", action: "read", description: "View orders" },
   { key: "orders:write", resource: "orders", action: "write", description: "Edit orders" },
+  { key: "orders:refund", resource: "orders", action: "refund", description: "Refund orders" },
 
   { key: "fulfillments:write", resource: "fulfillments", action: "write", description: "Fulfill orders" },
 

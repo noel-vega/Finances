@@ -3,6 +3,7 @@ import type Stripe from 'stripe';
 import { createStripeClient } from 'payments';
 import { env } from 'src/shared/env';
 import { STRIPE } from './payments.constants';
+import { StripeRefundsService } from './refunds.service';
 import { StripeConnectController } from './stripe-connect.controller';
 import { StripeConnectService } from './stripe-connect.service';
 import { StripeWebhookController } from './stripe-webhook.controller';
@@ -17,7 +18,7 @@ const stripeProvider = {
 
 @Module({
   controllers: [StripeConnectController, StripeWebhookController],
-  providers: [stripeProvider, StripeConnectService],
-  exports: [STRIPE],
+  providers: [stripeProvider, StripeConnectService, StripeRefundsService],
+  exports: [STRIPE, StripeRefundsService],
 })
 export class PaymentsModule {}

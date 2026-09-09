@@ -34,5 +34,15 @@ export function createOrdersResource(client: Client<paths>, doRequest: DoFn) {
       );
       return data;
     },
+
+    refund: async (
+      id: number,
+      body: components["schemas"]["RefundOrderDto"],
+    ) => {
+      const { data } = await doRequest(() =>
+        client.POST("/orders/{id}/refunds", { params: { path: { id } }, body }),
+      );
+      return data;
+    },
   };
 }
