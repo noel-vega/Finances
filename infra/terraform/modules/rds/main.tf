@@ -1,3 +1,8 @@
+resource "random_password" "master" {
+  length  = 32
+  special = false # alphanumeric only — no characters that need URL-encoding in the connection string
+}
+
 resource "aws_db_subnet_group" "this" {
   name       = "${var.name_prefix}-db"
   subnet_ids = var.private_subnet_ids
@@ -37,9 +42,15 @@ resource "aws_db_instance" "this" {
   db_name  = "ordersail"
   username = "postgres"
 
-  # RDS creates/rotates the master credential in Secrets Manager directly —
-  # Terraform state never holds the raw password.
-  manage_master_user_password = true
+  # Static, Terraform-managed master password. We deliberately do NOT use
+  # `manage_master_user_password` (RDS-managed rotation): it rotates the
+  # password out-of-band every 7 days, which the composed `database-url` app
+  # secret (modules/secrets) can't follow without a `terraform apply` — every
+  # rotation was a prod outage (OS-366). Managed rotation comes back via RDS
+  # Proxy (OS-45). The password lives in the (encrypted, access-restricted)
+  # remote state.
+  password          = random_password.master.result
+  apply_immediately = true
 
   db_subnet_group_name      = aws_db_subnet_group.this.name
   vpc_security_group_ids    = [aws_security_group.rds.id]

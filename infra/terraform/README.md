@@ -141,6 +141,20 @@ The new instance comes up with `deletion_protection = true` from
 `modules/rds/main.tf` — no code change and no manual re-enable needed. The final
 snapshot is `ordersail-production-final`; delete it manually once you're sure.
 
+### RDS master password
+
+Terraform-managed (`modules/rds` → `random_password.master`), **not**
+`manage_master_user_password`. RDS-side auto-rotation rotates the password
+out-of-band every 7 days, which the composed `database-url` app secret can't
+follow without an `apply` — that was a recurring prod outage (OS-366). The
+password lives in the (encrypted, versioned, access-restricted) remote state.
+
+To rotate it: `terraform apply -replace=module.rds.random_password.master`, then
+`aws ecs update-service --cluster ordersail --service ordersail-<svc>
+--force-new-deployment` for each of merchant-api / storefront-api / worker /
+pos-api so they re-read `database-url`. Managed rotation comes back — properly —
+with **RDS Proxy** (OS-45).
+
 ### CloudFront changes
 
 Creating or destroying a distribution takes ~15–20 min each (Terraform waits for

@@ -3,8 +3,13 @@ variable "name_prefix" {
   default = "ordersail"
 }
 
-variable "rds_master_user_secret_arn" {
+variable "rds_master_username" {
   type = string
+}
+
+variable "rds_master_password" {
+  type      = string
+  sensitive = true
 }
 
 variable "rds_address" {
