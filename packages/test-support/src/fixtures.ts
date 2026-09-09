@@ -326,6 +326,13 @@ export async function insertOrder(
   opts: {
     accountId: number;
     channel?: 'web' | 'pos';
+    status?:
+      | 'pending'
+      | 'paid'
+      | 'partially_refunded'
+      | 'refunded'
+      | 'canceled'
+      | 'payment_failed';
     customerEmail?: string | null;
     customerName?: string | null;
     subtotalCents?: number;
@@ -340,6 +347,7 @@ export async function insertOrder(
       .values({
         accountId: opts.accountId,
         channel: opts.channel ?? 'web',
+        status: opts.status ?? 'paid',
         customerEmail: opts.customerEmail ?? 'buyer@test.com',
         customerName: opts.customerName ?? 'Buyer',
         subtotalCents: opts.subtotalCents ?? 1000,

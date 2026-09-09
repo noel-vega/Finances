@@ -200,6 +200,7 @@ export async function assertCanonicalOrderWritten(
     .where(eq(ordersTable.accountId, s.accountId));
   expect(order).toMatchObject({
     channel: 'web',
+    status: 'paid',
     customerEmail: CUSTOMER.email,
     customerName: CUSTOMER.name,
     subtotalCents: SUBTOTAL_CENTS,
