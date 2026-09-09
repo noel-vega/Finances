@@ -1,5 +1,5 @@
 import type { Client } from "openapi-fetch";
-import type { paths } from "../types.gen.js";
+import type { paths, components } from "../types.gen.js";
 import type { DoFn } from "../http.js";
 
 export function createOrdersResource(client: Client<paths>, doRequest: DoFn) {
@@ -21,6 +21,16 @@ export function createOrdersResource(client: Client<paths>, doRequest: DoFn) {
       };
       const { data } = await doRequest(() =>
         client.GET("/orders/{id}", { params: { path } }),
+      );
+      return data;
+    },
+
+    transitionStatus: async (
+      id: number,
+      body: components["schemas"]["UpdateOrderStatusDto"],
+    ) => {
+      const { data } = await doRequest(() =>
+        client.PATCH("/orders/{id}/status", { params: { path: { id } }, body }),
       );
       return data;
     },
