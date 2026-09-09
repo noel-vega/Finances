@@ -21,8 +21,47 @@ permissions:
   id-token: write
   contents: read
 
+# One production-mutating run at a time. Migrate (when dispatched on its own) and
+# Rollback share this same group, so a manual migration or rollback queues behind
+# an in-flight deploy instead of racing it. cancel-in-progress is false on purpose
+# — killing a run mid-migration or mid-update-service leaves production half-done.
+# A batch of merges collapses to one running + one pending (the tip); the commits
+# in between are cancelled while pending and the `guard` job skips the first run if
+# a newer commit already landed.
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
 jobs:
+  # Cheap pre-flight: on a push, bail if this commit is no longer the tip of main
+  # (a later PR in the same merge batch already superseded it). Downstream jobs
+  # chain off build-and-push via `needs:`, so skipping it cascades the whole
+  # pipeline to "skipped" and the run still concludes green.
+  guard:
+    runs-on: ubuntu-latest
+    outputs:
+      proceed: ${{ steps.check.outputs.proceed }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: check
+        run: |
+          if [ "${{ github.event_name }}" != "push" ]; then
+            echo "proceed=true" >> "$GITHUB_OUTPUT"   # manual dispatch always proceeds
+            exit 0
+          fi
+          git fetch --quiet origin main
+          TIP=$(git rev-parse FETCH_HEAD)
+          if [ "$TIP" = "$GITHUB_SHA" ]; then
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::$GITHUB_SHA superseded by $TIP — skipping deploy"
+          fi
+
   build-and-push:
+    needs: guard
+    if: needs.guard.outputs.proceed == 'true'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -144,8 +183,10 @@ jobs:
         include:
           - app: merchant-web
             ssm_prefix: merchant-web
+            site_type: spa
           - app: website
             ssm_prefix: website
+            site_type: astro
     steps:
       - uses: actions/checkout@v4
 
@@ -181,7 +222,9 @@ jobs:
           VITE_STRIPE_PUBLISHABLE_KEY: ${{ vars.VITE_STRIPE_PUBLISHABLE_KEY }}
         run: npm run build --workspace=${{ matrix.app }}
 
-      - name: Sync to S3 and invalidate CloudFront
+      # SPA (merchant-web): one index.html, everything else is a hashed asset.
+      - name: Sync to S3 and invalidate CloudFront (SPA)
+        if: matrix.site_type == 'spa'
         run: |
           set -euo pipefail
 
@@ -199,6 +242,34 @@ jobs:
             --cache-control "public,max-age=0,must-revalidate"
 
           aws cloudfront create-invalidation --distribution-id "$DIST_ID" --paths "/index.html" "/"
+
+      # Multi-page Astro (website): only _astro/* is fingerprinted; every page has
+      # its own must-revalidate index.html. Ported from the former deploy-website.yml.
+      - name: Sync to S3 and invalidate CloudFront (Astro multipage)
+        if: matrix.site_type == 'astro'
+        run: |
+          set -euo pipefail
+
+          BUCKET=$(aws ssm get-parameter --name /ordersail/production/frontend/${{ matrix.ssm_prefix }}-bucket --query 'Parameter.Value' --output text)
+          DIST_ID=$(aws ssm get-parameter --name /ordersail/production/frontend/${{ matrix.ssm_prefix }}-distribution --query 'Parameter.Value' --output text)
+          DIST_DIR="apps/${{ matrix.app }}/dist"
+
+          # Pass 1 — fingerprinted build assets get a 1-year immutable cache.
+          aws s3 sync "$DIST_DIR" "s3://$BUCKET" \
+            --cache-control "public,max-age=31536000,immutable" \
+            --exclude "*" --include "_astro/*"
+
+          # Pass 2 — everything else (every page's index.html, 404.html,
+          # favicons) has a stable URL but per-deploy content, so it must
+          # revalidate. --delete prunes removed pages/assets. The just-uploaded
+          # _astro/* files match on size/mtime and are skipped, keeping their
+          # immutable header.
+          aws s3 sync "$DIST_DIR" "s3://$BUCKET" --delete \
+            --cache-control "public,max-age=0,must-revalidate"
+
+          # Multi-page site — invalidate everything (a few cents/deploy) rather
+          # than maintaining a per-path list.
+          aws cloudfront create-invalidation --distribution-id "$DIST_ID" --paths "/*"
 
   smoke-test:
     needs: [deploy-services, deploy-frontends]
