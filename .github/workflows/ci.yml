@@ -146,6 +146,9 @@ jobs:
   docker-smoke-build:
     runs-on: ubuntu-latest
     strategy:
+      # one image failing shouldn't cancel the others mid-build — they each
+      # still write their own layer cache
+      fail-fast: false
       matrix:
         target: [merchant-api, storefront-api, pos-api, worker, migrate]
     steps:
@@ -159,3 +162,9 @@ jobs:
           context: .
           file: docker/${{ matrix.target }}.Dockerfile
           push: false
+          # per-image scope so the 5 matrix builds don't overwrite each
+          # other's manifest. mode=max caches the intermediate stages too —
+          # `deps` (npm ci), `build` (nest build), `prod-deps` — which is
+          # where all the time goes in these multi-stage Dockerfiles.
+          cache-from: type=gha,scope=${{ matrix.target }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.target }}
