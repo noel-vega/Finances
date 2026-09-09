@@ -2,6 +2,10 @@ output "endpoint" {
   value = aws_db_instance.this.endpoint
 }
 
+output "identifier" {
+  value = aws_db_instance.this.identifier
+}
+
 output "address" {
   value = aws_db_instance.this.address
 }
