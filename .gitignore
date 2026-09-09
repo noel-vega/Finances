@@ -17,3 +17,7 @@ dist
 *.tfstate
 *.tfstate.backup
 crash.log
+
+# terraform: local var files carrying alert recipients, gate creds, etc.
+*.auto.tfvars
+*.auto.tfvars.json
