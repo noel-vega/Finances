@@ -19,6 +19,7 @@ import {
   productsTable,
   productVariantsTable,
   stripeAccountsTable,
+  usersTable,
   variantOptionValuesTable,
 } from 'db';
 import type { TestDb } from './test-db/db.js';
@@ -48,6 +49,28 @@ export async function insertAccount(
         name: over.name ?? 'Test Store',
         phone: over.phone ?? '5555550100',
         email: over.email ?? `owner-${uniq()}@store.test`,
+      })
+      .returning(),
+  );
+}
+
+export async function insertUser(
+  db: TestDb,
+  opts: {
+    accountId: number;
+    firstname?: string;
+    lastname?: string;
+    email?: string;
+  },
+): Promise<Row<typeof usersTable>> {
+  return one(
+    await db
+      .insert(usersTable)
+      .values({
+        accountId: opts.accountId,
+        firstname: opts.firstname ?? 'Staff',
+        lastname: opts.lastname ?? `Member ${uniq()}`,
+        email: opts.email ?? `staff-${uniq()}@store.test`,
       })
       .returning(),
   );

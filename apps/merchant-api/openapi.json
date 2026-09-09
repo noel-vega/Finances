@@ -1718,6 +1718,51 @@
         ]
       }
     },
+    "/orders/{id}/status": {
+      "patch": {
+        "operationId": "OrdersController_updateStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOrderStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderStatusChange"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "Orders"
+        ]
+      }
+    },
     "/fulfillments/rates": {
       "post": {
         "operationId": "FulfillmentsController_getRates",
@@ -4469,6 +4514,63 @@
         "required": [
           "items",
           "unresolvedCount"
+        ]
+      },
+      "UpdateOrderStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "paid",
+              "partially_refunded",
+              "refunded",
+              "canceled",
+              "payment_failed"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "OrderStatusChange": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "paid",
+              "partially_refunded",
+              "refunded",
+              "canceled",
+              "payment_failed"
+            ]
+          },
+          "previousStatus": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "paid",
+              "partially_refunded",
+              "refunded",
+              "canceled",
+              "payment_failed"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "previousStatus"
         ]
       }
     }

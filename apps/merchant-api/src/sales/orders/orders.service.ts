@@ -1,4 +1,9 @@
-import { Inject, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { DRIZZLE } from 'src/shared/database/database.constants';
 import { inventoryMovementsTable, locationsTable } from 'db/stock';
 import {
@@ -20,6 +25,9 @@ import {
   OrderDetail,
   type FulfillmentStatus,
 } from './entities/order-detail.entity';
+import { OrderStatusChange } from './entities/order-status-change.entity';
+import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
+import { transitionOrderStatus } from './order-status';
 import type { Fulfillment } from '../fulfillments/entities/fulfillment.entity';
 
 const MAX_LIMIT = 100;
@@ -181,6 +189,41 @@ export class OrdersService {
       items,
       fulfillments,
     };
+  }
+
+  // Narrow manual status correction (PATCH /orders/:id/status). Refund states
+  // are reached through the refund flow (OS-121/122), never set by hand here.
+  async updateStatus(
+    id: number,
+    accountId: number,
+    dto: UpdateOrderStatusDto,
+    actorUserId: number,
+  ): Promise<OrderStatusChange> {
+    if (dto.status === 'refunded' || dto.status === 'partially_refunded') {
+      throw new ConflictException(
+        `Set '${dto.status}' via a refund (POST /orders/${id}/refunds), not a manual status change`,
+      );
+    }
+
+    return this.db.transaction(async (tx) => {
+      const [order] = await tx
+        .select({ id: ordersTable.id })
+        .from(ordersTable)
+        .where(
+          and(eq(ordersTable.id, id), eq(ordersTable.accountId, accountId)),
+        );
+      if (!order) throw new NotFoundException();
+
+      const { from, to } = await transitionOrderStatus(tx, {
+        orderId: id,
+        to: dto.status,
+        actorType: 'staff',
+        actorUserId,
+        reason: dto.reason ?? null,
+      });
+
+      return { id, status: to, previousStatus: from };
+    });
   }
 
   // sum of fulfillment_items.quantity per order, for the given order ids —
