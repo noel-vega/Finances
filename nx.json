@@ -31,6 +31,11 @@
       "inputs": ["default", "^production"],
       "cache": true
     },
+    "lint:ci": {
+      "dependsOn": ["^build"],
+      "inputs": ["default", "^production"],
+      "cache": true
+    },
     "test": {
       "inputs": [
         "default",
