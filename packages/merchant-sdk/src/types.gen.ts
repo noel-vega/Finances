@@ -596,6 +596,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/orders/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["OrdersController_cancel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/fulfillments/rates": {
         parameters: {
             query?: never;
@@ -1370,6 +1386,16 @@ export interface components {
         RefundLineDto: {
             orderItemId: number;
             quantity: number;
+        };
+        CancelOrderDto: {
+            reason?: string;
+        };
+        OrderCancellation: {
+            orderId: number;
+            /** @enum {string} */
+            status: "canceled";
+            refundIssued: boolean;
+            refundAmountCents: number;
         };
     };
     responses: never;
@@ -2494,6 +2520,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OrderRefund"];
+                };
+            };
+        };
+    };
+    OrdersController_cancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CancelOrderDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderCancellation"];
                 };
             };
         };

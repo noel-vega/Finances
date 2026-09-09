@@ -14,18 +14,21 @@ export const ORDER_STATUSES = orderStatusEnum.enumValues;
 // the manual correction endpoint all move status through here so the rules and
 // the `status_changed` audit event live in exactly one place.
 //
-//   pending ──▶ paid ──▶ partially_refunded ──▶ refunded
-//      │         │              │                  (terminal)
-//      │         └──────────────┴──▶ canceled      (terminal)
+//   pending ──▶ paid ──▶ partially_refunded ──▶ refunded ──▶ canceled
+//      │         │              │                              (terminal)
+//      │         └──────────────┴──────────────────▶ canceled  (terminal)
 //      ├──▶ payment_failed ──▶ paid | canceled
 //      └──▶ payment_failed | canceled
+//
+// `refunded ──▶ canceled` exists for OS-125: cancelling a paid order fully
+// refunds it (→ refunded) and then marks it canceled, in one transaction.
 export const ALLOWED_TRANSITIONS: Record<OrderStatus, readonly OrderStatus[]> =
   {
     pending: ['paid', 'payment_failed', 'canceled'],
     paid: ['partially_refunded', 'refunded', 'canceled'],
     partially_refunded: ['partially_refunded', 'refunded', 'canceled'],
     payment_failed: ['paid', 'canceled'],
-    refunded: [],
+    refunded: ['canceled'],
     canceled: [],
   };
 

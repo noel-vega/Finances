@@ -59,10 +59,13 @@ describe('order-status state machine', () => {
     expect(canTransition('paid', 'refunded')).toBe(true);
     expect(canTransition('partially_refunded', 'refunded')).toBe(true);
     expect(canTransition('payment_failed', 'paid')).toBe(true);
+    // a fully-refunded order can still be marked canceled (OS-125 cancel)
+    expect(canTransition('refunded', 'canceled')).toBe(true);
 
     expect(canTransition('paid', 'pending')).toBe(false);
     expect(canTransition('canceled', 'paid')).toBe(false);
-    expect(canTransition('refunded', 'canceled')).toBe(false);
+    expect(canTransition('refunded', 'paid')).toBe(false);
+    expect(canTransition('canceled', 'canceled')).toBe(false);
   });
 });
 

@@ -44,5 +44,15 @@ export function createOrdersResource(client: Client<paths>, doRequest: DoFn) {
       );
       return data;
     },
+
+    cancel: async (
+      id: number,
+      body: components["schemas"]["CancelOrderDto"],
+    ) => {
+      const { data } = await doRequest(() =>
+        client.POST("/orders/{id}/cancel", { params: { path: { id } }, body }),
+      );
+      return data;
+    },
   };
 }

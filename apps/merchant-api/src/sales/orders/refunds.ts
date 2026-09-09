@@ -78,6 +78,39 @@ export async function resolveRestockTargets(
   return lines;
 }
 
+// Applies a set of restock lines — one `return` movement + a materialised
+// balance bump per line. Shared by recordRefund (a refund's restock) and
+// OS-125's cancel (its no-refund restock path).
+export async function applyRestock(
+  executor: Pick<typeof Db, 'insert'>,
+  lines: RestockLine[],
+): Promise<void> {
+  for (const line of lines) {
+    if (line.quantity <= 0) continue;
+    await executor.insert(inventoryMovementsTable).values({
+      orderItemId: line.orderItemId,
+      variantId: line.variantId,
+      locationId: line.locationId,
+      delta: line.quantity,
+      reason: 'return',
+    });
+    await executor
+      .insert(inventoryTable)
+      .values({
+        variantId: line.variantId,
+        locationId: line.locationId,
+        stock: line.quantity,
+      })
+      .onConflictDoUpdate({
+        target: [inventoryTable.variantId, inventoryTable.locationId],
+        set: {
+          stock: sql`${inventoryTable.stock} + ${line.quantity}`,
+          updatedAt: new Date(),
+        },
+      });
+  }
+}
+
 export interface RecordRefundInput {
   orderId: number;
   // the tender being reversed — its `method` is copied onto the refund row
@@ -140,30 +173,7 @@ export async function recordRefund(
     })
     .returning({ id: orderPaymentsTable.id });
 
-  for (const line of input.restockLines ?? []) {
-    if (line.quantity <= 0) continue;
-    await executor.insert(inventoryMovementsTable).values({
-      orderItemId: line.orderItemId,
-      variantId: line.variantId,
-      locationId: line.locationId,
-      delta: line.quantity,
-      reason: 'return',
-    });
-    await executor
-      .insert(inventoryTable)
-      .values({
-        variantId: line.variantId,
-        locationId: line.locationId,
-        stock: line.quantity,
-      })
-      .onConflictDoUpdate({
-        target: [inventoryTable.variantId, inventoryTable.locationId],
-        set: {
-          stock: sql`${inventoryTable.stock} + ${line.quantity}`,
-          updatedAt: new Date(),
-        },
-      });
-  }
+  await applyRestock(executor, input.restockLines ?? []);
 
   const [{ net }] = await executor
     .select({
