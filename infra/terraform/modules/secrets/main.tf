@@ -15,22 +15,18 @@ resource "aws_secretsmanager_secret" "app" {
   name     = "${var.name_prefix}/production/${each.value}"
 }
 
-# --- database-url: the one secret Terraform legitimately owns the value
-# of, composed from the RDS-managed master credential + endpoint. ---------
-
-data "aws_secretsmanager_secret_version" "rds_master" {
-  secret_id = var.rds_master_user_secret_arn
-}
+# --- database-url: composed from the RDS endpoint + the Terraform-managed
+# master password (modules/rds). A stable value — no RDS-side rotation to
+# chase (OS-366). ------------------------------------------------------------
 
 locals {
-  rds_credentials = jsondecode(data.aws_secretsmanager_secret_version.rds_master.secret_string)
   # sslmode=require: RDS's default parameter group sets rds.force_ssl=1, which
   # rejects plaintext connections outright (pg_hba.conf has no non-SSL entry).
   # uselibpqcompat=true: without it, this pg-connection-string version treats
   # "require" as an alias for "verify-full", which fails with no RDS CA
   # bundle installed in the app image — this flag restores plain
   # encrypt-without-verifying semantics.
-  database_url = "postgres://${local.rds_credentials.username}:${urlencode(local.rds_credentials.password)}@${var.rds_address}:${var.rds_port}/${var.rds_db_name}?sslmode=require&uselibpqcompat=true"
+  database_url = "postgres://${var.rds_master_username}:${urlencode(var.rds_master_password)}@${var.rds_address}:${var.rds_port}/${var.rds_db_name}?sslmode=require&uselibpqcompat=true"
 }
 
 resource "aws_secretsmanager_secret" "database_url" {

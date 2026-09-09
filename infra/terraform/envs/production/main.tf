@@ -114,12 +114,13 @@ module "elasticache" {
 }
 
 module "secrets" {
-  source                     = "../../modules/secrets"
-  name_prefix                = var.name_prefix
-  rds_master_user_secret_arn = module.rds.master_user_secret_arn
-  rds_address                = module.rds.address
-  rds_port                   = module.rds.port
-  rds_db_name                = module.rds.db_name
+  source              = "../../modules/secrets"
+  name_prefix         = var.name_prefix
+  rds_master_username = module.rds.username
+  rds_master_password = module.rds.master_password
+  rds_address         = module.rds.address
+  rds_port            = module.rds.port
+  rds_db_name         = module.rds.db_name
 }
 
 module "ecs_cluster" {

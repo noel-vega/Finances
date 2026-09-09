@@ -18,7 +18,8 @@ output "username" {
   value = aws_db_instance.this.username
 }
 
-output "master_user_secret_arn" {
-  description = "Secrets Manager ARN of the RDS-managed master credential."
-  value       = aws_db_instance.this.master_user_secret[0].secret_arn
+output "master_password" {
+  description = "Terraform-managed Postgres master password. Composed into the database-url app secret (modules/secrets)."
+  value       = random_password.master.result
+  sensitive   = true
 }
