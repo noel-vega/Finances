@@ -44,16 +44,18 @@ resource "aws_cloudwatch_metric_alarm" "cpu" {
   ok_actions    = var.alarm_warning_topic_arns
 }
 
+# FreeableMemory sits low in normal operation on a micro (Postgres uses RAM for
+# page cache) — needs a sustained dip, not a momentary one, to mean anything.
 resource "aws_cloudwatch_metric_alarm" "freeable_memory" {
   alarm_name        = "${var.name_prefix}-rds-freeable-memory"
-  alarm_description = "RDS ${local.db_id}: FreeableMemory below ${var.freeable_memory_floor_mb} MB."
+  alarm_description = "RDS ${local.db_id}: FreeableMemory below ${var.freeable_memory_floor_mb} MB for 15 min."
 
   namespace           = "AWS/RDS"
   metric_name         = "FreeableMemory"
   dimensions          = { DBInstanceIdentifier = local.db_id }
   statistic           = "Minimum"
   period              = 300
-  evaluation_periods  = 2
+  evaluation_periods  = 3
   comparison_operator = "LessThanThreshold"
   threshold           = var.freeable_memory_floor_mb * 1000 * 1000
   treat_missing_data  = "ignore"

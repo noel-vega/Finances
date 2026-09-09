@@ -46,8 +46,11 @@ variable "cpu_threshold" {
 }
 
 variable "freeable_memory_floor_mb" {
+  # db.t4g.micro has 1 GiB and Postgres keeps most of it as page cache, so
+  # FreeableMemory sits low in steady state (measured ~180–210 MB flat). 100 MB
+  # is "genuinely tight, sustained", not the normal baseline.
   type    = number
-  default = 200
+  default = 100
 }
 
 variable "max_connections_threshold" {

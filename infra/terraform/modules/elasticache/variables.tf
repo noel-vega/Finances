@@ -45,8 +45,12 @@ variable "engine_cpu_threshold" {
 }
 
 variable "swap_threshold_mb" {
+  # cache.t4g.micro baselines at a flat ~54 MB of swap even at 1.7% memory use —
+  # the oft-quoted 50 MB threshold is wrong for a node this small. 128 MB is
+  # clearly above baseline. Real memory pressure shows first in the (critical)
+  # DatabaseMemoryUsagePercentage / Evictions alarms anyway.
   type    = number
-  default = 50
+  default = 128
 }
 
 variable "max_connections" {
