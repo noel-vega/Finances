@@ -138,6 +138,8 @@ module "alb_merchant_api" {
   container_port              = 3000
   ecs_tasks_security_group_id = module.ecs_cluster.ecs_tasks_security_group_id
   acm_certificate_arn         = aws_acm_certificate_validation.frontends.certificate_arn
+  alarm_critical_topic_arns   = [aws_sns_topic.alerts_critical.arn]
+  alarm_warning_topic_arns    = [aws_sns_topic.alerts_warning.arn]
 }
 
 module "alb_storefront_api" {
@@ -149,6 +151,8 @@ module "alb_storefront_api" {
   container_port              = 3001
   ecs_tasks_security_group_id = module.ecs_cluster.ecs_tasks_security_group_id
   acm_certificate_arn         = aws_acm_certificate_validation.frontends.certificate_arn
+  alarm_critical_topic_arns   = [aws_sns_topic.alerts_critical.arn]
+  alarm_warning_topic_arns    = [aws_sns_topic.alerts_warning.arn]
 }
 
 # Dedicated ALB, mirroring the other two public APIs. OS-63 (M7 cost pass)
@@ -162,6 +166,8 @@ module "alb_pos_api" {
   container_port              = 3004
   ecs_tasks_security_group_id = module.ecs_cluster.ecs_tasks_security_group_id
   acm_certificate_arn         = aws_acm_certificate_validation.frontends.certificate_arn
+  alarm_critical_topic_arns   = [aws_sns_topic.alerts_critical.arn]
+  alarm_warning_topic_arns    = [aws_sns_topic.alerts_warning.arn]
 }
 
 # merchant-api's task role: direct S3 access to the product-images
