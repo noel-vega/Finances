@@ -114,6 +114,9 @@ module "elasticache" {
   private_subnet_ids          = module.network.private_subnet_ids
   ecs_tasks_security_group_id = module.ecs_cluster.ecs_tasks_security_group_id
   node_type                   = var.redis_node_type
+
+  alarm_critical_topic_arns = [aws_sns_topic.alerts_critical.arn]
+  alarm_warning_topic_arns  = [aws_sns_topic.alerts_warning.arn]
 }
 
 module "secrets" {
