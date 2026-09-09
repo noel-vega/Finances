@@ -5,8 +5,8 @@
 #                     floor, ElastiCache memory pressure, unhealthy hosts.
 #   alerts-warning  — email only: elevated latency / CPU / capacity, non-urgent.
 #
-# Recipients come from `alert_emails` / `alert_sms_numbers` in a git-ignored
-# `secrets.auto.tfvars` (see variables.tf). Email subs need a one-time click to
+# Recipients (local.alert_emails / local.alert_sms_numbers) come from a Secrets
+# Manager secret — see alerts-recipients.tf. Email subs need a one-time click to
 # confirm; SMS is wired but the number list stays empty until the SNS SMS
 # sandbox is exited. Runbook: docs/runbooks/alerts.md.
 
@@ -41,7 +41,7 @@ locals {
   # one (topic, email) subscription per pair. Keyed on the static tier label +
   # email so the for_each keys are plan-known even though the ARN values aren't.
   email_subscriptions = {
-    for pair in setproduct(keys(local.alert_topic_arns), var.alert_emails) :
+    for pair in setproduct(keys(local.alert_topic_arns), local.alert_emails) :
     "${pair[0]}|${pair[1]}" => { topic_arn = local.alert_topic_arns[pair[0]], email = pair[1] }
   }
 }
@@ -59,7 +59,7 @@ resource "aws_sns_topic_subscription" "email" {
 
 # critical topic only — SMS is noisier, keep it to pages
 resource "aws_sns_topic_subscription" "sms" {
-  for_each  = toset(var.alert_sms_numbers)
+  for_each  = toset(local.alert_sms_numbers)
   topic_arn = local.alerts_critical_topic_arn
   protocol  = "sms"
   endpoint  = each.value
