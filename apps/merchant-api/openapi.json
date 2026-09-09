@@ -1763,6 +1763,51 @@
         ]
       }
     },
+    "/orders/{id}/refunds": {
+      "post": {
+        "operationId": "OrdersController_refund",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefundOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderRefund"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "Orders"
+        ]
+      }
+    },
     "/fulfillments/rates": {
       "post": {
         "operationId": "FulfillmentsController_getRates",
@@ -4571,6 +4616,53 @@
           "id",
           "status",
           "previousStatus"
+        ]
+      },
+      "RefundOrderDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string"
+          },
+          "restock": {
+            "type": "boolean",
+            "default": true
+          }
+        }
+      },
+      "OrderRefund": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "orderId": {
+            "type": "number"
+          },
+          "amountCents": {
+            "type": "number"
+          },
+          "stripeRefundId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "paid",
+              "partially_refunded",
+              "refunded",
+              "canceled",
+              "payment_failed"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "orderId",
+          "amountCents",
+          "stripeRefundId",
+          "status"
         ]
       }
     }

@@ -47,7 +47,7 @@ globally via `APP_GUARD`), `env.ts`.
    | `catalog` | `identity` |
    | `stock` | `identity` |
    | `payments` | `identity` |
-   | `sales` | `identity`, `catalog`, `stock` |
+   | `sales` | `identity`, `catalog`, `stock`, `payments` (refunds — via `sales/orders/ports/`) |
    | `platform` | `identity`, `sales` — **`platform/dashboard` is the one cross-context read-model**, allowed to query other contexts' data for summary views |
 
 4. The shared kernel is a **leaf** — it may not import a context.
@@ -63,13 +63,25 @@ Adding a new cross-context edge = update the table above **and** the
   barrel-exported services. The consumer's domain code depends only on the port.
   Extraction = swap the adapter for an HTTP client, nothing else changes.
 
-  Today's one live edge: **`platform/dashboard → sales`**. `dashboard.service`
-  depends on `SalesPort` (`platform/dashboard/ports/sales.port.ts`);
-  `SalesAdapter` (`…/ports/sales.adapter.ts`) is the *only* file in `platform/`
-  that imports `sales`' services — enforced by `no-restricted-imports` in
-  `eslint.config.mjs`. `dashboard.service`'s `getOrderTotals` /
-  `getOutOfStockCount` stay as direct SQL (deliberate read-model projections —
-  platform is exempt from the read-graph).
+  Two live edges:
+  - **`platform/dashboard → sales`**. `dashboard.service` depends on `SalesPort`
+    (`platform/dashboard/ports/sales.port.ts`); `SalesAdapter`
+    (`…/ports/sales.adapter.ts`) is the *only* file in `platform/` that imports
+    `sales`' services — enforced by `no-restricted-imports` in
+    `eslint.config.mjs`. `dashboard.service`'s `getOrderTotals` /
+    `getOutOfStockCount` stay as direct SQL (deliberate read-model projections —
+    platform is exempt from the read-graph).
+  - **`sales → payments`** (M2 refunds, OS-121). `sales` owns the order
+    lifecycle; `payments` owns the Connect mapping (`stripe_accounts`) and the
+    Stripe surface. `RefundsService` (`sales/orders/`) depends on `PaymentsPort`
+    (`sales/orders/ports/payments.port.ts`) with one method, `refundPaymentIntent`;
+    `PaymentsAdapter` (`…/ports/payments.adapter.ts`) is the only file in `sales`
+    that imports `src/payments`, delegating to `StripeRefundsService`. Chosen over
+    a direct `sales → payments` service call (the OS-359 decision point): `payments`
+    is extraction seam #1, and the adapter keeps that cut a one-file change.
+    Status transitions + the negative-payment / restock writes stay entirely in
+    `sales` (`transitionOrderStatus` / `recordRefund`); `payments` only talks to
+    Stripe.
 - **Domain events** — for a genuine reactive side-effect in another context,
   not a synchronous read (use a port for that). In-process, via
   `@nestjs/event-emitter`, wired by the `shared/events` kernel module.

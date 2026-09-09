@@ -7,14 +7,18 @@ import {
   Param,
   ParseIntPipe,
   Patch,
+  Post,
   Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse } from '@nestjs/swagger';
 import { OrdersService } from './orders.service';
+import { RefundsService } from './refunds.service';
 import { PaginatedOrders } from './entities/paginated-orders.entity';
 import { OrderDetail } from './entities/order-detail.entity';
 import { OrderStatusChange } from './entities/order-status-change.entity';
+import { OrderRefund } from './entities/order-refund.entity';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
+import { RefundOrderDto } from './dto/refund-order.dto';
 import {
   CurrentUser,
   RequirePermissions,
@@ -23,7 +27,10 @@ import {
 
 @Controller('orders')
 export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) {}
+  constructor(
+    private readonly ordersService: OrdersService,
+    private readonly refundsService: RefundsService,
+  ) {}
 
   @Get()
   @ApiBearerAuth('JWT-auth')
@@ -62,5 +69,19 @@ export class OrdersController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.ordersService.updateStatus(id, user.accountId, dto, user.sub);
+  }
+
+  // Full refund of a web order via the Stripe connected account. Partial /
+  // line-item refunds land in OS-122.
+  @Post(':id/refunds')
+  @RequirePermissions('orders:refund')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOkResponse({ type: OrderRefund })
+  refund(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: RefundOrderDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.refundsService.refundOrder(id, user.accountId, dto, user.sub);
   }
 }

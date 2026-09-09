@@ -109,12 +109,16 @@ export default tseslint.config(
               },
             },
             {
+              // sales → payments is the M2 refund path: sales/orders/ports/
+              // (PaymentsPort + PaymentsAdapter) is the anti-corruption layer,
+              // the rest of sales depends only on the local port. See
+              // ARCHITECTURE.md § Cross-context communication.
               from: { element: { type: 'context', captured: { context: 'sales' } } },
               allow: {
                 to: {
                   element: {
                     type: 'context',
-                    captured: { context: '{identity,catalog,stock}' },
+                    captured: { context: '{identity,catalog,stock,payments}' },
                     fileInternalPath: 'index.ts',
                   },
                 },

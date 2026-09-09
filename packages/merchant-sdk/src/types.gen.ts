@@ -580,6 +580,22 @@ export interface paths {
         patch: operations["OrdersController_updateStatus"];
         trace?: never;
     };
+    "/orders/{id}/refunds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["OrdersController_refund"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/fulfillments/rates": {
         parameters: {
             query?: never;
@@ -1335,6 +1351,19 @@ export interface components {
             status: "pending" | "paid" | "partially_refunded" | "refunded" | "canceled" | "payment_failed";
             /** @enum {string} */
             previousStatus: "pending" | "paid" | "partially_refunded" | "refunded" | "canceled" | "payment_failed";
+        };
+        RefundOrderDto: {
+            reason?: string;
+            /** @default true */
+            restock: boolean;
+        };
+        OrderRefund: {
+            id: number;
+            orderId: number;
+            amountCents: number;
+            stripeRefundId: string;
+            /** @enum {string} */
+            status: "pending" | "paid" | "partially_refunded" | "refunded" | "canceled" | "payment_failed";
         };
     };
     responses: never;
@@ -2434,6 +2463,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OrderStatusChange"];
+                };
+            };
+        };
+    };
+    OrdersController_refund: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefundOrderDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderRefund"];
                 };
             };
         };
