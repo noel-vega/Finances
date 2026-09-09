@@ -18,6 +18,8 @@ dist
 *.tfstate.backup
 crash.log
 
-# terraform: local var files carrying alert recipients, gate creds, etc.
+# terraform: auto-loaded local var files must never be committed (standard
+# hygiene). Secrets are held in Secrets Manager, not here — see
+# envs/production/alerts-recipients.tf and frontend-auth.tf.
 *.auto.tfvars
 *.auto.tfvars.json

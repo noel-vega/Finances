@@ -123,6 +123,28 @@ curl -sI -u 'crew:<pass>' https://merchant.ordersail.com    # 200
 curl -sI https://merchant.ordersail.com/api/                # not the Basic realm
 ```
 
+## Alerts & alarms (OS-80)
+
+`envs/production/monitoring.tf` creates two SNS topics
+(`ordersail-alerts-{critical,warning}`) and the CloudWatch alarm suite
+(`modules/{ecs-service,alb,rds,elasticache}/alarms.tf`, plus the worker's
+order-job dead-letter page) routes to them.
+
+**Prerequisite — the recipients secret must exist before `terraform apply`**
+(the `alerts-recipients.tf` data source fails if it's absent, same as the
+frontend gate):
+
+```bash
+aws secretsmanager create-secret --region us-east-1 \
+  --name ordersail/production/alerts/recipients \
+  --secret-string '{"emails":["you@example.com"],"sms":[]}'
+```
+
+`terraform apply` then creates one `email` subscription per address per topic.
+Each sends a one-time confirmation email from `no-reply@sns.amazonaws.com` that
+must be clicked — **check Spam / the Promotions tab**. `sms` stays `[]` until the
+SNS SMS sandbox is exited. Full runbook: `docs/runbooks/alerts.md`.
+
 ## Runbooks
 
 ### Changing an RDS identity attribute (`db_name`, `identifier`, `engine`, …)

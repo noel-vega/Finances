@@ -55,22 +55,6 @@ variable "domain_name" {
   type        = string
 }
 
-variable "alert_emails" {
-  description = <<-EOT
-    Email addresses subscribed to both alert SNS topics (OS-80). Each address gets
-    a one-time "confirm subscription" email from AWS. Supply out of band in a
-    git-ignored `secrets.auto.tfvars`, not in the committed tfvars.
-  EOT
-  type        = list(string)
-  default     = []
-}
-
-variable "alert_sms_numbers" {
-  description = <<-EOT
-    E.164 phone numbers for SMS on the critical topic. Declared but unused until
-    the AWS SNS SMS sandbox is exited (verified-numbers-only + spending limit).
-    Also supply via `secrets.auto.tfvars`.
-  EOT
-  type        = list(string)
-  default     = []
-}
+# Alert recipients moved to a Secrets Manager secret (OS-375) — see
+# alerts-recipients.tf. A *.auto.tfvars only loads from the directory `terraform`
+# runs in, so an apply from a fresh checkout silently created zero subscriptions.

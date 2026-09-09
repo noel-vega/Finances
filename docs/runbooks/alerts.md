@@ -14,23 +14,42 @@ Two SNS topics, created in `infra/terraform/envs/production/monitoring.tf`:
 
 ### Adding / changing recipients
 
-Recipients are **not** in the committed tfvars. Put them in a git-ignored
-`infra/terraform/envs/production/secrets.auto.tfvars`:
+Recipients live in a Secrets Manager secret — **not** in git or tfvars — read by
+`infra/terraform/envs/production/alerts-recipients.tf` (same pattern as the frontend
+basic-auth gate). JSON shape (both keys optional, default `[]`):
 
-```hcl
-alert_emails      = ["you@example.com", "oncall@example.com"]
-alert_sms_numbers = []   # keep empty until the SNS SMS sandbox is exited
+```json
+{ "emails": ["you@example.com", "oncall@example.com"], "sms": [] }
 ```
 
-`terraform apply`, then **click the confirmation link** in each "AWS Notification —
-Subscription Confirmation" email. Unconfirmed subscriptions receive nothing.
+**First time** (the secret is an apply prerequisite — Terraform's data source fails if
+it's absent):
+
+```bash
+aws secretsmanager create-secret --region us-east-1 \
+  --name ordersail/production/alerts/recipients \
+  --secret-string '{"emails":["you@example.com"],"sms":[]}'
+```
+
+**Later changes:**
+
+```bash
+aws secretsmanager put-secret-value --region us-east-1 \
+  --secret-id ordersail/production/alerts/recipients \
+  --secret-string '{"emails":["you@example.com","oncall@example.com"],"sms":[]}'
+```
+
+Then `terraform apply` (adds/removes `aws_sns_topic_subscription.email`), and **click
+"Confirm subscription"** in each "AWS Notification - Subscription Confirmation" email from
+`no-reply@sns.amazonaws.com`. Unconfirmed subscriptions receive nothing — and the mail
+often lands in **Spam** or Gmail's **Promotions** tab.
 
 ### SMS (deferred)
 
 AWS SNS SMS starts in a **sandbox**: it can only send to phone numbers you've verified in
 the SNS console, and there's a monthly spend limit. To use it: verify the destination
 number(s) (SNS → Text messaging → Sandbox destination phone numbers), optionally request
-production access, set a spending limit, then populate `alert_sms_numbers`.
+production access, set a spending limit, then add them to the secret's `sms` array.
 
 ## Testing
 
