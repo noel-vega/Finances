@@ -197,9 +197,12 @@ data "aws_iam_policy_document" "merchant_api_task" {
 # touches the warning topic.
 data "aws_iam_policy_document" "worker_task" {
   statement {
-    effect    = "Allow"
-    actions   = ["sns:Publish"]
-    resources = [aws_sns_topic.alerts_critical.arn]
+    effect  = "Allow"
+    actions = ["sns:Publish"]
+    # local (constructed string), not aws_sns_topic.alerts_critical.arn — the
+    # module's `aws_iam_role_policy.task_extra` has count = policy != null ? 1 : 0,
+    # and a "known after apply" ARN makes that count unresolvable at plan time.
+    resources = [local.alerts_critical_topic_arn]
   }
 }
 
@@ -317,7 +320,7 @@ module "ecs_service_worker" {
     { name = "REDIS_PORT", value = tostring(module.elasticache.port) },
     # dead-letter pager for permanently-failed order jobs (OS-73); unset ⇒
     # AlertsService is a no-op and only the [alert] log line fires
-    { name = "ALERTS_CRITICAL_TOPIC_ARN", value = aws_sns_topic.alerts_critical.arn },
+    { name = "ALERTS_CRITICAL_TOPIC_ARN", value = local.alerts_critical_topic_arn },
     # interim SES SMTP config (Phase 9) — sandbox mode until AWS approves
     # production access; SMTP_FROM must exactly match the verified identity
     { name = "SMTP_HOST", value = "email-smtp.${var.region}.amazonaws.com" },
