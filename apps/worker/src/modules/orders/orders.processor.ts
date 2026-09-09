@@ -138,6 +138,7 @@ export class OrdersProcessor extends WorkerHost {
         .values({
           accountId: data.accountId,
           channel: 'web',
+          status: 'paid',
           customerEmail: data.customerEmail,
           customerName: data.customerName,
           subtotalCents: data.subtotalCents,

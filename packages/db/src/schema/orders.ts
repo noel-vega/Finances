@@ -1,4 +1,5 @@
 import {
+  index,
   integer,
   jsonb,
   pgEnum,
@@ -13,6 +14,7 @@ import { accountsTable } from "./accounts.js";
 import { productVariantsTable } from "./products.js";
 import { locationsTable } from "./inventory.js";
 import { posDevicesTable } from "./pos-devices.js";
+import { usersTable } from "./users.js";
 import { createInsertSchema, createSelectSchema } from "drizzle-orm/zod";
 import z from "zod";
 
@@ -26,6 +28,20 @@ export const orderPaymentMethodEnum = pgEnum("order_payment_method", [
   "stripe",
   "cash",
   "card",
+]);
+
+// an order's financial lifecycle — deliberately separate from the read-time
+// derived fulfillment status (unfulfilled / partially_fulfilled / fulfilled),
+// which stays computed and unstored. 'pending' / 'payment_failed' are reserved
+// for a future provisional-order path; today the only writers (checkout worker,
+// pos-api) create orders already 'paid'. See Payments M2.
+export const orderStatusEnum = pgEnum("order_status", [
+  "pending",
+  "paid",
+  "partially_refunded",
+  "refunded",
+  "canceled",
+  "payment_failed",
 ]);
 
 // a completed sale. 'web' rows are created by the checkout webhook once
@@ -57,13 +73,17 @@ export const ordersTable = pgTable("orders", {
   shippingCents: integer().notNull().default(0),
   // the actual amount charged / total collected
   amountTotalCents: integer().notNull(),
+  // financial lifecycle (see orderStatusEnum). No column default — the two
+  // writers set it explicitly on insert; the M2 migration backfills every
+  // pre-existing row to 'paid'.
+  status: orderStatusEnum().notNull(),
   // null until the order-confirmation email job is successfully enqueued
   // (web only) — lets the worker tell "already emailed" apart from "order
   // committed but the process died before the email went out"
   confirmationEmailQueuedAt: timestamp("confirmation_email_queued_at"),
   createdAt: timestampAt("created_at"),
   updatedAt: timestampAt("updated_at"),
-});
+}, (t) => [index().on(t.accountId, t.status)]);
 
 export const SelectOrderSchema = createSelectSchema(ordersTable);
 export type SelectOrder = z.infer<typeof SelectOrderSchema>;
@@ -251,3 +271,52 @@ export const SelectFailedOrderSchema = createSelectSchema(failedOrdersTable);
 export type SelectFailedOrder = z.infer<typeof SelectFailedOrderSchema>;
 export const InsertFailedOrderSchema = createInsertSchema(failedOrdersTable);
 export type InsertFailedOrder = z.infer<typeof InsertFailedOrderSchema>;
+
+// what an order_events row records. Mostly a status change, but also the
+// human-visible trail for refunds / cancellations / disputes rendered on the
+// order detail page's activity timeline (M2).
+export const orderEventTypeEnum = pgEnum("order_event_type", [
+  "status_changed",
+  "refund",
+  "cancellation",
+  "payment",
+  "fulfillment",
+  "note",
+]);
+
+// who caused the event — a signed-in staff user, an automated path (webhook,
+// worker), or the customer.
+export const orderActorTypeEnum = pgEnum("order_actor_type", [
+  "staff",
+  "system",
+  "customer",
+]);
+
+// append-only per-order audit trail. `data` carries type-specific detail
+// ({ from, to } for a status change; { grossAmountCents, stripeRefundId, reason,
+// lines } for a refund; …); `message` is the pre-rendered summary the timeline
+// shows.
+export const orderEventsTable = pgTable(
+  "order_events",
+  {
+    id: integer().primaryKey().generatedAlwaysAsIdentity(),
+    orderId: integer()
+      .notNull()
+      .references(() => ordersTable.id, { onDelete: "cascade" }),
+    type: orderEventTypeEnum().notNull(),
+    data: jsonb().$type<Record<string, unknown>>(),
+    message: text().notNull(),
+    actorType: orderActorTypeEnum().notNull(),
+    // null for system events, or when the staff user was since deleted
+    actorUserId: integer().references(() => usersTable.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestampAt("created_at"),
+  },
+  (t) => [index().on(t.orderId, t.createdAt)],
+);
+
+export const SelectOrderEventSchema = createSelectSchema(orderEventsTable);
+export type SelectOrderEvent = z.infer<typeof SelectOrderEventSchema>;
+export const InsertOrderEventSchema = createInsertSchema(orderEventsTable);
+export type InsertOrderEvent = z.infer<typeof InsertOrderEventSchema>;

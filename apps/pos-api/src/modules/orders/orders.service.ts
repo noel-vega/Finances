@@ -160,6 +160,7 @@ export class OrdersService {
         .values({
           accountId: device.accountId,
           channel: "pos",
+          status: "paid",
           locationId: device.locationId,
           posDeviceId: device.deviceId,
           subtotalCents,
