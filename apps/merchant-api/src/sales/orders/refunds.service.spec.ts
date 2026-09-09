@@ -1,10 +1,15 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import {
   and,
   eq,
   orderEventsTable,
   orderPaymentsTable,
+  orderRefundLinesTable,
   ordersTable,
 } from 'db/sales';
 import { inventoryMovementsTable, inventoryTable } from 'db/stock';
@@ -268,5 +273,178 @@ describe('RefundsService.refundOrder', () => {
       .from(orderEventsTable)
       .where(eq(orderEventsTable.orderId, s.orderId));
     expect(events).toHaveLength(0);
+  });
+});
+
+const refundLinesFor = (orderId: number) =>
+  db
+    .select({
+      orderItemId: orderRefundLinesTable.orderItemId,
+      quantity: orderRefundLinesTable.quantity,
+    })
+    .from(orderRefundLinesTable)
+    .innerJoin(
+      orderPaymentsTable,
+      eq(orderPaymentsTable.id, orderRefundLinesTable.refundPaymentId),
+    )
+    .where(eq(orderPaymentsTable.orderId, orderId));
+
+// test isolation truncates between cases, so all `return` movements belong to
+// the order under test
+const allReturns = () =>
+  db
+    .select()
+    .from(inventoryMovementsTable)
+    .where(eq(inventoryMovementsTable.reason, 'return'));
+
+describe('RefundsService.refundOrder — partial + line-item', () => {
+  it('rejects amountCents and lines together with a 400', async () => {
+    const s = await seedPaidWebOrder();
+    const { service } = await build(jest.fn());
+
+    await expect(
+      service.refundOrder(
+        s.orderId,
+        s.accountId,
+        { amountCents: 100, lines: [{ orderItemId: s.itemId, quantity: 1 }] },
+        s.staffId,
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('ad-hoc amount: negative row, partially_refunded, no restock, no refund lines', async () => {
+    const s = await seedPaidWebOrder();
+    const { service, refundPaymentIntent } = await build(
+      jest.fn().mockResolvedValue({ stripeRefundId: 're_amt' }),
+    );
+
+    const result = await service.refundOrder(
+      s.orderId,
+      s.accountId,
+      { amountCents: 1500, reason: 'shipping goodwill' },
+      s.staffId,
+    );
+
+    expect(result).toMatchObject({
+      amountCents: 1500,
+      status: 'partially_refunded',
+    });
+    expect(refundPaymentIntent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        amountCents: 1500,
+        idempotencyKey: `refund-order-${s.orderId}-p0`,
+      }),
+    );
+    expect(await statusOf(s.orderId)).toBe('partially_refunded');
+    expect(await stockAt(s.variantId, s.locationId)).toBe(START_STOCK - 2);
+    expect(await allReturns()).toHaveLength(0);
+    expect(await refundLinesFor(s.orderId)).toHaveLength(0);
+  });
+
+  it('line item: amount from snapshot price, restocks those units, writes refund lines', async () => {
+    const s = await seedPaidWebOrder(); // 2 × $50
+    const { service } = await build(
+      jest.fn().mockResolvedValue({ stripeRefundId: 're_line1' }),
+    );
+
+    const result = await service.refundOrder(
+      s.orderId,
+      s.accountId,
+      { lines: [{ orderItemId: s.itemId, quantity: 1 }] },
+      s.staffId,
+    );
+
+    expect(result).toMatchObject({
+      amountCents: 5000,
+      status: 'partially_refunded',
+    });
+    expect(await stockAt(s.variantId, s.locationId)).toBe(START_STOCK - 1);
+    expect(await refundLinesFor(s.orderId)).toEqual([
+      { orderItemId: s.itemId, quantity: 1 },
+    ]);
+  });
+
+  it('a second line refund of the remaining units clears the balance → refunded', async () => {
+    const s = await seedPaidWebOrder();
+    const { service } = await build(
+      jest
+        .fn()
+        .mockResolvedValueOnce({ stripeRefundId: 're_l1' })
+        .mockResolvedValueOnce({ stripeRefundId: 're_l2' }),
+    );
+
+    await service.refundOrder(
+      s.orderId,
+      s.accountId,
+      { lines: [{ orderItemId: s.itemId, quantity: 1 }] },
+      s.staffId,
+    );
+    const second = await service.refundOrder(
+      s.orderId,
+      s.accountId,
+      { lines: [{ orderItemId: s.itemId, quantity: 1 }] },
+      s.staffId,
+    );
+
+    expect(second.status).toBe('refunded');
+    expect(await statusOf(s.orderId)).toBe('refunded');
+    expect(await stockAt(s.variantId, s.locationId)).toBe(START_STOCK);
+    expect(await refundLinesFor(s.orderId)).toEqual([
+      { orderItemId: s.itemId, quantity: 1 },
+      { orderItemId: s.itemId, quantity: 1 },
+    ]);
+  });
+
+  it('enforces the per-line cap: cannot refund more units than remain', async () => {
+    const s = await seedPaidWebOrder();
+    const create = jest.fn().mockResolvedValue({ stripeRefundId: 're_x' });
+    const { service } = await build(create);
+
+    await service.refundOrder(
+      s.orderId,
+      s.accountId,
+      { lines: [{ orderItemId: s.itemId, quantity: 2 }] },
+      s.staffId,
+    );
+
+    await expect(
+      service.refundOrder(
+        s.orderId,
+        s.accountId,
+        { lines: [{ orderItemId: s.itemId, quantity: 1 }] },
+        s.staffId,
+      ),
+    ).rejects.toBeInstanceOf(ConflictException);
+    expect(create).toHaveBeenCalledTimes(1);
+  });
+
+  it('enforces the cumulative cap: an amount over the remaining balance is a 409', async () => {
+    const s = await seedPaidWebOrder(); // $100
+    const create = jest.fn();
+    const { service } = await build(create);
+
+    await expect(
+      service.refundOrder(
+        s.orderId,
+        s.accountId,
+        { amountCents: s.totalCents + 1 },
+        s.staffId,
+      ),
+    ).rejects.toBeInstanceOf(ConflictException);
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it('rejects a line for an item not on the order', async () => {
+    const s = await seedPaidWebOrder();
+    const { service } = await build(jest.fn());
+
+    await expect(
+      service.refundOrder(
+        s.orderId,
+        s.accountId,
+        { lines: [{ orderItemId: s.itemId + 999, quantity: 1 }] },
+        s.staffId,
+      ),
+    ).rejects.toBeInstanceOf(ConflictException);
   });
 });

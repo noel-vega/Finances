@@ -4627,6 +4627,15 @@
           "restock": {
             "type": "boolean",
             "default": true
+          },
+          "amountCents": {
+            "type": "number"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RefundLineDto"
+            }
           }
         }
       },
@@ -4663,6 +4672,21 @@
           "amountCents",
           "stripeRefundId",
           "status"
+        ]
+      },
+      "RefundLineDto": {
+        "type": "object",
+        "properties": {
+          "orderItemId": {
+            "type": "number"
+          },
+          "quantity": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "orderItemId",
+          "quantity"
         ]
       }
     }

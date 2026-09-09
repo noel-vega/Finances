@@ -49,6 +49,7 @@ export type UpdateOrderStatusDto =
   components["schemas"]["UpdateOrderStatusDto"];
 export type OrderRefund = components["schemas"]["OrderRefund"];
 export type RefundOrderDto = components["schemas"]["RefundOrderDto"];
+export type RefundLineDto = components["schemas"]["RefundLineDto"];
 export type OrderItemAllocation = components["schemas"]["OrderItemAllocation"];
 export type Fulfillment = components["schemas"]["Fulfillment"];
 export type FulfillmentItem = components["schemas"]["FulfillmentItem"];
