@@ -9,6 +9,7 @@ import {
   useTestDb,
 } from 'test-support';
 import { DRIZZLE } from '../../database/database.constants';
+import { AlertsService } from '../alerts/alerts.service';
 import { OrdersProcessor } from './orders.processor';
 
 // M9 regression anchor — the consumer half of the checkout→order path.
@@ -28,6 +29,7 @@ describe('checkout → order end-to-end (M9 regression anchor)', () => {
         OrdersProcessor,
         { provide: DRIZZLE, useValue: db },
         { provide: getQueueToken(QUEUE_NAMES.EMAIL), useValue: emailQueue },
+        { provide: AlertsService, useValue: { publishCritical: jest.fn() } },
       ],
     }).compile();
     const processor = ref.get(OrdersProcessor);
